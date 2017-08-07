@@ -1,1 +1,40 @@
-# Parser for the Puppet Language written in Go
+# Puppet Language Parser
+
+This is a parser for .pp (puppet) or .epp (embedded puppet) files written in [Go](https://golang.org/).
+
+## The parse program
+A command line utility named `parse` is provided. It prints errors and
+warnings on _stderr_, and returns a non zero exit status on failure. On success,
+it produces a JSON representation of the AST on _stdout_.
+
+Usage:
+```
+parse [-v] <path to pp or epp file>
+```
+
+**-v** validate only, i.e. suppress generation of AST.
+
+## The parser package
+
+### What it is
+The `parser` go-package is a library that can be used by other applications
+that wishes to parse puppet and validate code and use the AST. See [parser.go](parse/parser.go)
+for sample usage of `Parser` and `Validator`.
+
+### What it is not
+This is not a evaluator (A.K.A. compiler). An evaluator that acts on the produced AST would be one way
+of using the parser package.
+
+## This is work in progress
+This project is work in progress. There is no release yet and absolutely no
+guarantee that things will not change radically in the near future.
+
+### What's missing
+- The current code needs API documentation
+- The Validator is far from complete
+- A JSON schema is needed to describe the json format for the AST
+
+## Contributing
+Please contact the author [Thomas Hallgren](mailto:thomas.hallgren@puppet.com) if you
+have ideas or want to use this code.
+
