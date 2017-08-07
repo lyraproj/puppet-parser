@@ -2,7 +2,9 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="c9b7fa19-df3a-4201-a6a5-f97e40c81aab" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/README.md" afterPath="$PROJECT_DIR$/README.md" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/parse/parser.go" afterPath="$PROJECT_DIR$/parse/parser.go" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/parser/validate_test.go" afterPath="$PROJECT_DIR$/parser/validate_test.go" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -12,8 +14,11 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="CoverageDataManager">
+    <SUITE FILE_PATH="coverage/go_parser$validate_test_go.coverage" NAME="validate_test.go Coverage Results" MODIFIED="1502092823863" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
     <SUITE FILE_PATH="coverage/puppetlabs$validate_test_go.coverage" NAME="validate_test.go Coverage Results" MODIFIED="1502039721042" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
     <SUITE FILE_PATH="coverage/puppetlabs$parser_test_go.coverage" NAME="parser_test.go Coverage Results" MODIFIED="1502038661909" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/go_parser$parser_test_go.coverage" NAME="parser_test.go Coverage Results" MODIFIED="1502092836022" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
+    <SUITE FILE_PATH="coverage/go_parser$polish_test_go.coverage" NAME="polish_test.go Coverage Results" MODIFIED="1502092830202" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="GoCoverage" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" />
   </component>
   <component name="CoverageOptionsProvider">
     <option name="myAddOrReplace" value="1" />
@@ -22,24 +27,34 @@
     <splitter split-orientation="horizontal" split-proportion="0.85192126">
       <split-first>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-          <file leaf-file-name="parser.go" pinned="false" current-in-tab="false">
+          <file leaf-file-name="parser.go" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/parse/parser.go">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="748">
-                  <caret line="44" column="0" lean-forward="false" selection-start-line="44" selection-start-column="0" selection-end-line="44" selection-end-column="0" />
+                <state relative-caret-position="136">
+                  <caret line="8" column="0" lean-forward="false" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
+                  <folding />
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="validate_test.go" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/parser/validate_test.go">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="188">
+                  <caret line="51" column="13" lean-forward="false" selection-start-line="51" selection-start-column="13" selection-end-line="51" selection-end-column="13" />
                   <folding>
-                    <element signature="e#14#137#0" expanded="true" />
+                    <element signature="e#16#38#0" expanded="true" />
                   </folding>
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="README.md" pinned="false" current-in-tab="true">
+          <file leaf-file-name="README.md" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/README.md">
               <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
                 <state split_layout="SPLIT">
                   <first_editor relative-caret-position="442">
-                    <caret line="26" column="0" lean-forward="true" selection-start-line="26" selection-start-column="0" selection-end-line="26" selection-end-column="0" />
+                    <caret line="26" column="0" lean-forward="false" selection-start-line="26" selection-start-column="0" selection-end-line="26" selection-end-column="0" />
                     <folding />
                   </first_editor>
                   <second_editor />
@@ -137,11 +152,12 @@
         <option value="$PROJECT_DIR$/parser/polish_test.go" />
         <option value="$PROJECT_DIR$/parser/main.go" />
         <option value="$USER_HOME$/tmp/foo.pp" />
-        <option value="$PROJECT_DIR$/parse/parser.go" />
         <option value="$PROJECT_DIR$/parser/issues.go" />
         <option value="$PROJECT_DIR$/parser/parser.go" />
         <option value="$PROJECT_DIR$/parser/validate.go" />
         <option value="$PROJECT_DIR$/README.md" />
+        <option value="$PROJECT_DIR$/parser/validate_test.go" />
+        <option value="$PROJECT_DIR$/parse/parser.go" />
       </list>
     </option>
   </component>
@@ -173,28 +189,28 @@
     </navigator>
     <panes>
       <pane id="Scope" />
-      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
             <path>
-              <item name="puppetlabs" type="b2602c69:ProjectViewProjectNode" />
-              <item name="puppetlabs" type="462c0819:PsiDirectoryNode" />
+              <item name="go-parser" type="b2602c69:ProjectViewProjectNode" />
+              <item name="go-parser" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
-              <item name="puppetlabs" type="b2602c69:ProjectViewProjectNode" />
-              <item name="puppetlabs" type="462c0819:PsiDirectoryNode" />
+              <item name="go-parser" type="b2602c69:ProjectViewProjectNode" />
+              <item name="go-parser" type="462c0819:PsiDirectoryNode" />
               <item name="parse" type="462c0819:PsiDirectoryNode" />
             </path>
             <path>
-              <item name="puppetlabs" type="b2602c69:ProjectViewProjectNode" />
-              <item name="puppetlabs" type="462c0819:PsiDirectoryNode" />
+              <item name="go-parser" type="b2602c69:ProjectViewProjectNode" />
+              <item name="go-parser" type="462c0819:PsiDirectoryNode" />
               <item name="parser" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
+      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -239,6 +255,15 @@
       <package value="github.com/puppetlabs" />
       <filePath value="$PROJECT_DIR$/parser/parser_test.go" />
     </configuration>
+    <configuration name="polish_test.go" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true">
+      <module name="puppetlabs" />
+      <working_directory value="$PROJECT_DIR$/parser" />
+      <go_parameters value="-i" />
+      <framework value="gotest" />
+      <kind value="FILE" />
+      <package value="github.com/puppetlabs/go-parser" />
+      <filePath value="$PROJECT_DIR$/parser/polish_test.go" />
+    </configuration>
     <configuration name="validate_test.go" type="GoTestRunConfiguration" factoryName="Go Test" temporary="true">
       <module name="puppetlabs" />
       <working_directory value="$PROJECT_DIR$/parser" />
@@ -248,16 +273,18 @@
       <package value="github.com/puppetlabs" />
       <filePath value="$PROJECT_DIR$/parser/validate_test.go" />
     </configuration>
-    <list size="3">
+    <list size="4">
       <item index="0" class="java.lang.String" itemvalue="Go Application.Build parser.go and run" />
       <item index="1" class="java.lang.String" itemvalue="Go Test.parser_test.go" />
       <item index="2" class="java.lang.String" itemvalue="Go Test.validate_test.go" />
+      <item index="3" class="java.lang.String" itemvalue="Go Test.polish_test.go" />
     </list>
     <recent_temporary>
-      <list size="3">
+      <list size="4">
         <item index="0" class="java.lang.String" itemvalue="Go Application.Build parser.go and run" />
-        <item index="1" class="java.lang.String" itemvalue="Go Test.validate_test.go" />
-        <item index="2" class="java.lang.String" itemvalue="Go Test.parser_test.go" />
+        <item index="1" class="java.lang.String" itemvalue="Go Test.parser_test.go" />
+        <item index="2" class="java.lang.String" itemvalue="Go Test.polish_test.go" />
+        <item index="3" class="java.lang.String" itemvalue="Go Test.validate_test.go" />
       </list>
     </recent_temporary>
   </component>
@@ -271,7 +298,16 @@
     <history-entry file="parser_test_go - 2017.08.06 at 18h 57m 41s.xml">
       <configuration name="parser_test.go" configurationId="GoTestRunConfiguration" />
     </history-entry>
+    <history-entry file="parser_test_go - 2017.08.07 at 10h 00m 36s.xml">
+      <configuration name="parser_test.go" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="polish_test_go - 2017.08.07 at 10h 00m 30s.xml">
+      <configuration name="polish_test.go" configurationId="GoTestRunConfiguration" />
+    </history-entry>
     <history-entry file="validate_test_go - 2017.08.06 at 19h 15m 21s.xml">
+      <configuration name="validate_test.go" configurationId="GoTestRunConfiguration" />
+    </history-entry>
+    <history-entry file="validate_test_go - 2017.08.07 at 10h 00m 24s.xml">
       <configuration name="validate_test.go" configurationId="GoTestRunConfiguration" />
     </history-entry>
   </component>
@@ -284,7 +320,8 @@
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="true" content_ui="tabs" />
       <window_info id="Database" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32978016" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Run" active="true" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.32978016" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
+      <window_info id="Coverage" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3296875" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
@@ -293,7 +330,6 @@
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
-      <window_info id="Coverage" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.3296875" sideWeight="0.5" order="3" side_tool="true" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
       <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
@@ -319,11 +355,76 @@
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/parse/parser.go">
       <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="136">
+          <caret line="8" column="27" lean-forward="false" selection-start-line="8" selection-start-column="27" selection-end-line="8" selection-end-column="27" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file:///usr/lib/golang/src/runtime/panic.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9163">
+          <caret line="542" column="0" lean-forward="false" selection-start-line="542" selection-start-column="0" selection-end-line="542" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="442">
+            <caret line="26" column="0" lean-forward="true" selection-start-line="26" selection-start-column="0" selection-end-line="26" selection-end-column="0" />
+            <folding />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/tmp/foo.pp">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="255">
+          <caret line="15" column="0" lean-forward="false" selection-start-line="15" selection-start-column="0" selection-end-line="15" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/parser/parser.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1445">
+          <caret line="85" column="7" lean-forward="false" selection-start-line="85" selection-start-column="7" selection-end-line="85" selection-end-column="7" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/parser/validate.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2975">
+          <caret line="177" column="1" lean-forward="false" selection-start-line="177" selection-start-column="1" selection-end-line="177" selection-end-column="1" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/parser/expression.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="9622">
+          <caret line="570" column="0" lean-forward="false" selection-start-line="570" selection-start-column="0" selection-end-line="570" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/parser/issues.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/parse/parser.go">
+      <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="595">
           <caret line="44" column="0" lean-forward="false" selection-start-line="44" selection-start-column="0" selection-end-line="44" selection-end-column="0" />
-          <folding>
-            <element signature="e#14#137#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -390,9 +491,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="357">
           <caret line="28" column="0" lean-forward="false" selection-start-line="28" selection-start-column="0" selection-end-line="28" selection-end-column="0" />
-          <folding>
-            <element signature="e#14#137#0" expanded="true" />
-          </folding>
+          <folding />
         </state>
       </provider>
     </entry>
@@ -503,30 +602,38 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/parse/parser.go">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="748">
-          <caret line="44" column="0" lean-forward="false" selection-start-line="44" selection-start-column="0" selection-end-line="44" selection-end-column="0" />
-          <folding>
-            <element signature="e#14#137#0" expanded="true" />
-          </folding>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="442">
+            <caret line="26" column="0" lean-forward="false" selection-start-line="26" selection-start-column="0" selection-end-line="26" selection-end-column="0" />
+            <folding />
+          </first_editor>
+          <second_editor />
         </state>
       </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/README.md">
       <provider editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding />
         </state>
       </provider>
-      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
-        <state split_layout="SPLIT">
-          <first_editor relative-caret-position="442">
-            <caret line="26" column="0" lean-forward="true" selection-start-line="26" selection-start-column="0" selection-end-line="26" selection-end-column="0" />
-            <folding />
-          </first_editor>
-          <second_editor />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/parser/validate_test.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="188">
+          <caret line="51" column="13" lean-forward="false" selection-start-line="51" selection-start-column="13" selection-end-line="51" selection-end-column="13" />
+          <folding>
+            <element signature="e#16#38#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/parse/parser.go">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="136">
+          <caret line="8" column="0" lean-forward="false" selection-start-line="8" selection-start-column="0" selection-end-line="8" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
