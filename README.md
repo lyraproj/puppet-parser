@@ -25,6 +25,37 @@ for sample usage of `Parser` and `Validator`.
 This is not a evaluator (A.K.A. compiler). An evaluator that acts on the produced AST would be one way
 of using the parser package.
 
+## Getting started
+#### Install the go runtime
+This step is different depending on platform. On a Redhat/Debian system:
+```
+$ sudo yum install go
+```
+#### Set up environment
+```
+$ export GOPATH="$HOME/go"
+$ export PATH="$PATH:$GOPATH/bin"
+```
+#### Clone this repo into its package location
+```
+$ mkdir -p "$GOPATH/src/github.com/puppetlabs"
+$ cd "$GOPATH/src/github.com/puppetlabs"
+$ git clone git@github.com:puppetlabs/go-parser.git
+```
+
+#### Install the command
+The command is now ready to be installed using `go install`. Since this command acts on the
+setting of `GOPATH` it doesn't matter what directory you're in when executing it. The binary
+will be installed in `$GOPATH/bin` regardless.
+```
+$ go install github.com/puppetlabs/go-parser/parse
+```
+
+#### Use the command
+```
+$ parse some_manifest.pp
+```
+
 ## This is work in progress
 This project is work in progress. There is no release yet and absolutely no
 guarantee that things will not change radically in the near future.
