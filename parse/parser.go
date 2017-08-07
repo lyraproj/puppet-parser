@@ -1,3 +1,4 @@
+// +build go1.7
 package main
 
 import (
@@ -7,7 +8,6 @@ import (
   . "strings"
   "io/ioutil"
   "flag"
-  "encoding/json"
   "bytes"
 )
 
@@ -45,10 +45,7 @@ func main() {
 
   if !*validateOnly {
     result := bytes.NewBufferString(``)
-    enc := json.NewEncoder(result)
-    enc.SetEscapeHTML(false)
-    enc.Encode(expr.ToPN().ToData())
-    result.Truncate(result.Len() - 1)
-    Println(result.String())
+    Encode(expr, result)
+    Print(result.String())
   }
 }
