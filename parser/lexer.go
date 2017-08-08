@@ -144,7 +144,7 @@ const (
 var tokenMap = map[int]string {
   TOKEN_END: `EOF`,
 
-  // B: ``,inary ops
+  // Binary ops
   TOKEN_ASSIGN: `=`,
   TOKEN_ADD_ASSIGN: `+=`,
   TOKEN_SUBTRACT_ASSIGN: `-=`,
@@ -183,7 +183,7 @@ var tokenMap = map[int]string {
   TOKEN_OUT_EDGE: `<-`,
   TOKEN_OUT_EDGE_SUB: `<~`,
 
-  // U: ``,nary ops
+  // Unary ops
   TOKEN_NOT: `!`,
   TOKEN_AT: `@`,
   TOKEN_ATAT: `@@`,
@@ -220,7 +220,7 @@ var tokenMap = map[int]string {
   TOKEN_COLON: `:`,
   TOKEN_SEMICOLON: `;`,
 
-  // S: ``,trings with semantics
+  // Strings with semantics
   TOKEN_IDENTIFIER: `identifier`,
   TOKEN_STRING: `string literal`,
   TOKEN_INTEGER: `integer literal`,
@@ -232,7 +232,7 @@ var tokenMap = map[int]string {
   TOKEN_REGEXP: `regexp`,
   TOKEN_TYPE_NAME: `type name`,
 
-  // K: ``,eywords
+  // Keywords
   TOKEN_KEYWORD: ``,
   TOKEN_AND: `and`,
   TOKEN_APPLICATION: `application`,
