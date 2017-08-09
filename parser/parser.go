@@ -97,16 +97,22 @@ func Parse(file string, source string, eppMode bool) (expr Expression, err error
 func (ctx *context) parse(expectedEnd int, singleExpression bool) (expr Expression) {
   _, start := ctx.skipWhite(false)
   ctx.SetPos(start)
-  expressions := make([]Expression, 0, 10)
-  for {
-    if ctx.currentToken == expectedEnd || singleExpression && len(expressions) == 1 {
-      if singleExpression {
-        return expressions[0]
-      }
-      return ctx.factory.Block(ctx.transformCalls(expressions, start), ctx.locator, start, ctx.Pos()-start)
+  if singleExpression {
+    if ctx.currentToken == expectedEnd {
+      expr = ctx.factory.Undef(ctx.locator, start, 0)
+    } else {
+      expr = ctx.expression()
+      ctx.assertToken(expectedEnd)
     }
+    return
+  }
+
+  expressions := make([]Expression, 0, 10)
+  for ctx.currentToken != expectedEnd {
     expressions = append(expressions, ctx.expression())
   }
+  expr = ctx.factory.Block(ctx.transformCalls(expressions, start), ctx.locator, start, ctx.Pos()-start)
+  return
 }
 
 func (ctx *context) assertToken(token int) {
@@ -564,11 +570,11 @@ func (ctx *context) atomExpression() (expr Expression) {
     // look ahead for '(' in which case this is a named function call
     name := ctx.tokenString()
     ctx.nextToken()
-    if ctx.currentToken == TOKEN_LP {
-      // Function call. This is picked up by the caller function
-      expr = ctx.factory.QualifiedName(name, ctx.locator, atomStart, ctx.Pos()-atomStart)
-    } else {
+    if ctx.currentToken == TOKEN_TYPE_NAME {
       expr = ctx.typeAliasOrDefinition()
+    } else {
+      // Not a type definition. Just treat the 'type' keyword as a qualfied name
+      expr = ctx.factory.QualifiedName(name, ctx.locator, atomStart, ctx.Pos()-atomStart)
     }
 
   case TOKEN_FUNCTION:

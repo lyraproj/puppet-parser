@@ -242,7 +242,7 @@ func (f *defaultExpressionFactory) QualifiedReference(name string, locator *Loca
 }
 
 func (f *defaultExpressionFactory) Regexp(value string, locator *Locator, offset int, length int) Expression {
-  return &RegexpExpression{positioned{locator, offset, length}, value }
+  return &RegexpExpression{literalExpression{positioned{locator, offset, length}}, value}
 }
 
 func (f *defaultExpressionFactory) RelOp(op string, lhs Expression, rhs Expression, locator *Locator, offset int, length int) Expression {

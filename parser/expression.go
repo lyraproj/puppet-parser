@@ -325,7 +325,7 @@ type (
   }
 
   RegexpExpression struct {
-    positioned
+    literalExpression
     value string
   }
 

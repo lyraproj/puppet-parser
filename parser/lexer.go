@@ -339,6 +339,9 @@ func (ctx *context)nextToken() {
       ctx.consumeFloat(start, c)
       break
     }
+    if(isLetter(c)) {
+      panic(ctx.parseIssue(LEX_DIGIT_EXPECTED))
+    }
     v, _ := ParseInt(ctx.From(start), 10, 64)
     ctx.setTokenValue(TOKEN_INTEGER, v)
     ctx.radix = 10
@@ -615,22 +618,28 @@ func (ctx *context)nextToken() {
       ctx.setToken(TOKEN_DIVIDE)
 
     case '$':
-      c, _ = ctx.Next()
+      c, sz = ctx.Peek()
       if c == ':' {
-        c, _ = ctx.Next()
+        ctx.Advance(sz)
+        c, sz = ctx.Peek()
         if c != ':' {
           ctx.SetPos(start)
           panic(ctx.parseIssue(LEX_INVALID_VARIABLE_NAME))
         }
-        c, _ = ctx.Next()
+        ctx.Advance(sz)
+        c, sz = ctx.Peek()
       }
       if isLowercaseLetter(c) {
+        ctx.Advance(sz)
         ctx.consumeQualifiedName(start, TOKEN_VARIABLE)
       } else if isDecimalDigit(c) {
+        ctx.Advance(sz)
         ctx.skipDecimalDigits()
         ctx.tokenValue = ctx.Text[start + 1:ctx.Pos()]
-      } else {
+      } else if isLetter(c) {
         panic(ctx.parseIssue(LEX_INVALID_VARIABLE_NAME))
+      } else {
+        ctx.tokenValue = ``
       }
       ctx.setTokenValue(TOKEN_VARIABLE, ctx.factory.Variable(
         ctx.factory.QualifiedName(ctx.tokenValue.(string), ctx.locator, start+1, ctx.Pos()-(start+1)),
@@ -1092,8 +1101,8 @@ func (ctx *context) interpolate(start int) (Expression) {
     } else if access, ok := expr.(*AccessExpression); ok {
       if identifier, ok := access.operand.(*QualifiedName); ok {
         expr = ctx.factory.Access(
-          ctx.factory.Variable(identifier, ctx.locator, start, identifier.length + 1),
-          access.keys, ctx.locator, start, access.length + 1)
+          ctx.factory.Variable(identifier, ctx.locator, start, identifier.byteLength() + 1),
+          access.keys, ctx.locator, start, access.byteLength() + 1)
       }
     }
     return ctx.factory.Text(expr, ctx.locator, start, ctx.Pos() - start)
@@ -1260,7 +1269,6 @@ func (ctx *context) consumeHeredocString() {
       ctx.Advance(n)
     default:
       ctx.Advance(n)
-      c, n = ctx.Peek()
     }
   }
 
@@ -1387,7 +1395,7 @@ func (ctx *context) consumeHeredocString() {
       ctx.SetPos(heredocTagEnd) // Normal parsing continues here
       ctx.nextLineStart = heredocEnd + 1 // and next newline will jump to here
       textExpr := ctx.factory.ConcatenatedString(segments, ctx.locator, heredocContentStart, heredocContentEnd -heredocContentStart)
-      ctx.setTokenValue(TOKEN_HEREDOC, ctx.factory.Heredoc(textExpr, syntax, ctx.locator, start, heredocContentEnd - start))
+      ctx.setTokenValue(TOKEN_HEREDOC, ctx.factory.Heredoc(textExpr, syntax, ctx.locator, heredocStart, heredocContentEnd - heredocStart))
       return
     }
   } else {
@@ -1398,7 +1406,7 @@ func (ctx *context) consumeHeredocString() {
   ctx.SetPos(heredocTagEnd) // Normal parsing continues here
   ctx.nextLineStart = heredocEnd + 1 // and next newline will jump to here
   textExpr := ctx.factory.String(heredoc, ctx.locator, heredocContentStart, heredocContentEnd -heredocContentStart)
-  ctx.setTokenValue(TOKEN_HEREDOC, ctx.factory.Heredoc(textExpr, syntax, ctx.locator, start, heredocContentEnd - start))
+  ctx.setTokenValue(TOKEN_HEREDOC, ctx.factory.Heredoc(textExpr, syntax, ctx.locator, heredocStart, heredocContentEnd - heredocStart))
 }
 
 func (ctx *context)extractFlags(start int) ([]byte) {

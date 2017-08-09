@@ -543,7 +543,7 @@ func TestVariable(t *testing.T) {
 
   expectError(t,
     `$Var`,
-    `invalid variable name at line 1:3`)
+    `invalid variable name at line 1:2`)
 
   expectError(t,
     `$:var::b`,
@@ -793,16 +793,6 @@ func TestTypeAlias(t *testing.T) {
         }
       }]`),
     `(type-alias (MyType) ([] (qr Object) (hash (=> (qn attributes) (hash (=> (qn name) (qr String)) (=> (qn number) (qr Integer)))))))`)
-
-  expectError(t,
-    Unindent(`
-      type $myType = Object[{
-        attributes => {
-        name => String,
-        number => Integer
-        }
-      }]`),
-    `expected type name to follow 'type' at line 1:13`)
 
   expectError(t,
     Unindent(`
@@ -1125,8 +1115,28 @@ func TestLineComment(t *testing.T) {
 
 func TestIdentifiers(t *testing.T) {
   expectDump(t,
+    `name`,
+    `(qn name)`)
+
+  expectDump(t,
+    `Name`,
+    `(qr Name)`)
+
+  expectDump(t,
+    `Ab::Bc`,
+    `(qr Ab::Bc)`)
+
+  expectDump(t,
     `$x = ::assertType(::TheType, $y)`,
     `(= ($ x) (call {:functor (qn ::assertType) :args [(qr ::TheType) ($ y)]}))`)
+
+  expectError(t,
+    `abc:cde`,
+    `unexpected token ':' at line 1:4`)
+
+  expectError(t,
+    `Ab::bc`,
+    `invalid type name at line 1:1`)
 
   expectError(t,
     `$x = ::3m`,
