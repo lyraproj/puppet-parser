@@ -5,19 +5,23 @@ import (
 )
 
 type Validator interface {
+  // Validate the semantics of the given expression
   Validate(e Expression)
 
+  // Return all reported issues (should be called after validation)
   Issues() []*ReportedIssue
 
   setPathAndSubject(path []Expression, expr Expression)
 }
 
+// All validators should "inherit" from this struct
 type AbstractValidator struct {
   path []Expression
   subject Expression
   issues []*ReportedIssue
 }
 
+// Accept an issue during validation
 func (v *AbstractValidator) Accept(issueCode string, e Expression, args...interface{}) {
   v.issues = append(v.issues, NewReportedIssue(issueCode, args, e))
 }
@@ -61,6 +65,8 @@ func ValidatePuppet(e Expression) Validator {
   return v
 }
 
+// Iterate over all expressions contained in the given expression (including the expression itself)
+// and validate each one.
 func Validate(v Validator, e Expression) {
   path := make([]Expression, 0, 16)
 

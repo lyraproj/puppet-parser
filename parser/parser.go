@@ -5,10 +5,18 @@ import (
   . `strings`
 )
 
+// Recursive descent parser for the Puppet language.
+//
+// This is actually the lexer with added functionality. Having the lexer and parser being the
+// same instance is very beneficial when the lexer must parse expressions (as is the case when
+// it encounters double quoted strings or heredoc with interpolation).
+
 type ExpressionParser interface {
   Parse(s string) Expression
 }
 
+// Set of names that will be treated as top level function calls rather than just identifiers
+// when followed by a single expression that is not within parenthesis.
 var statementCalls = map[string]bool{
   `require`: true,
   `realize`: true,
@@ -29,10 +37,15 @@ var statementCalls = map[string]bool{
   `return`: true,
 }
 
-func Parse(file string, source string, eppMode bool) (expr Expression, err error) {
+// Parse the contents of the given source. The filename is optional and will be used
+// in warnings and errors issued by the parser.
+//
+// If eppMode is true, the parser will treat the given source as text with embedded puppet
+// expressions.
+func Parse(filename string, source string, eppMode bool) (expr Expression, err error) {
   ctx := context{
     stringReader:  stringReader{Text: source},
-    locator:       &Locator{string: source, file: file},
+    locator:       &Locator{string: source, file: filename},
     factory:       DefaultFactory(),
     eppMode:       eppMode,
     nextLineStart: -1}

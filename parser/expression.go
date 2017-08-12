@@ -6,6 +6,18 @@ import (
   . "unicode/utf8"
 )
 
+// The AST Model. Designed to match the AST model used by the Puppet
+// ruby parser.
+//
+// See: https://github.com/puppetlabs/puppet/blob/master/lib/puppet/pops/model/ast.pp
+//
+// This model uses a name starting with a lowercase letter for the structs that represent
+// abstract types to avoid them being exported. Each such struct then has a corresponding
+// interface which is exported. Structs representing concrete types in the AST model use
+// names starting with an uppercase letter. This scheme allows all names of interfaces
+// and structs in the model to participate in type switches.
+//
+// TODO: Ideally, this model should be generated from the TypeSet described in the ast.pp
 type (
   PathVisitor func(path [] Expression, e Expression)
 
@@ -19,14 +31,20 @@ type (
   }
 
   Expression interface {
+    // Return the location in source for this expression.
     Location
 
+    // Let the given visitor iterate all contents. The iteration starts with this
+    // expression and will then traverse, depth first, into all contained expressions
     AllContents(path []Expression, visitor PathVisitor)
 
+    // Returns a very brief description of this expression suitable to use in error messages
     Label() string
 
+    // Returns the string that represents the parsed text that resulted in this expression
     String() string
 
+    // Returns false for all expressions except the Noop expression
     IsNop() bool
 
     // Represent the expression using polish notation
@@ -494,16 +512,6 @@ type (
   }
 )
 
-func (e *Locator) OffsetOnLine(offset int) int {
-  li := e.LineIndex()
-  line := SearchInts(li, offset + 1)
-  lineStart := li[line - 1]
-  if offset == lineStart {
-    return 0
-  }
-  return RuneCountInString(e.string[lineStart:offset])
-}
-
 func (e *Locator) String() string {
   return e.string
 }
@@ -512,7 +520,17 @@ func (e *Locator) File() string {
   return e.file
 }
 
-func (e *Locator) LineIndex() []int {
+// Return the line in the source for the given byte offset
+func (e *Locator) LineForOffset(offset int) int {
+  return SearchInts(e.getLineIndex(), offset + 1)
+}
+
+// Return the position on a line in the source for the given byte offset
+func (e *Locator) PosOnLine(offset int) int {
+  return e.offsetOnLine(offset) + 1
+}
+
+func (e *Locator) getLineIndex() []int {
   if e.lineIndex == nil {
     li := append(make([]int, 0, 32), 0)
     rdr := NewStringReader(e.string)
@@ -526,12 +544,14 @@ func (e *Locator) LineIndex() []int {
   return e.lineIndex
 }
 
-func (e *Locator) LineForOffset(offset int) int {
-  return SearchInts(e.LineIndex(), offset + 1)
-}
-
-func (e *Locator) PosOnLine(offset int) int {
-  return e.OffsetOnLine(offset) + 1
+func (e *Locator) offsetOnLine(offset int) int {
+  li := e.getLineIndex()
+  line := SearchInts(li, offset + 1)
+  lineStart := li[line - 1]
+  if offset == lineStart {
+    return 0
+  }
+  return RuneCountInString(e.string[lineStart:offset])
 }
 
 func (e *positioned) AllContents(path []Expression, visitor PathVisitor) {

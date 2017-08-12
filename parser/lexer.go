@@ -6,6 +6,8 @@ import (
   . `unicode/utf8`
 )
 
+// Recursive descent lexer for the Puppet language.
+
 type location struct {
   locator *Locator
   byteOffset int
