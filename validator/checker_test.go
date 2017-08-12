@@ -40,6 +40,46 @@ func TestAttributeAppendValidation(t *testing.T) {
   expectIssues(t, `service { apache: require +> File['apache.pem'] }`, VALIDATE_ILLEGAL_ATTRIBUTE_APPEND)
 }
 
+func TestAttributesOpValidation(t *testing.T) {
+  expectNoIssues(t,
+    Unindent(`
+      file { '/tmp/foo':
+        ensure => file,
+        * => $file_ownership
+      }`))
+
+  expectIssues(t,
+    Unindent(`
+      File <| mode == '0644' |> {
+        * => $file_ownership
+      }`),
+    VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT)
+
+  expectIssues(t,
+    Unindent(`
+      File {
+        ensure => file,
+        * => $file_ownership
+      }`),
+    VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT)
+
+  expectIssues(t,
+    Unindent(`
+      File['/tmp/foo'] {
+        ensure => file,
+        * => $file_ownership
+      }`),
+    VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT)
+
+  expectIssues(t,
+    Unindent(`
+      file { '/tmp/foo':
+        ensure => file,
+        * => function foo() {}
+      }`),
+    VALIDATE_NOT_RVALUE)
+}
+
 func TestBinaryOpValidation(t *testing.T) {
   expectIssues(t, `notice(function foo() {} < 3)`, VALIDATE_NOT_RVALUE)
   expectNoIssues(t, `notice(true == !false)`)

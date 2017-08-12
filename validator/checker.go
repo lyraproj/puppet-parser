@@ -22,6 +22,8 @@ func (v *Checker) Validate(e Expression) {
     v.check_AssignmentExpression(e.(*AssignmentExpression))
   case *AttributeOperation:
     v.check_AttributeOperation(e.(*AttributeOperation))
+  case *AttributesOperation:
+    v.check_AttributesOperation(e.(*AttributesOperation))
   case *BlockExpression:
     v.check_BlockExpression(e.(*BlockExpression))
   case *CallNamedFunctionExpression:
@@ -54,9 +56,18 @@ func (v *Checker) check_AttributeOperation(e *AttributeOperation) {
   }
 }
 
+func (v *Checker) check_AttributesOperation(e *AttributesOperation) {
+  p := v.Container()
+  switch p.(type) {
+  case AbstractResource, *CollectExpression, *CapabilityMapping:
+    v.Accept(VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT, p, `* =>`, A_an(p))
+  }
+  v.checkRValue(e.Expr())
+}
+
 func (v *Checker) check_BinaryExpression(e BinaryExpression) {
-  checkRValue(v, e.Lhs())
-  checkRValue(v, e.Rhs())
+  v.checkRValue(e.Lhs())
+  v.checkRValue(e.Rhs())
 }
 
 func (v *Checker) check_BlockExpression(e *BlockExpression) {
@@ -112,10 +123,10 @@ func checkAssign(v *Checker, e Expression) {
   }
 }
 
-func checkRValue(v *Checker, e Expression) {
+func (v *Checker) checkRValue(e Expression) {
   switch e.(type) {
   case UnaryExpression:
-    checkRValue(v, e.(UnaryExpression).Expr())
+    v.checkRValue(e.(UnaryExpression).Expr())
   case Definition, *CollectExpression:
     v.Accept(VALIDATE_NOT_RVALUE, e, A_anUc(e))
   }

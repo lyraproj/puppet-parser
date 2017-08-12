@@ -57,6 +57,10 @@ type (
     updateOffsetAndLength(offset int, length int)
   }
 
+  AbstractResource interface {
+    Form() string
+  }
+
   Definition interface {
     // Marker method, to ensure unique interface
     ToDefinition() Definition
@@ -378,19 +382,19 @@ type (
   }
 
   ResourceDefaultsExpression struct {
-    AbstractResource
+    abstractResource
     typeRef Expression
     operations []Expression
   }
 
   ResourceExpression struct {
-    AbstractResource
+    abstractResource
     typeName Expression
     bodies []Expression
   }
 
   ResourceOverrideExpression struct {
-    AbstractResource
+    abstractResource
     resources Expression
     operations []Expression
   }
@@ -462,7 +466,7 @@ type (
   }
 
   // Abstract types
-  AbstractResource struct {
+  abstractResource struct {
     positioned
     form string
   }
@@ -609,7 +613,7 @@ func deepVisit(e Expression, path []Expression, visitor PathVisitor, children...
   }
 }
 
-func (e *AbstractResource) Form() string {
+func (e *abstractResource) Form() string {
   return e.form
 }
 

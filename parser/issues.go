@@ -56,6 +56,7 @@ const (
   VALIDATE_ILLEGAL_EXPRESSION                  = `VALIDATE_ILLEGAL_EXPRESSION`
   VALIDATE_ILLEGAL_NUMERIC_ASSIGNMENT          = `VALIDATE_ILLEGAL_NUMERIC_ASSIGNMENT`
   VALIDATE_NOT_RVALUE                          = `VALIDATE_NOT_RVALUE`
+  VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT     = `VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT`
 )
 
 func init() {
@@ -108,6 +109,7 @@ func init() {
   newIssue(VALIDATE_ILLEGAL_NUMERIC_ASSIGNMENT, `Illegal attempt to assign to the numeric match result variable '$%s'. Numeric variables are not assignable`, false)
   newIssue(VALIDATE_CROSS_SCOPE_ASSIGNMENT, `Illegal attempt to assign to '%s'. Cannot assign to variables in other namespaces`, false)
   newIssue(VALIDATE_NOT_RVALUE, `Invalid use of expression. %s does not produce a value`, false)
+  newIssue(VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT, `The operator '%s' in %s is not supported`, false)
 }
 
 type (
