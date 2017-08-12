@@ -528,7 +528,7 @@ func (e* IfExpression) pnIf(name string) PN {
   return &namedValue{name, &hash{entries}}
 }
 
-func (e* namedDefinition) pnNamedDefinition(name string) PN {
+func (e*namedDefinition) pnNamedDefinition(name string) PN {
   return &namedValue{name, &hash{[]entry{
     &namedStringValue{`name`, e.Name() },
     &namedArray{`params`, pnElems(e.Parameters())},

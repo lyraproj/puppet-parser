@@ -27,7 +27,6 @@ type (
 
     String() string
 
-
     IsNop() bool
 
     // Represent the expression using polish notation
@@ -45,22 +44,28 @@ type (
     ToDefinition() Definition
   }
 
-  Unary interface {
+  BinaryExpression interface {
+    Lhs() Expression
+    Rhs() Expression
+  }
+
+  BooleanExpression interface {
+    BinaryExpression
+
+    // Marker method, to ensure unique interface
+    ToBooleanExpression() BooleanExpression
+  }
+
+  UnaryExpression interface {
     Expr() Expression
 
     // Marker method, to ensure unique interface
-    ToUnary() Unary
+    ToUnaryExpression() UnaryExpression
   }
 
   NameExpression interface {
     Expression
     Name() string
-  }
-
-  NamedDefinition interface {
-    NameExpression
-    Parameters() []Expression
-    Body() Expression
   }
 
   LiteralValue interface {
@@ -355,19 +360,19 @@ type (
   }
 
   ResourceDefaultsExpression struct {
-    abstractResource
+    AbstractResource
     typeRef Expression
     operations []Expression
   }
 
   ResourceExpression struct {
-    abstractResource
+    AbstractResource
     typeName Expression
     bodies []Expression
   }
 
   ResourceOverrideExpression struct {
-    abstractResource
+    AbstractResource
     resources Expression
     operations []Expression
   }
@@ -439,7 +444,7 @@ type (
   }
 
   // Abstract types
-  abstractResource struct {
+  AbstractResource struct {
     positioned
     form string
   }
@@ -563,7 +568,7 @@ func (e *positioned) updateOffsetAndLength(offset int, length int) {
   e.length = length
 }
 
-func (e* definitionExpression) ToDefinition() Definition {
+func (e *definitionExpression) ToDefinition() Definition {
   return e
 }
 
@@ -584,7 +589,7 @@ func deepVisit(e Expression, path []Expression, visitor PathVisitor, children...
   }
 }
 
-func (e *abstractResource) Form() string {
+func (e *AbstractResource) Form() string {
   return e.form
 }
 
@@ -654,6 +659,10 @@ func (e *binaryExpression) Lhs() Expression {
 
 func (e *binaryExpression) Rhs() Expression {
   return e.rhs
+}
+
+func (e *booleanExpression) ToBooleanExpression() BooleanExpression {
+  return e
 }
 
 func (e *BlockExpression) Statements() []Expression {
@@ -1231,7 +1240,7 @@ func (e *unaryExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.expr)
 }
 
-func (e *unaryExpression) ToUnary() Unary {
+func (e *unaryExpression) ToUnaryExpression() UnaryExpression {
   return e
 }
 

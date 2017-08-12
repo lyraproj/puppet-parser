@@ -131,6 +131,10 @@ func newIssue(code string, messageFormat string, demotable bool) {
   Issues[code] = &Issue{code, messageFormat, demotable}
 }
 
+func NewReportedIssue(issueCode string, args []interface{}, location Location) *ReportedIssue {
+  return &ReportedIssue{issueCode, args, location}
+}
+
 func (e *ReportedIssue) Error() (str string) {
   if issue, ok := Issues[e.issueCode]; ok {
     return appendLocation(fmt.Sprintf(issue.messageFormat, e.args...), e.location)

@@ -1,4 +1,4 @@
-// +build !go1.7
+// +build go1.7
 
 package parser
 
@@ -7,7 +7,8 @@ import (
   "io"
 )
 
-func Encode(expr Expression, result io.Writer) {
+func ToJson(expr Expression, result io.Writer) {
   enc := json.NewEncoder(result)
+  enc.SetEscapeHTML(false)
   enc.Encode(expr.ToPN().ToData())
 }

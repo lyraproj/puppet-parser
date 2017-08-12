@@ -262,7 +262,7 @@ func (f *defaultExpressionFactory) ReservedWord(value string, future bool, locat
 }
 
 func (f *defaultExpressionFactory) Resource(form string, typeName Expression, bodies []Expression, locator *Locator, offset int, length int) Expression {
-  return &ResourceExpression{abstractResource{positioned{locator, offset, length}, form}, typeName, bodies}
+  return &ResourceExpression{AbstractResource{positioned{locator, offset, length}, form}, typeName, bodies}
 }
 
 func (f *defaultExpressionFactory) ResourceBody(title Expression, operations []Expression, locator *Locator, offset int, length int) Expression {
@@ -270,11 +270,11 @@ func (f *defaultExpressionFactory) ResourceBody(title Expression, operations []E
 }
 
 func (f *defaultExpressionFactory) ResourceDefaults(form string, typeRef Expression, operations []Expression, locator *Locator, offset int, length int) Expression {
-  return &ResourceDefaultsExpression{abstractResource{positioned{locator, offset, length}, form}, typeRef, operations}
+  return &ResourceDefaultsExpression{AbstractResource{positioned{locator, offset, length}, form}, typeRef, operations}
 }
 
 func (f *defaultExpressionFactory) ResourceOverride(form string, resources Expression, operations []Expression, locator *Locator, offset int, length int) Expression {
-  return &ResourceOverrideExpression{abstractResource{positioned{locator, offset, length},form}, resources, operations}
+  return &ResourceOverrideExpression{AbstractResource{positioned{locator, offset, length},form}, resources, operations}
 }
 
 func (f *defaultExpressionFactory) Select(lhs Expression, entries []Expression, locator *Locator, offset int, length int) Expression {

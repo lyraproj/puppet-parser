@@ -1,7 +1,9 @@
-package parser
+package validator
 
 import (
   "testing"
+  . "github.com/puppetlabs/go-parser/parser"
+  . "github.com/puppetlabs/go-parser/testutils"
 )
 
 func TestVariableAssignValidation(t *testing.T) {
@@ -81,10 +83,23 @@ func expectIssues(t *testing.T, str string, expectedIssueCodes...string) {
 }
 
 func parseAndValidate(t *testing.T, str string) []*ReportedIssue {
-  if expr := parse(t, str, false); expr != nil {
-    v := NewValidator()
-    v.Validate(expr)
+  if expr := parse(t, str); expr != nil {
+    v := ValidatePuppet(expr)
     return v.Issues()
   }
   return nil
+}
+
+func parse(t *testing.T, str string) *BlockExpression {
+  expr, err := Parse(``, str, false)
+  if err != nil {
+    t.Errorf(err.Error())
+    return nil
+  }
+  block, ok := expr.(*BlockExpression)
+  if !ok {
+    t.Errorf("'%s' did not parse to a block", str)
+    return nil
+  }
+  return block
 }

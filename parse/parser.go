@@ -9,9 +9,11 @@ import (
   "io/ioutil"
   "flag"
   "bytes"
+  "github.com/puppetlabs/go-parser/validator"
 )
 
-var validateOnly = flag.Bool("v", false, "validate only")
+// Program to parse and validate a .pp or .epp file
+var validateOnly = flag.Bool("v", false, "validator only")
 
 func main() {
   flag.Parse()
@@ -34,8 +36,7 @@ func main() {
     Exit(1)
   }
 
-  v := NewValidator()
-  v.Validate(expr)
+  v := validator.ValidatePuppet(expr)
   if len(v.Issues()) > 0 {
     for _, issue := range v.Issues() {
       Fprintln(Stderr, issue.String())
@@ -45,7 +46,7 @@ func main() {
 
   if !*validateOnly {
     result := bytes.NewBufferString(``)
-    Encode(expr, result)
+    ToJson(expr, result)
     Print(result.String())
   }
 }
