@@ -554,6 +554,14 @@ func pnArgs(elements...Expression) []PN {
   return result
 }
 
+func pnLiterals(elements...interface{}) []PN {
+  result := make([]PN, len(elements))
+  for idx, element := range elements {
+    result[idx] = &literal{element}
+  }
+  return result
+}
+
 func doubleQuote(str string, b *Buffer) {
   b.WriteByte('"')
   for _, c := range str {

@@ -556,6 +556,18 @@ func TestBlock(t *testing.T) {
         `(= ($ r) "revealed") `+
         `(= ($ map) (hash (=> "ipl" "meaning") (=> 42 "life"))) `+
         `(concat (str ($ t)) " " (str ([] ($ map) "ipl")) " of " (str ([] ($ map) 42)) (str ([] (array 3 (concat " is not " (str ($ r)))) 1)) " here"))`)
+
+  expectBlock(t,
+    Unindent(`
+      $t = 'the';
+      $r = 'revealed';
+      $map = {'ipl' => 'meaning', 42.0 => 'life'};
+      "$t ${map['ipl']} of ${map[42.0]}${[3, " is not ${r}"][1]} here"`),
+    `(block `+
+        `(= ($ t) "the") `+
+        `(= ($ r) "revealed") `+
+        `(= ($ map) (hash (=> "ipl" "meaning") (=> 42 "life"))) `+
+        `(concat (str ($ t)) " " (str ([] ($ map) "ipl")) " of " (str ([] ($ map) 42)) (str ([] (array 3 (concat " is not " (str ($ r)))) 1)) " here"))`)
 }
 
 func TestFunctionDefintion(t *testing.T) {
@@ -1672,11 +1684,21 @@ func TestEPP(t *testing.T) {
       <%-||-%> some <%- $x = 3 -% $y %> text`),
     `invalid operator '-%' at line 1:28`)
 
-  expectDumpEPP(t,
+  expectBlockEPP(t,
     Unindent(`
-      <%| String $count |%> some arbitrary text
-      spanning <%- $count -%> lines`),
-    `(lambda {:params [{:name count :type (qr String)}] :body [(render-s " some arbitrary text\nspanning") ($ count) (render-s "lines")]})`)
+      vcenter: {
+        host: "<%= $host %>"
+        user: "<%= $username %>"
+        password: "<%= $password %>"
+      }`),
+    `(block `+
+        `(render-s "vcenter: {\n  host: \"") `+
+        `(render ($ host)) `+
+        `(render-s "\"\n  user: \"") `+
+        `(render ($ username)) `+
+        `(render-s "\"\n  password: \"") `+
+        `(render ($ password)) `+
+        `(render-s "\"\n}"))`)
 
   expectDumpEPP(t,
     Unindent(`
@@ -1753,6 +1775,10 @@ func TestEPP(t *testing.T) {
     Unindent(`
       $x = 3 -%> 4`),
     `unexpected token '%' at line 1:9`)
+
+  expectErrorEPP(t,
+    "\n<% |String $x| %>\n",
+    `Ambiguous EPP parameter expression. Probably missing '<%-' before parameters to remove leading whitespace at line 2:5`)
 }
 
 func expectDump(t *testing.T, source string, expected string) {
@@ -1761,6 +1787,10 @@ func expectDump(t *testing.T, source string, expected string) {
 
 func expectDumpEPP(t *testing.T, source string, expected string) {
   expectDumpX(t, source, expected, true)
+}
+
+func expectBlockEPP(t *testing.T, source string, expected string) {
+  expectBlockX(t, source, expected, true)
 }
 
 func expectDumpX(t *testing.T, source string, expected string, eppMode bool) {
@@ -1773,7 +1803,11 @@ func expectDumpX(t *testing.T, source string, expected string, eppMode bool) {
 }
 
 func expectBlock(t *testing.T, source string, expected string) {
-  expr, err := Parse(``, source, false)
+  expectBlockX(t, source, expected, false)
+}
+
+func expectBlockX(t *testing.T, source string, expected string, eppMode bool) {
+  expr, err := Parse(``, source, eppMode)
   if err != nil {
     t.Errorf(err.Error())
   } else {

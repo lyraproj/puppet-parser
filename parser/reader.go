@@ -30,7 +30,6 @@ type ParseError struct {
   rootCause error
   message string
   offset int
-  locator *Locator
 }
 
 type stringReader struct {
@@ -39,7 +38,7 @@ type stringReader struct {
 }
 
 func (e *ParseError) Error() string {
-  return Sprintf(`%s at %d:%d`, e.message, e.locator.LineForOffset(e.offset), e.locator.PosOnLine(e.offset))
+  return Sprintf(`%s at offset %d`, e.message, e.offset)
 }
 
 func NewStringReader(s string) StringReader {

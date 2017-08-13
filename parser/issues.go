@@ -79,7 +79,7 @@ func init() {
   HardIssue(PARSE_EXPECTED_TOKEN, `expected token '%s'`)
   HardIssue(PARSE_EXPECTED_TYPE_NAME_AFTER_TYPE, `expected type name to follow 'type'`)
   HardIssue(PARSE_EXPECTED_VARIABLE, `expected variable declaration`)
-  HardIssue(PARSE_ILLEGAL_EPP_PARAMETERS, `Ambiguous EPP parameter expression. Probably missing '<%-' before parameters to remove leading whitespace`)
+  HardIssue(PARSE_ILLEGAL_EPP_PARAMETERS, `Ambiguous EPP parameter expression. Probably missing '<%%-' before parameters to remove leading whitespace`)
   HardIssue(PARSE_INVALID_ATTRIBUTE, `invalid attribute operation`)
   HardIssue(PARSE_INVALID_RESOURCE, `invalid resource expression`)
   HardIssue(PARSE_INHERITS_MUST_BE_TYPE_NAME, `expected type name to follow 'inherits'`)

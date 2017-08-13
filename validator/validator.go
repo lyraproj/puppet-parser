@@ -29,6 +29,7 @@ func (v *AbstractValidator) Demote(code IssueCode, severity Severity) {
   if !issue.IsDemotable() {
     panic(Sprintf(`Attempt to demote the hard issue '%s' to %s`, code, severity.String()))
   }
+  v.severities[code] = severity
 }
 
 // Accept an issue during validation

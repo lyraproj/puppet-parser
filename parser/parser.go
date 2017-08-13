@@ -59,12 +59,7 @@ func Parse(filename string, source string, eppMode bool) (expr Expression, err e
 
   defer func() {
     if r := recover(); r != nil {
-      var ok bool
       err, _ = r.(error)
-      var pe *ParseError
-      if pe, ok = err.(*ParseError); ok {
-        pe.locator = ctx.locator
-      }
     }
   }()
 
@@ -106,7 +101,6 @@ func Parse(filename string, source string, eppMode bool) (expr Expression, err e
       }
       expressions = append(expressions, ctx.expression())
     }
-    return
   }
 
   ctx.nextToken()
@@ -928,10 +922,6 @@ func (ctx *context) typeAliasOrDefinition() Expression {
 
   start := ctx.tokenStartPos
   typeExpr := ctx.parameterType()
-
-  if typeExpr == nil {
-    panic(ctx.parseIssue(PARSE_EXPECTED_TYPE_NAME_AFTER_TYPE))
-  }
 
   switch ctx.currentToken {
   case TOKEN_ASSIGN:

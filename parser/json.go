@@ -7,8 +7,8 @@ import (
   "io"
 )
 
-func ToJson(expr Expression, result io.Writer) {
+func ToJson(value interface{}, result io.Writer) {
   enc := json.NewEncoder(result)
   enc.SetEscapeHTML(false)
-  enc.Encode(expr.ToPN().ToData())
+  enc.Encode(value)
 }

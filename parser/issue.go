@@ -114,6 +114,14 @@ func (e *ReportedIssue) Severity() Severity {
   return e.severity
 }
 
+// Represent the reported using polish notation
+func (e *ReportedIssue) ToPN() PN {
+  return &hash{[]entry{
+    &namedValue{`code`, &literal{e.issueCode}},
+    &namedValue{`severity`, &literal{e.severity}},
+    &namedValue{`message`, &literal{e.Error()}}}}
+}
+
 func appendLocation(str string, location Location) string {
   if location == nil {
     return str

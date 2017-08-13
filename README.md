@@ -5,14 +5,24 @@ This is a parser for .pp (puppet) or .epp (embedded puppet) files written in [Go
 ## The parse program
 A command line utility named `parse` is provided. It prints errors and
 warnings on _stderr_, and returns a non zero exit status on failure. On success,
-it produces a JSON representation of the AST on _stdout_.
+it produces a representation of the AST on _stdout_.
 
 Usage:
 ```
-parse [-v] <path to pp or epp file>
+parse [-v][-j] <path to pp or epp file>
 ```
-
-**-v** validate only, i.e. suppress generation of AST.
+<table border="0">
+    <tr>
+        <td><b>-v</b></td>
+        <td>Validate only, i.e. suppress generation of AST.</td>
+    </tr>
+    <tr>
+        <td><b>-j</b></td>
+        <td>JSON output. Outputs a JSON object with <code>issues</code> and <code>ast</code>
+            keys. The <code>issues</code> key will only be present when there were issues.
+        </td>
+    </tr>
+</table>
 
 ## The parser package
 
