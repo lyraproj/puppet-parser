@@ -2,6 +2,7 @@ package validator
 
 import (
   . "github.com/puppetlabs/go-parser/parser"
+  . "fmt"
 )
 
 type Validator interface {
@@ -19,11 +20,24 @@ type AbstractValidator struct {
   path []Expression
   subject Expression
   issues []*ReportedIssue
+  severities map[IssueCode]Severity
+}
+
+func (v *AbstractValidator) Demote(code IssueCode, severity Severity) {
+  issue := IssueForCode(code)
+  severity.AssertValid()
+  if !issue.IsDemotable() {
+    panic(Sprintf(`Attempt to demote the hard issue '%s' to %s`, code, severity.String()))
+  }
 }
 
 // Accept an issue during validation
-func (v *AbstractValidator) Accept(issueCode string, e Expression, args...interface{}) {
-  v.issues = append(v.issues, NewReportedIssue(issueCode, args, e))
+func (v *AbstractValidator) Accept(code IssueCode, e Expression, args...interface{}) {
+  severity, ok := v.severities[code]
+  if !ok {
+    severity = SEVERITY_ERROR
+  }
+  v.issues = append(v.issues, NewReportedIssue(code, severity, args, e))
 }
 
 // Returns the container of the currently validated expression

@@ -38,10 +38,16 @@ func main() {
 
   v := validator.ValidatePuppet(expr)
   if len(v.Issues()) > 0 {
+    severity := Severity(SEVERITY_IGNORE)
     for _, issue := range v.Issues() {
       Fprintln(Stderr, issue.String())
+      if issue.Severity() > severity {
+        severity = issue.Severity()
+      }
     }
-    Exit(1)
+    if severity == SEVERITY_ERROR {
+      Exit(1)
+    }
   }
 
   if !*validateOnly {

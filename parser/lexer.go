@@ -25,8 +25,8 @@ func (l *location) Pos() int {
   return l.locator.PosOnLine(l.byteOffset)
 }
 
-func (ctx *context) parseIssue(issueCode string, args...interface{}) *ReportedIssue {
-  return &ReportedIssue{issueCode, args, &location{ctx.locator, ctx.Pos()}}
+func (ctx *context) parseIssue(issueCode IssueCode, args...interface{}) *ReportedIssue {
+  return &ReportedIssue{issueCode, SEVERITY_ERROR, args, &location{ctx.locator, ctx.Pos()}}
 }
 
 const (
@@ -848,7 +848,7 @@ func (ctx *context) consumeQualifiedName(start int, token int) {
     }
 
     ctx.SetPos(start)
-    issueCode := LEX_INVALID_NAME
+    issueCode := IssueCode(LEX_INVALID_NAME)
     if token == TOKEN_TYPE_NAME {
       issueCode = LEX_INVALID_TYPE_NAME
     } else if token == TOKEN_VARIABLE {

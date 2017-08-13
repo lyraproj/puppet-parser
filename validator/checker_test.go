@@ -201,7 +201,7 @@ func expectNoIssues(t *testing.T, str string) {
   expectIssues(t, str)
 }
 
-func expectIssues(t *testing.T, str string, expectedIssueCodes...string) {
+func expectIssues(t *testing.T, str string, expectedIssueCodes...IssueCode) {
   issues := parseAndValidate(t, str)
   if issues == nil {
     return

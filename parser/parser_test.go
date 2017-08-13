@@ -16,6 +16,7 @@ func TestInteger(t *testing.T) {
   expectDump(t, `+123`, `123`)
   expectDump(t, `0XABC`, `2748`)
   expectDump(t, `0772`, `506`)
+  expectError(t, `3g`, `digit expected at line 1:2`)
   expectError(t, `0x3g21`, `hexadecimal digit expected at line 1:4`)
   expectError(t, `078`, `octal digit expected at line 1:3`)
 }
@@ -477,6 +478,14 @@ func TestVariable(t *testing.T) {
   expectDump(t,
     `$::var::b`,
     `($ ::var::b)`)
+
+  expectDump(t,
+    `$2`,
+    `($ 2)`)
+
+  expectDump(t,
+    `$`,
+    `($ )`)
 
   expectError(t,
     `$var:b`,

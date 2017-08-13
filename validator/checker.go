@@ -13,7 +13,9 @@ type Checker struct {
 }
 
 func NewChecker() *Checker {
-  return &Checker{AbstractValidator{nil, nil, make([]*ReportedIssue, 0, 5)}}
+  checker := &Checker{AbstractValidator{nil, nil, make([]*ReportedIssue, 0, 5), make(map[IssueCode]Severity, 5)}}
+  checker.Demote(VALIDATE_IDEM_EXPRESSION_NOT_LAST, SEVERITY_WARNING)
+  return checker
 }
 
 func (v *Checker) Validate(e Expression) {
