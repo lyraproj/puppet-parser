@@ -118,7 +118,7 @@ func (e *ReportedIssue) Severity() Severity {
 func (e *ReportedIssue) ToPN() PN {
   return &hash{[]entry{
     &namedValue{`code`, &literal{e.issueCode}},
-    &namedValue{`severity`, &literal{e.severity}},
+    &namedValue{`severity`, &literal{e.severity.String()}},
     &namedValue{`message`, &literal{e.Error()}}}}
 }
 
