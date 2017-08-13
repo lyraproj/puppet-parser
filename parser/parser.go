@@ -11,9 +11,16 @@ import (
 // same instance is very beneficial when the lexer must parse expressions (as is the case when
 // it encounters double quoted strings or heredoc with interpolation).
 
-type ExpressionParser interface {
-  Parse(s string) Expression
-}
+type(
+  ExpressionParser interface {
+    Parse(s string) Expression
+  }
+
+  // For argument lists that are not within parameters
+  commaSeparatedList struct {
+    LiteralList
+  }
+)
 
 // Set of names that will be treated as top level function calls rather than just identifiers
 // when followed by a single expression that is not within parenthesis.
@@ -114,7 +121,7 @@ func (ctx *context) parse(expectedEnd int, singleExpression bool) (expr Expressi
     if ctx.currentToken == expectedEnd {
       expr = ctx.factory.Undef(ctx.locator, start, 0)
     } else {
-      expr = ctx.expression()
+      expr = ctx.assignment()
       ctx.assertToken(expectedEnd)
     }
     return
@@ -122,7 +129,10 @@ func (ctx *context) parse(expectedEnd int, singleExpression bool) (expr Expressi
 
   expressions := make([]Expression, 0, 10)
   for ctx.currentToken != expectedEnd {
-    expressions = append(expressions, ctx.expression())
+    expressions = append(expressions, ctx.syntacticStatement())
+    if ctx.currentToken == TOKEN_SEMICOLON {
+      ctx.nextToken()
+    }
   }
   expr = ctx.factory.Block(ctx.transformCalls(expressions, start), ctx.locator, start, ctx.Pos()-start)
   return
@@ -156,7 +166,13 @@ func (ctx *context) transformCalls(exprs []Expression, start int) (result []Expr
   for ; idx < top; idx++ {
     expr := exprs[idx]
     if qname, ok := memo.(*QualifiedName); ok && statementCalls[qname.name] {
-      cn := ctx.factory.CallNamed(memo, false, []Expression{expr}, nil, ctx.locator, memo.byteOffset(), (expr.byteOffset()+expr.byteLength())-memo.byteOffset())
+      var args []Expression
+      if csList, ok := expr.(*commaSeparatedList); ok {
+        args = csList.elements
+      } else {
+        args = []Expression{expr}
+      }
+      cn := ctx.factory.CallNamed(memo, false, args, nil, ctx.locator, memo.byteOffset(), (expr.byteOffset()+expr.byteLength())-memo.byteOffset())
       if cnFunc, ok := expr.(*CallNamedFunctionExpression); ok {
         cnFunc.rvalRequired = true
       }
@@ -205,8 +221,21 @@ func (ctx *context) expressions(endToken int, producer producerFunc) (exprs []Ex
   }
 }
 
-func (ctx *context) expression() (expr Expression) {
-  return ctx.assignment()
+func (ctx *context) syntacticStatement() (expr Expression) {
+  var args []Expression
+  expr = ctx.assignment()
+  for ctx.currentToken == TOKEN_COMMA {
+    ctx.nextToken()
+    if args == nil {
+      args = make([]Expression, 0, 2)
+      args = append(args, expr)
+    }
+    args = append(args, ctx.assignment())
+  }
+  if args != nil {
+    expr = &commaSeparatedList{LiteralList{positioned{ctx.locator, expr.byteOffset(), ctx.Pos() - expr.byteOffset()}, args}}
+  }
+  return
 }
 
 func (ctx *context) assignment() (expr Expression) {
@@ -225,13 +254,13 @@ func (ctx *context) assignment() (expr Expression) {
 }
 
 func (ctx *context) relationship() (expr Expression) {
-  expr = ctx.lowPrioExpression()
+  expr = ctx.resource()
   for {
     switch ctx.currentToken {
     case TOKEN_IN_EDGE, TOKEN_IN_EDGE_SUB, TOKEN_OUT_EDGE, TOKEN_OUT_EDGE_SUB:
       op := ctx.tokenString()
       ctx.nextToken()
-      expr = ctx.factory.RelOp(op, expr, ctx.lowPrioExpression(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+      expr = ctx.factory.RelOp(op, expr, ctx.resource(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
 
     default:
       return expr
@@ -239,11 +268,17 @@ func (ctx *context) relationship() (expr Expression) {
   }
 }
 
-func (ctx *context) lowPrioExpression() (expr Expression) {
+func (ctx *context) resource() (expr Expression) {
+  expr = ctx.expression()
+  if ctx.currentToken == TOKEN_LC {
+    expr = ctx.resourceExpression(expr.byteOffset(), expr, `regular`)
+  }
+  return
+}
+
+func (ctx *context) expression() (expr Expression) {
   expr = ctx.orExpression()
   switch ctx.currentToken {
-  case TOKEN_LC:
-    expr = ctx.resourceExpression(expr.byteOffset(), expr, `regular`)
   case TOKEN_PRODUCES, TOKEN_CONSUMES:
     // Must be preceded by name of class
     capToken := ctx.tokenString()
@@ -396,16 +431,16 @@ func (ctx *context) inExpression() (expr Expression) {
 }
 
 func (ctx *context) arrayExpression() (elements []Expression) {
-  return ctx.expressions(TOKEN_RB, expression)
+  return ctx.expressions(TOKEN_RB, assignment)
 }
 
 func hashEntry(ctx *context) Expression {
-  key := ctx.expression()
+  key := ctx.assignment()
   if ctx.currentToken != TOKEN_FARROW {
     panic(ctx.parseIssue(PARSE_EXPECTED_FARROW_AFTER_KEY))
   }
   ctx.nextToken()
-  value := ctx.expression()
+  value := ctx.assignment()
   return ctx.factory.KeyedEntry(key, value, ctx.locator, key.byteOffset(), ctx.Pos()-key.byteOffset())
 }
 
@@ -506,7 +541,7 @@ func (ctx *context) atomExpression() (expr Expression) {
   switch ctx.currentToken {
   case TOKEN_LP, TOKEN_WSLP:
     ctx.nextToken()
-    expr = ctx.expression()
+    expr = ctx.factory.Parenthesized(ctx.assignment(), ctx.locator, atomStart, ctx.Pos()-atomStart)
     ctx.assertToken(TOKEN_RP)
     ctx.nextToken()
 
@@ -674,7 +709,7 @@ func selectorEntry(ctx *context) (expr Expression) {
 func (ctx *context) caseExpression() Expression {
   start := ctx.tokenStartPos
   ctx.nextToken()
-  test := ctx.orExpression()
+  test := ctx.expression()
   ctx.assertToken(TOKEN_LC)
   ctx.nextToken()
   caseOptions := ctx.caseOptions()

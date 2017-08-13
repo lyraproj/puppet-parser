@@ -956,6 +956,9 @@ func TestCallNamed(t *testing.T) {
   expectDump(t,
     `notice hello()`, `(invoke {:functor (qn notice) :args [(call {:functor (qn hello) :args []})]})`)
 
+  expectDump(t,
+    `notice hello(), 'world'`, `(invoke {:functor (qn notice) :args [(call {:functor (qn hello) :args []}) "world"]})`)
+
   expectBlock(t,
     Unindent(`
       $x = $y.myFunc
@@ -965,7 +968,7 @@ func TestCallNamed(t *testing.T) {
       `(= ($ x) (call_method {:functor (. ($ y) (qn myFunc)) :args []})) `+
       `(invoke {:functor (qn callIt) :args [(unfold ($ x))]}) `+
       `(call_method {`+
-        `:functor (. (+ 2 3) (qn with)) `+
+        `:functor (. (() (+ 2 3)) (qn with)) `+
         `:args [] `+
         `:block {`+
           `:params [{:name x}] `+
@@ -1567,7 +1570,7 @@ func TestOperators(t *testing.T) {
 
   expectDump(t,
     `$x = a * (b + c)`,
-    `(= ($ x) (* (qn a) (+ (qn b) (qn c))))`)
+    `(= ($ x) (* (qn a) (() (+ (qn b) (qn c)))))`)
 
   expectDump(t,
     `$x = $y -= $z`,

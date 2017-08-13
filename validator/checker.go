@@ -93,10 +93,8 @@ func (v *Checker) check_CallNamedFunctionExpression(e *CallNamedFunctionExpressi
       // Call to parameterized type
       return
     }
-
-  default:
-    v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Functor(), A_an(e.Functor()), `function name`, A_an(e))
   }
+  v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Functor(), A_an(e.Functor()), `function name`, A_an(e))
 }
 
 // TODO: Add more validations here

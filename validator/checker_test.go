@@ -80,6 +80,29 @@ func TestAttributesOpValidation(t *testing.T) {
     VALIDATE_NOT_RVALUE)
 }
 
+func TestCallNamedFunctionValidation(t *testing.T) {
+  expectNoIssues(t,
+    Unindent(`
+      include apache
+      `))
+
+  expectNoIssues(t,
+    Unindent(`
+      $x = String(123, 16)
+      `))
+
+  expectNoIssues(t,
+    Unindent(`
+      $x = Enum['a', 'b']('a')
+      `))
+
+  expectIssues(t,
+    Unindent(`
+      $x = enum['a', 'b']('a')
+      `),
+    VALIDATE_ILLEGAL_EXPRESSION)
+}
+
 func TestBinaryOpValidation(t *testing.T) {
   expectIssues(t, `notice(function foo() {} < 3)`, VALIDATE_NOT_RVALUE)
   expectNoIssues(t, `notice(true == !false)`)
@@ -92,6 +115,86 @@ func TestBlockValidation(t *testing.T) {
       $x = 3
       `),
     VALIDATE_IDEM_EXPRESSION_NOT_LAST)
+
+  expectIssues(t,
+    Unindent(`
+      case $z {
+      2: { true }
+      3: { false }
+      default: { false }
+      }
+      $x = 3
+      `),
+    VALIDATE_IDEM_EXPRESSION_NOT_LAST)
+
+  expectNoIssues(t,
+    Unindent(`
+      case $z {
+      2: { true }
+      3: { false }
+      default: { $v = 1 }
+      }
+      $x = 3
+      `))
+
+  expectNoIssues(t,
+    Unindent(`
+      case ($z = 2) {
+      2: { true }
+      3: { false }
+      default: { false }
+      }
+      $x = 3
+      `))
+
+  expectNoIssues(t,
+    Unindent(`
+      case $z {
+      ($y = 2): { true }
+      3: { false }
+      default: { false }
+      }
+      $x = 3
+      `))
+
+  expectIssues(t,
+    Unindent(`
+      if $z { 3 } else { 4 }
+      $x = 3
+      `),
+    VALIDATE_IDEM_EXPRESSION_NOT_LAST)
+
+  expectNoIssues(t,
+    Unindent(`
+      if $z { $v = 3 } else { $v = 4 }
+      $x = 3
+      `))
+
+  expectIssues(t,
+    Unindent(`
+      unless $z { 3 }
+      $x = 3
+      `),
+    VALIDATE_IDEM_EXPRESSION_NOT_LAST)
+
+  expectNoIssues(t,
+    Unindent(`
+      unless $z { $v = 3 }
+      $x = 3
+      `))
+
+  expectIssues(t,
+    Unindent(`
+      (3)
+      $x = 3
+      `),
+    VALIDATE_IDEM_EXPRESSION_NOT_LAST)
+
+  expectNoIssues(t,
+    Unindent(`
+      ($v = 3)
+      $x = 3
+      `))
 }
 
 func expectNoIssues(t *testing.T, str string) {

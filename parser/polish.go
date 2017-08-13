@@ -445,6 +445,7 @@ func (e *Parameter) ToPN() PN {
   return &hash{entries}
 }
 
+func (e *ParenthesizedExpression) ToPN() PN { return &namedValue{`()`, e.Expr().ToPN()}}
 func (e *Program) ToPN() PN                { return e.Body().ToPN() }
 func (e *QualifiedName) ToPN() PN          { return &namedStringValue{`qn`, e.Name()}}
 func (e *QualifiedReference) ToPN() PN     { return &namedStringValue{`qr`, e.Name()}}
@@ -528,7 +529,7 @@ func (e* IfExpression) pnIf(name string) PN {
   return &namedValue{name, &hash{entries}}
 }
 
-func (e*namedDefinition) pnNamedDefinition(name string) PN {
+func (e *namedDefinition) pnNamedDefinition(name string) PN {
   return &namedValue{name, &hash{[]entry{
     &namedStringValue{`name`, e.Name() },
     &namedArray{`params`, pnElems(e.Parameters())},
