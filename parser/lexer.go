@@ -4,6 +4,8 @@ import (
   . `strconv`
   . `bytes`
   . `unicode/utf8`
+  . "github.com/puppetlabs/go-parser/issue"
+  "unicode"
 )
 
 // Recursive descent lexer for the Puppet language.
@@ -26,7 +28,7 @@ func (l *location) Pos() int {
 }
 
 func (ctx *context) parseIssue(issueCode IssueCode, args...interface{}) *ReportedIssue {
-  return &ReportedIssue{issueCode, SEVERITY_ERROR, args, &location{ctx.locator, ctx.Pos()}}
+  return NewReportedIssue(issueCode, SEVERITY_ERROR, args, &location{ctx.locator, ctx.Pos()})
 }
 
 const (
@@ -341,7 +343,7 @@ func (ctx *context)nextToken() {
       ctx.consumeFloat(start, c)
       break
     }
-    if(isLetter(c)) {
+    if unicode.IsLetter(c) {
       panic(ctx.parseIssue(LEX_DIGIT_EXPECTED))
     }
     v, _ := ParseInt(ctx.From(start), 10, 64)
@@ -637,8 +639,8 @@ func (ctx *context)nextToken() {
       } else if isDecimalDigit(c) {
         ctx.Advance(sz)
         ctx.skipDecimalDigits()
-        ctx.tokenValue = ctx.Text[start + 1:ctx.Pos()]
-      } else if isLetter(c) {
+        ctx.tokenValue = ctx.Text()[start + 1:ctx.Pos()]
+      } else if unicode.IsLetter(c) {
         panic(ctx.parseIssue(LEX_INVALID_VARIABLE_NAME))
       } else {
         ctx.tokenValue = ``
@@ -682,7 +684,7 @@ func (ctx *context)nextToken() {
           ctx.Advance(sz)
           c, sz = ctx.Peek()
         }
-        if isLetterOrDigit(c) {
+        if isDecimalDigit(c) || unicode.IsLetter(c) {
           panic(ctx.parseIssue(LEX_OCTALDIGIT_EXPECTED))
         }
         if ctx.Pos() > octalStart {
@@ -895,7 +897,7 @@ func (ctx *context) consumeFloat(start int, d rune) {
       c, n = ctx.Peek()
     }
   }
-  if isLetter(c) {
+  if unicode.IsLetter(c) {
     panic(ctx.parseIssue(LEX_DIGIT_EXPECTED))
   }
   v, _ := ParseFloat(ctx.From(start), 64)
@@ -1357,7 +1359,7 @@ func (ctx *context) consumeHeredocString() {
         continue
       }
 
-      expr := ctx.Text
+      expr := ctx.Text()
       tagEnd := n + tagLen
       if tagEnd <= len(expr) && tag == expr[n:tagEnd] {
         // tag found if rest of line is whitespace

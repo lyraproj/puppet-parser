@@ -4,7 +4,7 @@ import (
   "testing"
   "bytes"
   "encoding/json"
-  . "github.com/puppetlabs/go-parser/testutils"
+  . "github.com/puppetlabs/go-parser/internal/testutils"
 )
 
 func TestManifest(t *testing.T) {

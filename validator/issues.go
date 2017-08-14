@@ -1,8 +1,6 @@
 package validator
 
-import (
-  . "github.com/puppetlabs/go-parser/parser"
-)
+import . "github.com/puppetlabs/go-parser/issue"
 
 const (
   VALIDATE_APPENDS_DELETES_NO_LONGER_SUPPORTED = `VALIDATE_APPENDS_DELETES_NO_LONGER_SUPPORTED`

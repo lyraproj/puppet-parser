@@ -1,11 +1,10 @@
-package parser
+package issue
 
 import (
-  "fmt"
-  "bytes"
+  . "fmt"
+  . "bytes"
+  . "github.com/puppetlabs/go-parser/pn"
 )
-
-type IssueCode string
 
 // this would be an enum in most other languages
 const (
@@ -15,9 +14,20 @@ const (
   SEVERITY_ERROR = 4
 )
 
-type Severity int
-
 type (
+  IssueCode string
+
+  Severity int
+
+  Location interface {
+    File() string
+
+    Line() int
+
+    // Position on line
+    Pos() int
+  }
+
   Issue struct {
     code          IssueCode
     messageFormat string
@@ -66,7 +76,7 @@ func (severity Severity) String() string {
   case SEVERITY_ERROR:
     return `error`
   default:
-    panic(fmt.Sprintf(`Illegal severity level: %d`, severity))
+    panic(Sprintf(`Illegal severity level: %d`, severity))
   }
 }
 
@@ -75,7 +85,7 @@ func (severity Severity) AssertValid() {
   case SEVERITY_IGNORE, SEVERITY_DEPRECATION, SEVERITY_WARNING, SEVERITY_ERROR:
     return
   default:
-    panic(fmt.Sprintf(`Illegal severity level: %d`, severity))
+    panic(Sprintf(`Illegal severity level: %d`, severity))
   }
 }
 
@@ -91,7 +101,7 @@ func IssueForCode(code IssueCode) *Issue {
   if dsc, ok := issues[code]; ok {
     return dsc
   }
-  panic(fmt.Sprintf("internal error: no issue found for issue code '%s'", code))
+  panic(Sprintf("internal error: no issue found for issue code '%s'", code))
 }
 
 func NewReportedIssue(code IssueCode, severity Severity, args []interface{}, location Location) *ReportedIssue {
@@ -99,7 +109,7 @@ func NewReportedIssue(code IssueCode, severity Severity, args []interface{}, loc
 }
 
 func (e *ReportedIssue) Error() (str string) {
-  return appendLocation(fmt.Sprintf(IssueForCode(e.issueCode).messageFormat, e.args...), e.location)
+  return appendLocation(Sprintf(IssueForCode(e.issueCode).messageFormat, e.args...), e.location)
 }
 
 func (e *ReportedIssue) String() (str string) {
@@ -116,17 +126,17 @@ func (e *ReportedIssue) Severity() Severity {
 
 // Represent the reported using polish notation
 func (e *ReportedIssue) ToPN() PN {
-  return &hash{[]entry{
-    &namedValue{`code`, &literal{e.issueCode}},
-    &namedValue{`severity`, &literal{e.severity.String()}},
-    &namedValue{`message`, &literal{e.Error()}}}}
+  return Hash([]Entry{
+    NamedValue(`code`, Literal(e.issueCode)),
+    NamedValue(`severity`, Literal(e.severity.String())),
+    NamedValue(`message`, Literal(e.Error()))})
 }
 
 func appendLocation(str string, location Location) string {
   if location == nil {
     return str
   }
-  b := bytes.NewBufferString(str)
+  b := NewBufferString(str)
   line := location.Line()
   pos := location.Pos()
   if file := location.File(); file != `` {
@@ -134,10 +144,10 @@ func appendLocation(str string, location Location) string {
       b.WriteString(` at `)
       b.WriteString(file)
       b.WriteByte(':')
-      fmt.Fprintf(b, `%d`, line)
+      Fprintf(b, `%d`, line)
       if pos > 0 {
         b.WriteByte(':')
-        fmt.Fprintf(b, `%d`, pos)
+        Fprintf(b, `%d`, pos)
       }
     } else {
       b.WriteString(` in `)
@@ -145,10 +155,10 @@ func appendLocation(str string, location Location) string {
     }
   } else if line > 0 {
     b.WriteString(` at line `)
-    fmt.Fprintf(b, `%d`, line)
+    Fprintf(b, `%d`, line)
     if pos > 0 {
       b.WriteByte(':')
-      fmt.Fprintf(b, `%d`, pos)
+      Fprintf(b, `%d`, pos)
     }
   }
   return b.String()

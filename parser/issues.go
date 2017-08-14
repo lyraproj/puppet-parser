@@ -1,5 +1,7 @@
 package parser
 
+import . "github.com/puppetlabs/go-parser/issue"
+
 const (
   // Lexer issues
   LEX_DOUBLE_COLON_NOT_FOLLOWED_BY_NAME = `DOUBLE_COLON_NOT_FOLLOWED_BY_NAME`
@@ -34,6 +36,7 @@ const (
   PARSE_EXPECTED_HOSTNAME                 = `PARSE_EXPECTED_HOSTNAME`
   PARSE_EXPECTED_TITLE                    = `PARSE_EXPECTED_TITLE`
   PARSE_EXPECTED_TOKEN                    = `PARSE_EXPECTED_TOKEN`
+  PARSE_EXPECTED_TYPE_NAME                = `PARSE_EXPECTED_TYPE_NAME`
   PARSE_EXPECTED_TYPE_NAME_AFTER_TYPE     = `PARSE_EXPECTED_TYPE_NAME_AFTER_TYPE`
   PARSE_EXPECTED_VARIABLE                 = `PARSE_EXPECTED_VARIABLE`
   PARSE_ILLEGAL_EPP_PARAMETERS            = `PARSE_ILLEGAL_EPP_PARAMETERS`
@@ -77,6 +80,7 @@ func init() {
   HardIssue(PARSE_EXPECTED_NAME_AFTER_FUNCTION, `expected a name to follow keyword 'function'`)
   HardIssue(PARSE_EXPECTED_TITLE, `resource title expected`)
   HardIssue(PARSE_EXPECTED_TOKEN, `expected token '%s'`)
+  HardIssue(PARSE_EXPECTED_TYPE_NAME, `expected type name`)
   HardIssue(PARSE_EXPECTED_TYPE_NAME_AFTER_TYPE, `expected type name to follow 'type'`)
   HardIssue(PARSE_EXPECTED_VARIABLE, `expected variable declaration`)
   HardIssue(PARSE_ILLEGAL_EPP_PARAMETERS, `Ambiguous EPP parameter expression. Probably missing '<%%-' before parameters to remove leading whitespace`)

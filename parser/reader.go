@@ -20,7 +20,7 @@ type StringReader interface {
   SetPos(int)
 
   // Returns the string that is backing the reader
-  String() (string)
+  Text() (string)
 
   // Returns the substring starting at start and up to, but not including, the current position
   From(start int) (string)
@@ -34,7 +34,7 @@ type ParseError struct {
 
 type stringReader struct {
   i int
-  Text string
+  text string
 }
 
 func (e *ParseError) Error() string {
@@ -42,7 +42,7 @@ func (e *ParseError) Error() string {
 }
 
 func NewStringReader(s string) StringReader {
-  return &stringReader{i: 0, Text: s}
+  return &stringReader{i: 0, text: s}
 }
 
 func (r *stringReader) parseError(message string) *ParseError {
@@ -55,15 +55,15 @@ func (r *stringReader)invalidUnicode() *ParseError {
 
 func (r *stringReader)Next() (c rune, start int) {
   start = r.i
-  if r.i >= len(r.Text) {
+  if r.i >= len(r.text) {
     return
   }
-  c = rune(r.Text[r.i])
+  c = rune(r.text[r.i])
   if c < RuneSelf {
     r.i++
     return
   }
-  c, size := DecodeRuneInString(r.Text[r.i:])
+  c, size := DecodeRuneInString(r.text[r.i:])
   if c == RuneError {
     panic(r.invalidUnicode())
   }
@@ -72,15 +72,15 @@ func (r *stringReader)Next() (c rune, start int) {
 }
 
 func (r *stringReader)Peek() (c rune, size int) {
-  if r.i >= len(r.Text) {
+  if r.i >= len(r.text) {
     return
   }
-  c = rune(r.Text[r.i])
+  c = rune(r.text[r.i])
   if c < RuneSelf {
     size = 1
     return
   }
-  c, size = DecodeRuneInString(r.Text[r.i:])
+  c, size = DecodeRuneInString(r.text[r.i:])
   if c == RuneError {
     panic(r.invalidUnicode())
   }
@@ -99,13 +99,13 @@ func (r *stringReader)SetPos(pos int) {
   r.i = pos
 }
 
-func (r *stringReader)String() (string) {
-  return r.Text
+func (r *stringReader)Text() (string) {
+  return r.text
 }
 
 // Returns a substring of the contained string that starts at the given position and ends at
 // the current position
 func (r *stringReader)From(start int) (string) {
-  return r.Text[start:r.i]
+  return r.text[start:r.i]
 }
 

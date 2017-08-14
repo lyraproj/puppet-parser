@@ -3,11 +3,16 @@ package parser
 import (
   `testing`
   `bytes`
-  . "github.com/puppetlabs/go-parser/testutils"
+  . "github.com/puppetlabs/go-parser/internal/testutils"
 )
 
 func TestEmpty(t *testing.T) {
   expectDump(t, ``, `(undef)`)
+}
+
+func TestInvalidUnicode(t *testing.T) {
+  expectError(t, "$var = \"\xa0\xa1\"", `invalid unicode character at offset 8`)
+  expectError(t, "$var = 23\xa0\xa1", `invalid unicode character at offset 9`)
 }
 
 func TestInteger(t *testing.T) {
@@ -17,6 +22,7 @@ func TestInteger(t *testing.T) {
   expectDump(t, `0XABC`, `2748`)
   expectDump(t, `0772`, `506`)
   expectError(t, `3g`, `digit expected at line 1:2`)
+  expectError(t, `3ö`, `digit expected at line 1:2`)
   expectError(t, `0x3g21`, `hexadecimal digit expected at line 1:4`)
   expectError(t, `078`, `octal digit expected at line 1:3`)
 }
@@ -81,6 +87,10 @@ func TestDoubleQuoted(t *testing.T) {
   expectDump(t,
     `"hello ${var}"`,
     `(concat "hello " (str ($ var)))`)
+
+  expectDump(t,
+    `"hello ${}"`,
+    `(concat "hello " (str (undef)))`)
 
   expectDump(t,
     `"Before ${{ a => true, b => "hello"}} and after"`,
@@ -604,6 +614,13 @@ func TestFunctionDefintion(t *testing.T) {
          numbers.size
       }`),
     `expected variable declaration at line 1:33`)
+
+  expectError(t,
+    Unindent(`
+      function myFunc(Integer *$numbers) >> $var {
+         numbers.size
+      }`),
+    `expected type name at line 1:43`)
 
   expectError(t,
     Unindent(`

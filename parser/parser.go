@@ -51,7 +51,7 @@ var statementCalls = map[string]bool{
 // expressions.
 func Parse(filename string, source string, eppMode bool) (expr Expression, err error) {
   ctx := context{
-    stringReader:  stringReader{Text: source},
+    stringReader:  stringReader{text: source},
     locator:       &Locator{string: source, file: filename},
     factory:       DefaultFactory(),
     eppMode:       eppMode,
@@ -1149,7 +1149,7 @@ func (ctx *context) parameterType() Expression {
   start := ctx.tokenStartPos
   typeName := ctx.typeName()
   if typeName == nil {
-    return nil
+    panic(ctx.parseIssue(PARSE_EXPECTED_TYPE_NAME))
   }
 
   if ctx.currentToken == TOKEN_LB {

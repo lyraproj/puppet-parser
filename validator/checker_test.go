@@ -2,8 +2,9 @@ package validator
 
 import (
   "testing"
+  . "github.com/puppetlabs/go-parser/issue"
   . "github.com/puppetlabs/go-parser/parser"
-  . "github.com/puppetlabs/go-parser/testutils"
+  . "github.com/puppetlabs/go-parser/internal/testutils"
 )
 
 func TestVariableAssignValidation(t *testing.T) {

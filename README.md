@@ -28,7 +28,7 @@ parse [-v][-j] <path to pp or epp file>
 
 ### What it is
 The `parser` go-package is a library that can be used by other applications
-that wishes to parse puppet and validate code and use the AST. See [parser.go](parse/parser.go)
+that wishes to parse puppet and validate code and use the AST. See [parser.go](main/parser.go)
 for sample usage of `Parser` and `Validator`.
 
 ### What it is not

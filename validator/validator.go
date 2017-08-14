@@ -1,6 +1,7 @@
 package validator
 
 import (
+  . "github.com/puppetlabs/go-parser/issue"
   . "github.com/puppetlabs/go-parser/parser"
   . "fmt"
 )
