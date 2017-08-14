@@ -198,6 +198,63 @@ func TestBlockValidation(t *testing.T) {
       `))
 }
 
+func TestCapabilityMappingValidation(t *testing.T) {
+  expectNoIssues(t,
+    Unindent(`
+      Something produces Foo {}
+      `))
+
+  expectNoIssues(t,
+    Unindent(`
+      Something[A] produces Foo {}
+      `))
+
+  expectIssues(t,
+    Unindent(`
+      something produces Foo {}
+      `),
+    VALIDATE_ILLEGAL_CLASSREF)
+
+  expectIssues(t,
+    Unindent(`
+      Something produces foo {}
+      `),
+    VALIDATE_ILLEGAL_CLASSREF)
+
+  expectIssues(t,
+    Unindent(`
+      Something['A', 'B'] produces Foo {}
+      `),
+    VALIDATE_ILLEGAL_EXPRESSION)
+}
+
+
+func TestCaseExpressionValidation(t *testing.T) {
+  expectNoIssues(t,
+    Unindent(`
+      case $x {
+        'a': { true }
+        default: { 'false' }
+      }`))
+
+  expectIssues(t,
+    Unindent(`
+      case $x {
+        'a': { true }
+        default: { 'false' }
+        default: { 'true' }
+      }`),
+    VALIDATE_DUPLICATE_DEFAULT)
+
+  expectIssues(t,
+    Unindent(`
+      case $x {
+        function foo() {}: { true }
+        default: { false }
+      }`),
+    VALIDATE_NOT_RVALUE)
+}
+
 func expectNoIssues(t *testing.T, str string) {
   expectIssues(t, str)
 }

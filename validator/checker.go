@@ -8,6 +8,7 @@ import (
 
 var NUMERIC_VAR_NAME_EXPR = MustCompile(`\A(?:0|(?:[1-9][0-9]*))\z`)
 var DOUBLE_COLON_EXPR = MustCompile(`::`)
+var CLASSREF_EXPR = MustCompile(`\A(?:::)?[A-Z][\w]*(?:::[A-Z][\w]*)*\z`)
 
 type Checker struct {
   AbstractValidator
@@ -31,6 +32,12 @@ func (v *Checker) Validate(e Expression) {
     v.check_BlockExpression(e.(*BlockExpression))
   case *CallNamedFunctionExpression:
     v.check_CallNamedFunctionExpression(e.(*CallNamedFunctionExpression))
+  case *CapabilityMapping:
+    v.check_CapabilityMapping(e.(*CapabilityMapping))
+  case *CaseExpression:
+    v.check_CaseExpression(e.(*CaseExpression))
+  case *CaseOption:
+    v.check_CaseOption(e.(*CaseOption))
 
   // Interface switches
   case BinaryExpression:
@@ -98,6 +105,62 @@ func (v *Checker) check_CallNamedFunctionExpression(e *CallNamedFunctionExpressi
     }
   }
   v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Functor(), A_an(e.Functor()), `function name`, A_an(e))
+}
+
+func (v *Checker) check_CapabilityMapping(e *CapabilityMapping) {
+  var exprOk bool
+  switch e.Component().(type) {
+  case *QualifiedReference:
+    exprOk = true
+
+  case *QualifiedName:
+    v.Accept(VALIDATE_ILLEGAL_CLASSREF, e.Component(), e.Component().(*QualifiedName).Name())
+    exprOk = true // OK, besides from what was just reported
+
+  case *AccessExpression:
+    exprOk = false
+    ae, _ := e.Component().(*AccessExpression)
+    if _, ok := ae.Operand().(*QualifiedReference); ok && len(ae.Keys()) == 1 {
+      switch ae.Keys()[0].(type) {
+      case *LiteralString, *QualifiedName, *QualifiedReference:
+        exprOk = true
+      }
+    }
+
+  default:
+    // Parser will make sure that this never happens
+    exprOk = false
+  }
+
+  if !exprOk {
+    v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Component(), A_an(e.Component()), `capability mapping`, A_an(e))
+  }
+
+  if !CLASSREF_EXPR.MatchString(e.Capability()) {
+    v.Accept(VALIDATE_ILLEGAL_CLASSREF, e, e.Capability())
+  }
+}
+
+func (v *Checker) check_CaseExpression(e *CaseExpression) {
+  v.checkRValue(e.Test())
+  foundDefault := false
+  for _, option := range e.Options() {
+    co := option.(*CaseOption)
+    for _, value := range co.Values() {
+      if _, ok := value.(*LiteralDefault); ok {
+        if foundDefault {
+          v.Accept(VALIDATE_DUPLICATE_DEFAULT, value, e.Label())
+        }
+        foundDefault = true
+      }
+    }
+  }
+}
+
+func (v *Checker) check_CaseOption(e *CaseOption) {
+  for _, value := range e.Values() {
+    v.checkRValue(value)
+  }
 }
 
 // TODO: Add more validations here

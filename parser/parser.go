@@ -1233,8 +1233,12 @@ func (ctx *context) capabilityMapping(component Expression, kind string) Express
   ctx.assertToken(TOKEN_RC)
   ctx.nextToken()
 
-  if ne, ok := component.(NameExpression); ok {
-    component = ctx.factory.QualifiedName(ctx.qualifiedName(ne.Name()), ctx.locator, component.byteOffset(), component.byteLength())
+  switch component.(type) {
+  case *QualifiedReference, *QualifiedName:
+    // No action
+  case *ReservedWord:
+    // All reserved words are lowercase only
+    component = ctx.factory.QualifiedName(ctx.qualifiedName(component.(*ReservedWord).Name()), ctx.locator, component.byteOffset(), component.byteLength())
   }
   return ctx.factory.CapabilityMapping(kind, component, ctx.qualifiedName(capName), mappings, ctx.locator, start, ctx.Pos()-start)
 }
