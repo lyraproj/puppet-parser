@@ -1892,7 +1892,7 @@ func expectHeredoc(t *testing.T, str string, args ...interface{}) {
   t.Errorf("'%s' did not result in a heredoc expression", str)
 }
 
-func parse(t *testing.T, str string, eppMode bool) *BlockExpression {
+func parse(t *testing.T, str string, eppMode bool) Expression {
   expr, err := Parse(``, str, eppMode)
   if err != nil {
     t.Errorf(err.Error())
@@ -1903,21 +1903,17 @@ func parse(t *testing.T, str string, eppMode bool) *BlockExpression {
     t.Errorf("'%s' did not parse to a program", str)
     return nil
   }
-  block, ok := program.body.(*BlockExpression)
-  if !ok {
-    t.Errorf("'%s' did not parse to a program with a block", str)
-    return nil
-  }
-  return block
+  return program.body
 }
 
 func parseExpression(t *testing.T, str string, eppMode bool) Expression {
-  block := parse(t, str, eppMode)
-  if block != nil {
+  expr := parse(t, str, eppMode)
+  if block, ok := expr.(*BlockExpression); ok {
     if len(block.statements) == 1 {
       return block.statements[0]
     }
     t.Errorf("'%s' did not parse to a block with exactly one expression", str)
+    return nil
   }
-  return nil
+  return expr
 }

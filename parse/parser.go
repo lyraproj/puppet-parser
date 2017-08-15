@@ -4,6 +4,8 @@ package main
 import (
   . "os"
   . "fmt"
+  . "github.com/puppetlabs/go-parser/issue"
+  . "github.com/puppetlabs/go-parser/json"
   . "github.com/puppetlabs/go-parser/parser"
   . "strings"
   "io/ioutil"
@@ -21,7 +23,7 @@ func main() {
 
   args := flag.Args()
   if len(args) != 1 {
-    Fprintln(Stderr, "usage: parser [-v][-j] <pp or epp file to parse>")
+    Fprintln(Stderr, "usage: parse [-v][-j] <pp or epp file to parse>")
     Exit(1)
   }
 

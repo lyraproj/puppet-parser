@@ -56,6 +56,11 @@ var FUTURE_RESERVED_WORDS = map[string]bool {
   `consumes`: true,
 }
 
+var RESERVED_PARAMETERS = map[string]bool {
+  `name`: true,
+  `title`: true,
+}
+
 type Checker struct {
   AbstractValidator
 }
@@ -91,6 +96,20 @@ func (v *Checker) Validate(e Expression) {
     v.check_EppExpression(e.(*EppExpression))
   case *FunctionDefinition:
     v.check_FunctionDefinition(e.(*FunctionDefinition))
+  case *HostClassDefinition:
+    v.check_HostClassDefinition(e.(*HostClassDefinition))
+  case *IfExpression:
+    v.check_IfExpression(e.(*IfExpression))
+  case *KeyedEntry:
+    v.check_KeyedEntry(e.(*KeyedEntry))
+  case *LambdaExpression:
+    v.check_LambdaExpression(e.(*LambdaExpression))
+  case *LiteralHash:
+    v.check_LiteralHash(e.(*LiteralHash))
+  case *ResourceTypeDefinition:
+    v.check_ResourceTypeDefinition(e.(*ResourceTypeDefinition))
+  case *UnlessExpression:
+    v.check_UnlessExpression(e.(*UnlessExpression))
 
   // Interface switches
   case BinaryExpression:
@@ -230,7 +249,42 @@ func (v *Checker) check_EppExpression(e *EppExpression) {
 
 func (v *Checker) check_FunctionDefinition(e *FunctionDefinition) {
   v.check_NamedDefinition(e)
+  v.checkCaptureLast(e, e.Parameters())
   v.checkReturnType(e, e.ReturnType())
+}
+
+func (v *Checker) check_HostClassDefinition(e *HostClassDefinition) {
+  v.check_NamedDefinition(e)
+  v.checkNoCapture(e, e.Parameters())
+  v.checkReservedParams(e, e.Parameters())
+  v.checkNoIdemLast(e)
+}
+
+func (v *Checker) check_IfExpression(e *IfExpression) {
+  v.checkRValue(e.Test())
+}
+
+func (v *Checker) check_KeyedEntry(e *KeyedEntry) {
+  v.checkRValue(e.Key())
+  v.checkRValue(e.Value())
+}
+
+func (v *Checker) check_LambdaExpression(e *LambdaExpression) {
+  v.checkCaptureLast(e, e.Parameters())
+  v.checkReturnType(e, e.ReturnType())
+}
+
+func (v *Checker) check_LiteralHash(e *LiteralHash) {
+  unique := make(map[interface{}]bool, len(e.Entries()))
+  for _, entry := range e.Entries() {
+    if literalKey, ok := Literal(entry.(*KeyedEntry).Key()); ok {
+      if _, ok = unique[literalKey]; ok {
+        v.Accept(VALIDATE_DUPLICATE_KEY, entry, literalKey)
+      } else {
+        unique[literalKey] = true
+      }
+    }
+  }
 }
 
 func (v *Checker) check_NamedDefinition(e NamedDefinition) {
@@ -241,6 +295,17 @@ func (v *Checker) check_NamedDefinition(e NamedDefinition) {
   v.checkReservedTypeName(e, e.Name())
   v.checkFutureReservedWord(e, e.Name())
   v.checkParameterNameUniqueness(e, e.Parameters())
+}
+
+func (v *Checker) check_ResourceTypeDefinition(e *ResourceTypeDefinition) {
+  v.check_NamedDefinition(e)
+  v.checkNoCapture(e, e.Parameters())
+  v.checkReservedParams(e, e.Parameters())
+  v.checkNoIdemLast(e)
+}
+
+func (v *Checker) check_UnlessExpression(e *UnlessExpression) {
+  v.checkRValue(e.Test())
 }
 
 // TODO: Add more validations here
@@ -267,6 +332,38 @@ func checkAssign(v *Checker, e Expression) {
   }
 }
 
+func (v *Checker) checkFutureReservedWord(e Expression, w string) {
+  if _, ok := FUTURE_RESERVED_WORDS[w]; ok {
+    v.Accept(VALIDATE_FUTURE_RESERVED_WORD, e, w)
+  }
+}
+
+func (v *Checker) checkNoIdemLast(e NamedDefinition) {
+  if violator := v.endsWithIdem(e.Body().(*BlockExpression)); violator != nil && !v.isResourceWithoutTitle(violator) {
+    v.Accept(VALIDATE_IDEM_NOT_ALLOWED_LAST, violator, violator.Label(), A_anUc(e))
+  }
+}
+
+func (v *Checker) endsWithIdem(e *BlockExpression) Expression {
+  top := len(e.Statements())
+  if top > 0 {
+    last := e.Statements()[top-1]
+    if v.isIdem(last) {
+      return last
+    }
+  }
+  return nil
+}
+
+func (v *Checker) checkCaptureLast(container Expression, parameters []Expression) {
+  last := len(parameters) - 1
+  for idx := 0; idx < last; idx++ {
+    if param, ok := parameters[idx].(*Parameter); ok && param.CapturesRest() {
+      v.Accept(VALIDATE_CAPTURES_REST_NOT_LAST, param, param.Name())
+    }
+  }
+}
+
 func (v *Checker) checkNoCapture(container Expression, parameters []Expression) {
   for _, parameter := range parameters {
     if param, ok := parameter.(*Parameter); ok && param.CapturesRest() {
@@ -275,9 +372,45 @@ func (v *Checker) checkNoCapture(container Expression, parameters []Expression) 
   }
 }
 
+func (v *Checker) checkParameterNameUniqueness(container Expression, parameters []Expression) {
+  unique := make(map[string]bool, 10)
+  for _, parameter := range parameters {
+    param := parameter.(*Parameter)
+    if _, found := unique[param.Name()]; found {
+      v.Accept(VALIDATE_DUPLICATE_PARAMETER, parameter, param.Name())
+    } else {
+      unique[param.Name()] = true
+    }
+  }
+}
+
+func (v *Checker) checkReservedParams(container Expression, parameters []Expression) {
+  for _, parameter := range parameters {
+    param := parameter.(*Parameter)
+    if _, ok := RESERVED_PARAMETERS[param.Name()]; ok {
+      v.Accept(VALIDATE_RESERVED_PARAMETER, container, param.Name(), A_an(container))
+    }
+  }
+}
+
+func (v *Checker) checkReservedTypeName(e Expression, w string) {
+  if _, ok := RESERVED_TYPE_NAMES[w]; ok {
+    v.Accept(VALIDATE_RESERVED_TYPE_NAME, e, w, A_an(e))
+  }
+}
+
 func (v *Checker) checkReturnType(function Expression, returnType Expression) {
   if returnType != nil {
     v.checkTypeRef(function, returnType)
+  }
+}
+
+func (v *Checker) checkRValue(e Expression) {
+  switch e.(type) {
+  case UnaryExpression:
+    v.checkRValue(e.(UnaryExpression).Expr())
+  case Definition, *CollectExpression:
+    v.Accept(VALIDATE_NOT_RVALUE, e, A_anUc(e))
   }
 }
 
@@ -312,39 +445,6 @@ func (v *Checker) checkTypeRef(function Expression, r Expression) {
     v.checkFutureReservedWord(r, qr.DowncasedName())
   } else {
     v.Accept(VALIDATE_ILLEGAL_EXPRESSION, r, `a type reference`, A_an(function))
-  }
-}
-
-func (v *Checker) checkFutureReservedWord(e Expression, w string) {
-  if _, ok := FUTURE_RESERVED_WORDS[w]; ok {
-    v.Accept(VALIDATE_FUTURE_RESERVED_WORD, e, w)
-  }
-}
-
-func (v *Checker) checkReservedTypeName(e Expression, w string) {
-  if _, ok := RESERVED_TYPE_NAMES[w]; ok {
-    v.Accept(VALIDATE_RESERVED_TYPE_NAME, e, w, A_an(e))
-  }
-}
-
-func (v *Checker) checkParameterNameUniqueness(container Expression, parameters []Expression) {
-  unique := make(map[string]bool, 10)
-  for _, parameter := range parameters {
-    param := parameter.(*Parameter)
-    if _, found := unique[param.Name()]; found {
-      v.Accept(VALIDATE_DUPLICATE_PARAMETER, parameter, param.Name())
-    } else {
-      unique[param.Name()] = true
-    }
-  }
-}
-
-func (v *Checker) checkRValue(e Expression) {
-  switch e.(type) {
-  case UnaryExpression:
-    v.checkRValue(e.(UnaryExpression).Expr())
-  case Definition, *CollectExpression:
-    v.Accept(VALIDATE_NOT_RVALUE, e, A_anUc(e))
   }
 }
 
@@ -404,4 +504,18 @@ func (v *Checker) idem_CaseOption(e *CaseOption) bool {
 
 func (v *Checker) idem_IfExpression(e *IfExpression) bool {
   return v.isIdem(e.Test()) && v.isIdem(e.Then()) && v.isIdem(e.Else())
+}
+
+func (v *Checker) isResourceWithoutTitle(e Expression) bool {
+  if be, ok := e.(*BlockExpression); ok {
+    statements := be.Statements()
+    if len(statements) == 2 {
+      _, ok = statements[0].(*QualifiedReference)
+      if ok {
+        _, ok = statements[1].(*LiteralHash)
+        return ok
+      }
+    }
+  }
+  return false
 }
