@@ -53,10 +53,19 @@ func Parse(filename string, source string, eppMode bool) (expr Expression, err e
   ctx := context{
     stringReader:  stringReader{text: source},
     locator:       &Locator{string: source, file: filename},
+    definitions:   make([]Definition, 0, 8),
     factory:       DefaultFactory(),
     eppMode:       eppMode,
     nextLineStart: -1}
 
+  expr, err = ctx.parseTopBlock(filename, source, eppMode)
+  if err == nil {
+     expr = ctx.factory.Program(expr, ctx.definitions, ctx.locator, 0, ctx.Pos())
+  }
+  return
+}
+
+func (ctx *context) parseTopBlock(filename string, source string, eppMode bool) (expr Expression, err error) {
   defer func() {
     if r := recover(); r != nil {
       err, _ = r.(error)

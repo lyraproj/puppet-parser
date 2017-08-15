@@ -41,6 +41,7 @@ type ExpressionFactory interface {
   Or(lhs Expression, rhs Expression, locator *Locator, offset int, length int) Expression
   Parameter(name string, expr Expression, typeExpr Expression, capturesRest bool, locator *Locator, offset int, length int) Expression
   Parenthesized(expr Expression, locator *Locator, offset int, length int) Expression
+  Program(body Expression, definitions []Definition, locator *Locator, offset int, length int) Expression
   QualifiedName(name string, locator *Locator, offset int, length int) Expression
   QualifiedReference(name string, locator *Locator, offset int, length int) Expression
   Regexp(value string, locator *Locator, offset int, length int) Expression
@@ -236,6 +237,10 @@ func (f *defaultExpressionFactory) Parameter(name string, expr Expression, typeE
 
 func (f *defaultExpressionFactory) Parenthesized(expr Expression, locator *Locator, offset int, length int) Expression {
   return &ParenthesizedExpression{unaryExpression{positioned{locator, offset, length}, expr }}
+}
+
+func (f *defaultExpressionFactory) Program(body Expression, definitions []Definition, locator *Locator, offset int, length int) Expression {
+  return &Program{positioned{locator, offset, length}, body, definitions}
 }
 
 func (f *defaultExpressionFactory) QualifiedName(name string, locator *Locator, offset int, length int) Expression {

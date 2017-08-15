@@ -296,6 +296,7 @@ type context struct {
   locator         *Locator
   factory         ExpressionFactory
   nameStack       []string
+  definitions     []Definition
   eppMode         bool
   nextLineStart   int
   currentToken    int

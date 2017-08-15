@@ -78,7 +78,7 @@ func TestAttributesOpValidation(t *testing.T) {
         ensure => file,
         * => function foo() {}
       }`),
-    VALIDATE_NOT_RVALUE)
+    VALIDATE_NOT_TOP_LEVEL, VALIDATE_NOT_RVALUE)
 }
 
 func TestCallNamedFunctionValidation(t *testing.T) {
@@ -105,7 +105,7 @@ func TestCallNamedFunctionValidation(t *testing.T) {
 }
 
 func TestBinaryOpValidation(t *testing.T) {
-  expectIssues(t, `notice(function foo() {} < 3)`, VALIDATE_NOT_RVALUE)
+  expectIssues(t, `notice(function foo() {} < 3)`, VALIDATE_NOT_TOP_LEVEL, VALIDATE_NOT_RVALUE)
   expectNoIssues(t, `notice(true == !false)`)
 }
 
@@ -252,15 +252,94 @@ func TestCaseExpressionValidation(t *testing.T) {
         function foo() {}: { true }
         default: { false }
       }`),
-    VALIDATE_NOT_RVALUE)
+    VALIDATE_NOT_TOP_LEVEL, VALIDATE_NOT_RVALUE)
+}
+
+func TestCollectValidation(t *testing.T) {
+  expectNoIssues(t,
+    Unindent(`
+      User <| groups == 'admin' |>`))
+
+  expectIssues(t,
+    Unindent(`
+      user <| groups == 'admin' |>`),
+    VALIDATE_ILLEGAL_EXPRESSION)
+}
+
+func TestEppValidation(t *testing.T) {
+  expectNoIssuesEPP(t,
+    Unindent(`
+      <%-| $a, $b |-%>
+      This is $a <%= $a %>`))
+
+  expectIssuesEPP(t,
+    Unindent(`
+      <%-| $a, $b, $a |-%>
+      This is $a <%= $a %>`),
+    VALIDATE_DUPLICATE_PARAMETER)
+
+  expectIssuesEPP(t,
+    Unindent(`
+      <%-| $a, *$b |-%>
+      This is $a <%= $a %>`),
+    VALIDATE_CAPTURES_REST_NOT_SUPPORTED)
+}
+
+func TestFunctionDefinitionValidation(t *testing.T) {
+  expectNoIssues(t,
+    Unindent(`
+      function foo() {}`))
+
+  expectIssues(t,
+    Unindent(`
+      function foo() {
+        function bar() {}
+      }`),
+    VALIDATE_NOT_ABSOLUTE_TOP_LEVEL)
+
+  expectIssues(t,
+    Unindent(`
+      function foo() >> Application {
+      }`),
+    VALIDATE_FUTURE_RESERVED_WORD)
+
+  expectIssues(t,
+    Unindent(`
+      function foo() >> Application[X] {
+      }`),
+    VALIDATE_FUTURE_RESERVED_WORD)
+
+  expectIssues(t,
+    Unindent(`
+      function variant() {
+      }`),
+    VALIDATE_RESERVED_TYPE_NAME)
+
+  expectIssues(t,
+    Unindent(`
+      function Foo() {
+      }`),
+    VALIDATE_ILLEGAL_DEFINITION_NAME)
 }
 
 func expectNoIssues(t *testing.T, str string) {
-  expectIssues(t, str)
+  expectIssuesX(t, str, false)
+}
+
+func expectNoIssuesEPP(t *testing.T, str string) {
+  expectIssuesX(t, str, true)
 }
 
 func expectIssues(t *testing.T, str string, expectedIssueCodes...IssueCode) {
-  issues := parseAndValidate(t, str)
+  expectIssuesX(t, str, false, expectedIssueCodes...)
+}
+
+func expectIssuesEPP(t *testing.T, str string, expectedIssueCodes...IssueCode) {
+  expectIssuesX(t, str, true, expectedIssueCodes...)
+}
+
+func expectIssuesX(t *testing.T, str string, eppMode bool, expectedIssueCodes...IssueCode) {
+  issues := parseAndValidate(t, str, eppMode)
   if issues == nil {
     return
   }
@@ -283,23 +362,23 @@ func expectIssues(t *testing.T, str string, expectedIssueCodes...IssueCode) {
   }
 }
 
-func parseAndValidate(t *testing.T, str string) []*ReportedIssue {
-  if expr := parse(t, str); expr != nil {
+func parseAndValidate(t *testing.T, str string, eppMode bool) []*ReportedIssue {
+  if expr := parse(t, str, eppMode); expr != nil {
     v := ValidatePuppet(expr)
     return v.Issues()
   }
   return nil
 }
 
-func parse(t *testing.T, str string) *BlockExpression {
-  expr, err := Parse(``, str, false)
+func parse(t *testing.T, str string, eppMode bool) *Program {
+  expr, err := Parse(``, str, eppMode)
   if err != nil {
     t.Errorf(err.Error())
     return nil
   }
-  block, ok := expr.(*BlockExpression)
+  block, ok := expr.(*Program)
   if !ok {
-    t.Errorf("'%s' did not parse to a block", str)
+    t.Errorf("'%s' did not parse to a program", str)
     return nil
   }
   return block

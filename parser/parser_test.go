@@ -924,7 +924,7 @@ func TestApplication(t *testing.T) {
       MyCap produces Cap {
         attr => $value
       }`),
-    `(produces (qn MyCap) (Cap (=> (attr) ($ value))))`)
+    `(produces (qr MyCap) (Cap (=> (attr) ($ value))))`)
 }
 
 func TestCapabilityMappping(t *testing.T) {
@@ -1886,9 +1886,14 @@ func parse(t *testing.T, str string, eppMode bool) *BlockExpression {
     t.Errorf(err.Error())
     return nil
   }
-  block, ok := expr.(*BlockExpression)
+  program, ok := expr.(*Program)
   if !ok {
-    t.Errorf("'%s' did not parse to a block", str)
+    t.Errorf("'%s' did not parse to a program", str)
+    return nil
+  }
+  block, ok := program.body.(*BlockExpression)
+  if !ok {
+    t.Errorf("'%s' did not parse to a program with a block", str)
     return nil
   }
   return block

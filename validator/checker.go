@@ -8,7 +8,53 @@ import (
 
 var NUMERIC_VAR_NAME_EXPR = MustCompile(`\A(?:0|(?:[1-9][0-9]*))\z`)
 var DOUBLE_COLON_EXPR = MustCompile(`::`)
-var CLASSREF_EXPR = MustCompile(`\A(?:::)?[A-Z][\w]*(?:::[A-Z][\w]*)*\z`)
+
+// CLASSREF_EXT matches a class reference the same way as the lexer - i.e. the external source form
+// where each part must start with a capital letter A-Z.
+var CLASSREF_EXT = MustCompile(`\A(?:::)?[A-Z][\w]*(?:::[A-Z][\w]*)*\z`)
+
+
+// CLASSREF matches a class reference the way it is represented internally in the
+// model (i.e. in lower case).
+var CLASSREF_DECL = MustCompile(`\A[a-z][\w]*(?:::[a-z][\w]*)*\z`)
+
+var RESERVED_TYPE_NAMES = map[string]bool {
+  `type`: true,
+  `any`: true,
+  `unit`: true,
+  `scalar`: true,
+  `boolean`: true,
+  `numeric`: true,
+  `integer`: true,
+  `float`: true,
+  `collection`: true,
+  `array`: true,
+  `hash`: true,
+  `tuple`: true,
+  `struct`: true,
+  `variant`: true,
+  `optional`: true,
+  `enum`: true,
+  `regexp`: true,
+  `pattern`: true,
+  `runtime`: true,
+
+  `init`: true,
+  `object`: true,
+  `sensitive`: true,
+  `semver`: true,
+  `semverrange`: true,
+  `string`: true,
+  `timestamp`: true,
+  `timespan`: true,
+  `typeset`: true,
+}
+
+var FUTURE_RESERVED_WORDS = map[string]bool {
+  `application`: true,
+  `produces`: true,
+  `consumes`: true,
+}
 
 type Checker struct {
   AbstractValidator
@@ -17,6 +63,7 @@ type Checker struct {
 func NewChecker() *Checker {
   checker := &Checker{AbstractValidator{nil, nil, make([]*ReportedIssue, 0, 5), make(map[IssueCode]Severity, 5)}}
   checker.Demote(VALIDATE_IDEM_EXPRESSION_NOT_LAST, SEVERITY_WARNING)
+  checker.Demote(VALIDATE_FUTURE_RESERVED_WORD, SEVERITY_DEPRECATION)
   return checker
 }
 
@@ -38,6 +85,12 @@ func (v *Checker) Validate(e Expression) {
     v.check_CaseExpression(e.(*CaseExpression))
   case *CaseOption:
     v.check_CaseOption(e.(*CaseOption))
+  case *CollectExpression:
+    v.check_CollectExpression(e.(*CollectExpression))
+  case *EppExpression:
+    v.check_EppExpression(e.(*EppExpression))
+  case *FunctionDefinition:
+    v.check_FunctionDefinition(e.(*FunctionDefinition))
 
   // Interface switches
   case BinaryExpression:
@@ -108,7 +161,7 @@ func (v *Checker) check_CallNamedFunctionExpression(e *CallNamedFunctionExpressi
 }
 
 func (v *Checker) check_CapabilityMapping(e *CapabilityMapping) {
-  var exprOk bool
+  exprOk := false
   switch e.Component().(type) {
   case *QualifiedReference:
     exprOk = true
@@ -118,7 +171,6 @@ func (v *Checker) check_CapabilityMapping(e *CapabilityMapping) {
     exprOk = true // OK, besides from what was just reported
 
   case *AccessExpression:
-    exprOk = false
     ae, _ := e.Component().(*AccessExpression)
     if _, ok := ae.Operand().(*QualifiedReference); ok && len(ae.Keys()) == 1 {
       switch ae.Keys()[0].(type) {
@@ -126,17 +178,13 @@ func (v *Checker) check_CapabilityMapping(e *CapabilityMapping) {
         exprOk = true
       }
     }
-
-  default:
-    // Parser will make sure that this never happens
-    exprOk = false
   }
 
   if !exprOk {
     v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Component(), A_an(e.Component()), `capability mapping`, A_an(e))
   }
 
-  if !CLASSREF_EXPR.MatchString(e.Capability()) {
+  if !CLASSREF_EXT.MatchString(e.Capability()) {
     v.Accept(VALIDATE_ILLEGAL_CLASSREF, e, e.Capability())
   }
 }
@@ -163,6 +211,25 @@ func (v *Checker) check_CaseOption(e *CaseOption) {
   }
 }
 
+func (v *Checker) check_CollectExpression(e *CollectExpression) {
+  if _, ok := e.ResourceType().(*QualifiedReference); !ok {
+    v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.ResourceType(), A_an(e), `type name`)
+  }
+}
+
+func (v *Checker) check_EppExpression(e *EppExpression) {
+  p := v.Container()
+  if lambda, ok := p.(*LambdaExpression); ok {
+    v.checkNoCapture(lambda, lambda.Parameters())
+    v.checkParameterNameUniqueness(lambda, lambda.Parameters())
+  }
+}
+
+func (v *Checker) check_FunctionDefinition(e *FunctionDefinition) {
+  v.check_NameDefinition(e)
+  v.checkReturnType(e, e.ReturnType())
+}
+
 // TODO: Add more validations here
 
 // Helper functions
@@ -183,6 +250,88 @@ func checkAssign(v *Checker, e Expression) {
     }
     if DOUBLE_COLON_EXPR.MatchString(name) {
       v.Accept(VALIDATE_CROSS_SCOPE_ASSIGNMENT, e, name)
+    }
+  }
+}
+
+func (v *Checker) check_NameDefinition(e NamedDefinition) {
+  v.checkTop(e, v.Container())
+  if !CLASSREF_DECL.MatchString(e.Name()) {
+    v.Accept(VALIDATE_ILLEGAL_DEFINITION_NAME, e, e.Name(), A_an(e))
+  }
+  v.checkReservedTypeName(e, e.Name())
+  v.checkFutureReservedWord(e, e.Name())
+  v.checkParameterNameUniqueness(e, e.Parameters())
+}
+
+func (v *Checker) checkNoCapture(container Expression, parameters []Expression) {
+  for _, parameter := range parameters {
+    if param, ok := parameter.(*Parameter); ok && param.CapturesRest() {
+      v.Accept(VALIDATE_CAPTURES_REST_NOT_SUPPORTED, param, param.Name(), A_an(container))
+    }
+  }
+}
+
+func (v *Checker) checkReturnType(function Expression, returnType Expression) {
+  if returnType != nil {
+    v.checkTypeRef(function, returnType)
+  }
+}
+
+func (v *Checker) checkTop(e Expression, c Expression) {
+  switch c.(type) {
+  case nil, *HostClassDefinition, *Program:
+    return
+
+  case *BlockExpression:
+    c = v.ContainerOf(c)
+    if _, ok := c.(*Program); !ok {
+      switch e.(type) {
+      case *FunctionDefinition, *TypeAlias, *TypeDefinition:
+        // not ok. These can never be nested in a block
+        v.Accept(VALIDATE_NOT_ABSOLUTE_TOP_LEVEL, e, A_anUc(e))
+        return
+      }
+    }
+    v.checkTop(e, c)
+
+  default:
+    v.Accept(VALIDATE_NOT_TOP_LEVEL, e, A_anUc(e))
+  }
+}
+
+func (v *Checker) checkTypeRef(function Expression, r Expression) {
+  n := r
+  if ae, ok := r.(*AccessExpression); ok {
+    n = ae.Operand();
+  }
+  if qr, ok := n.(*QualifiedReference); ok {
+    v.checkFutureReservedWord(r, qr.DowncasedName())
+  } else {
+    v.Accept(VALIDATE_ILLEGAL_EXPRESSION, r, `a type reference`, A_an(function))
+  }
+}
+
+func (v *Checker) checkFutureReservedWord(e Expression, w string) {
+  if _, ok := FUTURE_RESERVED_WORDS[w]; ok {
+    v.Accept(VALIDATE_FUTURE_RESERVED_WORD, e, w)
+  }
+}
+
+func (v *Checker) checkReservedTypeName(e Expression, w string) {
+  if _, ok := RESERVED_TYPE_NAMES[w]; ok {
+    v.Accept(VALIDATE_RESERVED_TYPE_NAME, e, w, A_an(e))
+  }
+}
+
+func (v *Checker) checkParameterNameUniqueness(container Expression, parameters []Expression) {
+  unique := make(map[string]bool, 10)
+  for _, parameter := range parameters {
+    param := parameter.(*Parameter)
+    if _, found := unique[param.Name()]; found {
+      v.Accept(VALIDATE_DUPLICATE_PARAMETER, parameter, param.Name())
+    } else {
+      unique[param.Name()] = true
     }
   }
 }

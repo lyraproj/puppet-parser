@@ -92,6 +92,13 @@ type (
     ToBooleanExpression() BooleanExpression
   }
 
+  NamedDefinition interface {
+    Definition
+    Name()       string
+    Parameters() []Expression
+    Body()       Expression
+  }
+
   UnaryExpression interface {
     Expression
 
@@ -344,7 +351,7 @@ type (
   Program struct {
     positioned
     body        Expression
-    definitions []Expression
+    definitions []Definition
   }
 
   qRefDefinition struct {
@@ -1326,7 +1333,7 @@ func (e *ParenthesizedExpression) ToUnaryExpression() UnaryExpression {
 
 func (e *ParenthesizedExpression) ToPN() PN { return NamedValue(`()`, e.Expr().ToPN()) }
 
-func (e *Program) Definitions() []Expression {
+func (e *Program) Definitions() []Definition {
   return e.definitions
 }
 
