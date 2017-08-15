@@ -5,7 +5,7 @@ Heredoc is a construct that starts on one line, doesn't consume the whole line,
 and then has a body that starts on the next line (or after the next heredoc), and
 finally ends with an end tag.
 
-######Example heredoc:
+###### Example heredoc:
 
 ```puppet
 ['first', @(SECOND), 'third',
@@ -25,7 +25,7 @@ the end of line, the next line is actually after then end tag.
 
 To make things even more challenging, a line may contain several heredoc tags.
 
-######Example heredoc with several entries:
+###### Example heredoc with several entries:
 
 ```puppet
 ['first', @(SECOND), 'third', @(FOURTH), 'fifth',
@@ -49,7 +49,7 @@ using the brace delimited form, the contained expression can be an expression. T
 in turn, may both braces. It may even contain a string which in turn contains a nested
 interpolation:
 
-######Example of a valid nested interpolation
+###### Example of a valid nested interpolation
 ```puppet
 $t = 'the'
 $r = 'revealed'
