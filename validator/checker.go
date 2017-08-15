@@ -95,6 +95,9 @@ func (v *Checker) Validate(e Expression) {
   // Interface switches
   case BinaryExpression:
     v.check_BinaryExpression(e.(BinaryExpression))
+
+  case NamedDefinition:
+    v.check_NamedDefinition(e.(NamedDefinition))
   }
 }
 
@@ -226,8 +229,18 @@ func (v *Checker) check_EppExpression(e *EppExpression) {
 }
 
 func (v *Checker) check_FunctionDefinition(e *FunctionDefinition) {
-  v.check_NameDefinition(e)
+  v.check_NamedDefinition(e)
   v.checkReturnType(e, e.ReturnType())
+}
+
+func (v *Checker) check_NamedDefinition(e NamedDefinition) {
+  v.checkTop(e, v.Container())
+  if !CLASSREF_DECL.MatchString(e.Name()) {
+    v.Accept(VALIDATE_ILLEGAL_DEFINITION_NAME, e, e.Name(), A_an(e))
+  }
+  v.checkReservedTypeName(e, e.Name())
+  v.checkFutureReservedWord(e, e.Name())
+  v.checkParameterNameUniqueness(e, e.Parameters())
 }
 
 // TODO: Add more validations here
@@ -252,16 +265,6 @@ func checkAssign(v *Checker, e Expression) {
       v.Accept(VALIDATE_CROSS_SCOPE_ASSIGNMENT, e, name)
     }
   }
-}
-
-func (v *Checker) check_NameDefinition(e NamedDefinition) {
-  v.checkTop(e, v.Container())
-  if !CLASSREF_DECL.MatchString(e.Name()) {
-    v.Accept(VALIDATE_ILLEGAL_DEFINITION_NAME, e, e.Name(), A_an(e))
-  }
-  v.checkReservedTypeName(e, e.Name())
-  v.checkFutureReservedWord(e, e.Name())
-  v.checkParameterNameUniqueness(e, e.Parameters())
 }
 
 func (v *Checker) checkNoCapture(container Expression, parameters []Expression) {

@@ -172,6 +172,18 @@ func TestHeredoc(t *testing.T) {
       -TWO`),
     `(hash (=> (qn a) (heredoc {:text "The first\nheredoc text"})) (=> (qn b) (heredoc {:text "The second\nheredoc text"})))`)
 
+  expectDump(t,
+    Unindent(`
+      ['first', @(SECOND), 'third', @(FOURTH), 'fifth',
+        This is the text of the
+        second entry
+        |-SECOND
+        And here is the text of the
+        fourth entry
+        |-FOURTH
+        'sixth']`),
+    `(array "first" (heredoc {:text "This is the text of the\nsecond entry"}) "third" (heredoc {:text "And here is the text of the\nfourth entry"}) "fifth" "sixth")`)
+
   expectError(t,
     Unindent(`
       @(END
