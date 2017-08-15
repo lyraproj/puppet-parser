@@ -92,12 +92,17 @@ former. The parser uses a "best effort" here, since it really cannot. Instead a 
 
 Consider:
 ```
+notice
+'the argument'
+```
+or, which is exactly the same thing:
+```
 notice 'the argument'
 ```
-Is this a block that calls notice and then returns the string 'the argument'? Nope. Since "notice" happens
-to be one of the well known "statement calls", it's a block that returns the value of the expression
-`notice('the argument')`. A pair of parenthesis must be inserted after 'notice' to make it an actual call
-with no parameters.
+Is this a block that calls notice without arguments and then returns the string 'the argument'? Nope.
+Since "notice" happens to be one of the well known "statement calls", it's a block that returns the value
+of the expression `notice('the argument')`. A pair of parenthesis must be inserted after 'notice' to make
+it an actual call with no parameters.
 
 The exact same syntax, but with a function name that is not known to be a predefined statement call
 will yield a syntax error. Hence, this is illegal:
