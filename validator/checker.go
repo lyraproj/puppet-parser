@@ -453,8 +453,8 @@ func (v *Checker) checkTypeRef(function Expression, r Expression) {
 // negative answers since analysis of function behavior is not possible.
 func (v *Checker) isIdem(e Expression) bool {
   switch e.(type) {
-  case *AssignmentExpression, *RelationshipExpression, *RenderExpression, *RenderStringExpression:
-    return false
+  case nil, *AccessExpression, *ConcatenatedString, *HeredocExpression, *LiteralList, *LiteralHash, *Nop, *SelectorExpression:
+    return true
   case *BlockExpression:
     return v.idem_BlockExpression(e.(*BlockExpression))
   case *CaseExpression:
@@ -467,8 +467,12 @@ func (v *Checker) isIdem(e Expression) bool {
     return v.idem_IfExpression(&e.(*UnlessExpression).IfExpression)
   case *ParenthesizedExpression:
     return v.isIdem(e.(*ParenthesizedExpression).Expr())
-  default:
+  case *AssignmentExpression, *RelationshipExpression, *RenderExpression, *RenderStringExpression:
+    return false
+  case BinaryExpression, LiteralValue, UnaryExpression:
     return true
+  default:
+    return false
   }
 }
 
