@@ -290,6 +290,15 @@ func TestFunctionDefinitionValidation(t *testing.T) {
     Unindent(`
       function foo() {}`))
 
+  expectNoIssues(t,
+    Unindent(`
+      function foo($a, *$b) {}`))
+
+  expectIssues(t,
+    Unindent(`
+      function foo($a, *$b, $c) {}`),
+    VALIDATE_CAPTURES_REST_NOT_LAST)
+
   expectIssues(t,
     Unindent(`
       function foo() {
@@ -318,6 +327,133 @@ func TestFunctionDefinitionValidation(t *testing.T) {
   expectIssues(t,
     Unindent(`
       function Foo() {
+      }`),
+    VALIDATE_ILLEGAL_DEFINITION_NAME)
+}
+
+func TestHostClassDefinitionValidation(t *testing.T) {
+  expectNoIssues(t,
+    Unindent(`
+      class foo {}`))
+
+  expectNoIssues(t,
+    Unindent(`
+      class foo {
+        class bar {}
+      }`))
+
+  expectIssues(t,
+    Unindent(`
+      class foo($a, *$b) {
+      }`),
+    VALIDATE_CAPTURES_REST_NOT_SUPPORTED)
+
+  expectIssues(t,
+    Unindent(`
+      class foo($title, $b) {
+      }`),
+    VALIDATE_RESERVED_PARAMETER)
+
+  expectIssues(t,
+    Unindent(`
+      class foo($name, $b) {
+      }`),
+    VALIDATE_RESERVED_PARAMETER)
+
+  expectIssues(t,
+    Unindent(`
+      class foo($a) {
+        [$a]
+      }`),
+    VALIDATE_IDEM_NOT_ALLOWED_LAST)
+
+  expectIssues(t,
+    Unindent(`
+      class variant {
+      }`),
+    VALIDATE_RESERVED_TYPE_NAME)
+
+  expectIssues(t,
+    Unindent(`
+      class Foo {
+      }`),
+    VALIDATE_ILLEGAL_DEFINITION_NAME)
+}
+
+func TestLiteralHashValidation(t *testing.T) {
+  expectNoIssues(t,
+    Unindent(`
+      $x = {
+        1 => 'one',
+        '2' => 'two',
+        3.0 => 'three',
+        true => 'true',
+        undef => 'undef',
+        default => 'default'
+      }`))
+
+  expectIssues(t,
+    Unindent(`
+      $x = {
+        1 => 'one',
+        '2' => 'two',
+        1 => 'one again'
+      }`),
+    VALIDATE_DUPLICATE_KEY)
+}
+
+func TestResourceTypeDefinitionValidation(t *testing.T) {
+  expectNoIssues(t,
+    Unindent(`
+      define foo() {}`))
+
+  expectNoIssues(t,
+    Unindent(`
+      class foo() {
+        define bar() {}
+      }`))
+
+  expectIssues(t,
+    Unindent(`
+      define foo() {
+        define bar() {}
+      }`),
+    VALIDATE_NOT_TOP_LEVEL)
+
+  expectIssues(t,
+    Unindent(`
+      define foo($a, *$b) {
+      }`),
+    VALIDATE_CAPTURES_REST_NOT_SUPPORTED)
+
+  expectIssues(t,
+    Unindent(`
+      define foo($title, $b) {
+      }`),
+    VALIDATE_RESERVED_PARAMETER)
+
+  expectIssues(t,
+    Unindent(`
+      define foo($name, $b) {
+      }`),
+    VALIDATE_RESERVED_PARAMETER)
+
+  expectIssues(t,
+    Unindent(`
+      define foo($a) {
+        [$a]
+      }`),
+    VALIDATE_IDEM_NOT_ALLOWED_LAST)
+
+  expectIssues(t,
+    Unindent(`
+      define variant() {
+      }`),
+    VALIDATE_RESERVED_TYPE_NAME)
+
+  expectIssues(t,
+    Unindent(`
+      define Foo() {
       }`),
     VALIDATE_ILLEGAL_DEFINITION_NAME)
 }

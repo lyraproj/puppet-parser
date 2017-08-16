@@ -1,4 +1,4 @@
-package validator
+package literal
 
 import (
   . "github.com/puppetlabs/go-parser/parser"
@@ -6,7 +6,7 @@ import (
 
 const notLiteral = `not literal`
 
-func Literal(e Expression)  (value interface{}, ok bool) {
+func ToLiteral(e Expression)  (value interface{}, ok bool) {
   defer func() {
     if err := recover(); err != nil {
       if err == notLiteral {
@@ -49,6 +49,8 @@ func toLiteral(e Expression)  interface{} {
       }
     }
     panic(notLiteral)
+  case *HeredocExpression:
+    return toLiteral(e.(*HeredocExpression).Text())
   case LiteralValue:
     return e.(LiteralValue).Value()
   default:

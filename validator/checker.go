@@ -4,6 +4,7 @@ import (
   . "regexp"
   . "github.com/puppetlabs/go-parser/issue"
   . "github.com/puppetlabs/go-parser/parser"
+  . "github.com/puppetlabs/go-parser/literal"
 )
 
 var NUMERIC_VAR_NAME_EXPR = MustCompile(`\A(?:0|(?:[1-9][0-9]*))\z`)
@@ -114,9 +115,6 @@ func (v *Checker) Validate(e Expression) {
   // Interface switches
   case BinaryExpression:
     v.check_BinaryExpression(e.(BinaryExpression))
-
-  case NamedDefinition:
-    v.check_NamedDefinition(e.(NamedDefinition))
   }
 }
 
@@ -277,9 +275,10 @@ func (v *Checker) check_LambdaExpression(e *LambdaExpression) {
 func (v *Checker) check_LiteralHash(e *LiteralHash) {
   unique := make(map[interface{}]bool, len(e.Entries()))
   for _, entry := range e.Entries() {
-    if literalKey, ok := Literal(entry.(*KeyedEntry).Key()); ok {
+    key := entry.(*KeyedEntry).Key()
+    if literalKey, ok := ToLiteral(key); ok {
       if _, ok = unique[literalKey]; ok {
-        v.Accept(VALIDATE_DUPLICATE_KEY, entry, literalKey)
+        v.Accept(VALIDATE_DUPLICATE_KEY, entry, key.String())
       } else {
         unique[literalKey] = true
       }

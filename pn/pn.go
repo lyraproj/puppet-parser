@@ -250,7 +250,7 @@ func (pn *namedStringValue) value() interface{} {
 func (pn *literal) Format(b *Buffer) {
   switch pn.val.(type) {
   case string:
-    doubleQuote(pn.val.(string), b)
+    DoubleQuote(pn.val.(string), b)
   case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
     Fprintf(b, `%d`, pn.val)
   case float32, float64:
@@ -291,29 +291,3 @@ func formatEntries(elements []Entry, b *Buffer) {
     }
   }
 }
-
-func doubleQuote(str string, b *Buffer) {
-  b.WriteByte('"')
-  for _, c := range str {
-    switch c {
-    case '\t':
-      b.WriteString(`\t`)
-    case '\n':
-      b.WriteString(`\n`)
-    case '\r':
-      b.WriteString(`\r`)
-    case '"':
-      b.WriteString(`\"`)
-    case '\\':
-      b.WriteString(`\\`)
-    default:
-      if c < 0x20 {
-        Fprintf(b, `\u{%X}`, c)
-      } else {
-        b.WriteRune(c)
-      }
-    }
-  }
-  b.WriteByte('"')
-}
-

@@ -33,7 +33,7 @@ func init() {
   HardIssue(VALIDATE_CAPTURES_REST_NOT_SUPPORTED, `Parameter $%s has 'captures rest' - not supported in %s`)
   HardIssue(VALIDATE_CROSS_SCOPE_ASSIGNMENT, `Illegal attempt to assign to '%s'. Cannot assign to variables in other namespaces`)
   HardIssue(VALIDATE_DUPLICATE_DEFAULT, `This %s already has a 'default' entry - this is a duplicate`)
-  SoftIssue(VALIDATE_DUPLICATE_KEY, `The key '%s' is declared more than once`)
+  SoftIssue(VALIDATE_DUPLICATE_KEY, `The key %s is declared more than once`)
   HardIssue(VALIDATE_DUPLICATE_PARAMETER, `The parameter '%s' is declared more than once in the parameter list`)
   SoftIssue(VALIDATE_FUTURE_RESERVED_WORD, `Use of future reserved word: '%s'`)
   SoftIssue(VALIDATE_IDEM_EXPRESSION_NOT_LAST, `This %s has no effect. A value was produced and then forgotten (one or more preceding expressions may have the wrong form)`)
