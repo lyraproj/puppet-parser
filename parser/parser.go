@@ -160,7 +160,7 @@ func (ctx *context) tokenString() string {
 func (ctx *context) transformCalls(exprs []Expression, start int) (result []Expression) {
   top := len(exprs)
   if top == 0 {
-    return []Expression{ctx.factory.Undef(ctx.locator, start, ctx.Pos()-start)}
+    return exprs
   }
 
   memo := exprs[0]

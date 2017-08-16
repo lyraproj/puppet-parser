@@ -7,7 +7,7 @@ import (
 )
 
 func TestEmpty(t *testing.T) {
-  expectDump(t, ``, `(undef)`)
+  expectBlock(t, ``, `(block)`)
 }
 
 func TestInvalidUnicode(t *testing.T) {
@@ -657,43 +657,43 @@ func TestNodeDefinition(t *testing.T) {
     Unindent(`
       node default {
       }`),
-    `(node {:matches [(default)] :body [(undef)]})`)
+    `(node {:matches [(default)] :body []})`)
 
   expectDump(t,
     Unindent(`
       node /[a-f].*/ {
       }`),
-    `(node {:matches [(regexp "[a-f].*")] :body [(undef)]})`)
+    `(node {:matches [(regexp "[a-f].*")] :body []})`)
 
   expectDump(t,
     Unindent(`
       node /[a-f].*/, "example.com" {
       }`),
-    `(node {:matches [(regexp "[a-f].*") "example.com"] :body [(undef)]})`)
+    `(node {:matches [(regexp "[a-f].*") "example.com"] :body []})`)
 
   expectDump(t,
     Unindent(`
       node /[a-f].*/, example.com {
       }`),
-    `(node {:matches [(regexp "[a-f].*") "example.com"] :body [(undef)]})`)
+    `(node {:matches [(regexp "[a-f].*") "example.com"] :body []})`)
 
   expectDump(t,
     Unindent(`
       node /[a-f].*/, 192.168.0.1, 34, "$x.$y" {
       }`),
-    `(node {:matches [(regexp "[a-f].*") "192.168.0.1" "34" (concat (str ($ x)) "." (str ($ y)))] :body [(undef)]})`)
+    `(node {:matches [(regexp "[a-f].*") "192.168.0.1" "34" (concat (str ($ x)) "." (str ($ y)))] :body []})`)
 
   expectDump(t,
     Unindent(`
       node /[a-f].*/, 192.168.0.1, 34, "$x.$y", {
       }`),
-    `(node {:matches [(regexp "[a-f].*") "192.168.0.1" "34" (concat (str ($ x)) "." (str ($ y)))] :body [(undef)]})`)
+    `(node {:matches [(regexp "[a-f].*") "192.168.0.1" "34" (concat (str ($ x)) "." (str ($ y)))] :body []})`)
 
   expectDump(t,
     Unindent(`
       node /[a-f].*/ inherits 192.168.0.1 {
       }`),
-    `(node {:matches [(regexp "[a-f].*")] :parent "192.168.0.1" :body [(undef)]})`)
+    `(node {:matches [(regexp "[a-f].*")] :parent "192.168.0.1" :body []})`)
 
   expectDump(t,
     Unindent(`
@@ -720,7 +720,7 @@ func TestSiteDefinition(t *testing.T) {
     Unindent(`
       site {
       }`),
-    `(site (block (undef)))`)
+    `(site (block))`)
 
   expectDump(t,
     Unindent(`
@@ -736,14 +736,14 @@ func TestTypeDefinition(t *testing.T) {
       type MyType {
         # What statements that can be included here is not yet speced
       }`),
-    `(type-definition (MyType) () (block (undef)))`)
+    `(type-definition (MyType) () (block))`)
 
   expectDump(t,
     Unindent(`
       type MyType inherits OtherType {
         # What statements that can be included here is not yet speced
       }`),
-    `(type-definition (MyType) (OtherType) (block (undef)))`)
+    `(type-definition (MyType) (OtherType) (block))`)
 
   expectError(t,
     Unindent(`
@@ -805,13 +805,13 @@ func TestClass(t *testing.T) {
     Unindent(`
       class myclass {
       }`),
-    `(class {:name myclass :body [(undef)]})`)
+    `(class {:name myclass :body []})`)
 
   expectDump(t,
     Unindent(`
       class private {
       }`),
-    `(class {:name private :body [(undef)]})`)
+    `(class {:name private :body []})`)
 
   expectDump(t,
     Unindent(`
@@ -819,7 +819,7 @@ func TestClass(t *testing.T) {
         class inner {
         }
       }`),
-    `(class {:name myclass :body [(class {:name myclass::inner :body [(undef)]})]})`)
+    `(class {:name myclass :body [(class {:name myclass::inner :body []})]})`)
 
   expectDump(t,
     Unindent(`
@@ -827,7 +827,7 @@ func TestClass(t *testing.T) {
         class inner {
         }
       }`),
-    `(class {:name myclass :body [(class {:name myclass::inner :body [(undef)]})]})`)
+    `(class {:name myclass :body [(class {:name myclass::inner :body []})]})`)
 
   expectDump(t,
     Unindent(`
@@ -835,31 +835,31 @@ func TestClass(t *testing.T) {
         class ::inner {
         }
       }`),
-    `(class {:name myclass :body [(class {:name myclass::inner :body [(undef)]})]})`)
+    `(class {:name myclass :body [(class {:name myclass::inner :body []})]})`)
 
   expectDump(t,
     Unindent(`
       class myclass inherits other {
       }`),
-    `(class {:name myclass :parent other :body [(undef)]})`)
+    `(class {:name myclass :parent other :body []})`)
 
   expectDump(t,
     Unindent(`
       class myclass inherits default {
       }`),
-    `(class {:name myclass :parent default :body [(undef)]})`)
+    `(class {:name myclass :parent default :body []})`)
 
   expectDump(t,
     Unindent(`
       class myclass($a, $b = 2) {
       }`),
-    `(class {:name myclass :params [{:name a} {:name b :value 2}] :body [(undef)]})`)
+    `(class {:name myclass :params [{:name a} {:name b :value 2}] :body []})`)
 
   expectDump(t,
     Unindent(`
       class myclass($a, $b = 2) inherits other {
       }`),
-    `(class {:name myclass :parent other :params [{:name a} {:name b :value 2}] :body [(undef)]})`)
+    `(class {:name myclass :parent other :params [{:name a} {:name b :value 2}] :body []})`)
 
   expectError(t,
     Unindent(`
@@ -1149,7 +1149,7 @@ func TestRestOfLineComment(t *testing.T) {
       # [*version*]
       #   The package version to install, used to set the package name.
       #   Defaults to undefined`),
-    `(block (undef))`)
+    `(block)`)
 }
 
 func TestMultilineComment(t *testing.T) {
@@ -1224,7 +1224,7 @@ func TestIf(t *testing.T) {
       } else {
         false
       }`),
-    `(= ($ x) (if {:test (> ($ y) 2) :then [(undef)] :else [false]}))`)
+    `(= ($ x) (if {:test (> ($ y) 2) :then [] :else [false]}))`)
 
   expectDump(t,
     Unindent(`
@@ -1232,7 +1232,7 @@ func TestIf(t *testing.T) {
         true
       } else {
       }`),
-    `(= ($ x) (if {:test (!= ($ y) 34) :then [true] :else [(undef)]}))`)
+    `(= ($ x) (if {:test (!= ($ y) 34) :then [true] :else []}))`)
 
   expectDump(t,
     Unindent(`
@@ -1273,7 +1273,7 @@ func TestUnless(t *testing.T) {
       } else {
         false
       }`),
-    `(= ($ x) (unless {:test ($ y) :then [(undef)] :else [false]}))`)
+    `(= ($ x) (unless {:test ($ y) :then [] :else [false]}))`)
 
   expectDump(t,
     Unindent(`
@@ -1281,7 +1281,7 @@ func TestUnless(t *testing.T) {
         true
       } else {
       }`),
-    `(= ($ x) (unless {:test ($ y) :then [true] :else [(undef)]}))`)
+    `(= ($ x) (unless {:test ($ y) :then [true] :else []}))`)
 
   expectDump(t,
     Unindent(`
