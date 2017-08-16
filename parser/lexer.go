@@ -749,10 +749,13 @@ func (ctx *context)skipWhite(breakOnNewLine bool) (c rune, start int) {
           commentStartPos = start
           continue
         }
+        return
       }
-      return
 
     case '*':
+      if commentStart == '#' {
+        continue
+      }
       if commentStart == '*' {
         tc, sz := ctx.Peek()
         if tc == '/' {

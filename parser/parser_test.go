@@ -1143,6 +1143,13 @@ func TestRestOfLineComment(t *testing.T) {
       $x = 'y' # A variable assignment
       notice($y)`),
     `(block (= ($ x) "y") (invoke {:functor (qn notice) :args [($ y)]}))`)
+
+  expectBlock(t,
+    Unindent(`
+      # [*version*]
+      #   The package version to install, used to set the package name.
+      #   Defaults to undefined`),
+    `(block (undef))`)
 }
 
 func TestMultilineComment(t *testing.T) {
