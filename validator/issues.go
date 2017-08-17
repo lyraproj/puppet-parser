@@ -25,9 +25,11 @@ const (
   VALIDATE_ILLEGAL_NUMERIC_PARAMETER           = `VALIDATE_ILLEGAL_NUMERIC_PARAMETER`
   VALIDATE_ILLEGAL_PARAMETER_NAME              = `VALIDATE_ILLEGAL_PARAMETER_NAME`
   VALIDATE_ILLEGAL_QUERY_EXPRESSION            = `VALIDATE_ILLEGAL_QUERY_EXPRESSION`
+  VALIDATE_MULTIPLE_ATTRIBUTES_UNFOLD          = `VALIDATE_MULTIPLE_ATTRIBUTES_UNFOLD`
   VALIDATE_NOT_ABSOLUTE_TOP_LEVEL              = `VALIDATE_NOT_ABSOLUTE_TOP_LEVEL`
   VALIDATE_NOT_RVALUE                          = `VALIDATE_NOT_RVALUE`
   VALIDATE_NOT_TOP_LEVEL                       = `VALIDATE_NOT_TOP_LEVEL`
+  VALIDATE_NOT_VIRTUALIZABLE                   = `VALIDATE_NOT_VIRTUALIZABLE`
   VALIDATE_RESERVED_PARAMETER                  = `VALIDATE_RESERVED_PARAMETER`
   VALIDATE_RESERVED_TYPE_NAME                  = `VALIDATE_RESERVED_TYPE_NAME`
   VALIDATE_RESERVED_WORD                       = `VALIDATE_RESERVED_WORD`
@@ -57,9 +59,11 @@ func init() {
   HardIssue(VALIDATE_ILLEGAL_NUMERIC_PARAMETER, `The numeric parameter name '$%v' cannot be used (clashes with numeric match result variables)`)
   HardIssue(VALIDATE_ILLEGAL_PARAMETER_NAME, `Illegal parameter name. The given name '%v' does not conform to the naming rule /^[a-z_]\w*$/`)
   HardIssue(VALIDATE_ILLEGAL_QUERY_EXPRESSION, `Illegal query expression. %v cannot be used in a query`)
+  HardIssue(VALIDATE_MULTIPLE_ATTRIBUTES_UNFOLD, `Unfolding of attributes from Hash can only be used once per resource body`)
   HardIssue(VALIDATE_NOT_ABSOLUTE_TOP_LEVEL, `%v may only appear at top level`)
   HardIssue(VALIDATE_NOT_TOP_LEVEL, `Classes, definitions, and nodes may only appear at top level or inside other classes`)
   HardIssue(VALIDATE_NOT_RVALUE, `Invalid use of expression. %v does not produce a value`)
+  HardIssue(VALIDATE_NOT_VIRTUALIZABLE, `Resource Defaults/Overrides are not virtualizable`)
   HardIssue(VALIDATE_RESERVED_PARAMETER, `The parameter $%v redefines a built in parameter in %v`)
   HardIssue(VALIDATE_RESERVED_TYPE_NAME, `The name: '%v' is already defined by Puppet and can not be used as the name of %v`)
   HardIssue(VALIDATE_RESERVED_WORD, `Use of reserved word: %v, must be quoted if intended to be a String value`)

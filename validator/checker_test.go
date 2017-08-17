@@ -591,6 +591,51 @@ func TestRelationshipValidation(t *testing.T) {
     VALIDATE_NOT_RVALUE, VALIDATE_NOT_TOP_LEVEL)
 }
 
+func TestResourceBodyValidation(t *testing.T) {
+  expectNoIssues(t,
+    Unindent(`
+      file { '/tmp/foo':
+        ensure => file,
+        * => $file_ownership
+      }`))
+
+  expectIssues(t,
+    Unindent(`
+      file { '/tmp/foo':
+        ensure => file,
+        * => $file_ownership,
+        * => $file_mode_content
+      }`), VALIDATE_MULTIPLE_ATTRIBUTES_UNFOLD)
+}
+
+func TestResourceValidation(t *testing.T) {
+  expectNoIssues(t, `class { my: message => 'syntax ok' }`)
+
+  expectNoIssues(t, `@foo { my: message => 'syntax ok' }`)
+
+  expectNoIssues(t, `@@foo { my: message => 'syntax ok' }`)
+
+  expectIssues(t, `@class { my: message => 'syntax ok' }`, VALIDATE_NOT_VIRTUALIZABLE)
+
+  expectIssues(t, `@@class { my: message => 'syntax ok' }`, VALIDATE_NOT_VIRTUALIZABLE)
+}
+
+func TestResourceDefaultValidation(t *testing.T) {
+  expectNoIssues(t, `Something { message => 'syntax ok' }`)
+
+  expectIssues(t, `@Something { message => 'syntax ok' }`, VALIDATE_NOT_VIRTUALIZABLE)
+
+  expectIssues(t, `@@Something { message => 'syntax ok' }`, VALIDATE_NOT_VIRTUALIZABLE)
+}
+
+func TestResourceOverrideValidation(t *testing.T) {
+  expectNoIssues(t, `Something['here'] { message => 'syntax ok' }`)
+
+  expectIssues(t, `@Something['here'] { message => 'syntax ok' }`, VALIDATE_NOT_VIRTUALIZABLE)
+
+  expectIssues(t, `@@Something['here'] { message => 'syntax ok' }`, VALIDATE_NOT_VIRTUALIZABLE)
+}
+
 func TestResourceTypeDefinitionValidation(t *testing.T) {
   expectNoIssues(t, `node foo {}`)
 
@@ -615,6 +660,26 @@ func TestResourceTypeDefinitionValidation(t *testing.T) {
 
 func TestReservedWordValidation(t *testing.T) {
   expectIssues(t, `$x = private`, VALIDATE_RESERVED_WORD)
+}
+
+func TestSelectorExpressionValidation(t *testing.T) {
+  expectNoIssues(t,
+    Unindent(`
+      $role = $facts['os']['name'] ? {
+        'Solaris'           => role::solaris,
+        'RedHat'            => role::redhat,
+        /^(Debian|Ubuntu)$/ => role::debian,
+        default             => role::generic,
+      }`))
+
+  expectIssues(t,
+    Unindent(`
+      $role = $facts['os']['name'] ? {
+        'Solaris'           => role::solaris,
+        default             => role::generic,
+        'RedHat'            => role::redhat,
+        default             => role::generic,
+      }`), VALIDATE_DUPLICATE_DEFAULT)
 }
 
 func expectNoIssues(t *testing.T, str string) {
@@ -665,7 +730,7 @@ func expectIssuesX(t *testing.T, str string, eppMode bool, expectedIssueCodes...
 
 func parseAndValidate(t *testing.T, str string, eppMode bool) []*ReportedIssue {
   if expr := parse(t, str, eppMode); expr != nil {
-    v := ValidatePuppet(expr)
+    v := ValidatePuppet(expr, STRICT_ERROR)
     return v.Issues()
   }
   return nil

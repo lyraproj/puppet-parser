@@ -1393,6 +1393,11 @@ func TestResource(t *testing.T) {
 
   expectDump(t,
     Unindent(`
+      class { some_title: }`),
+    `(resource {:type (qn class) :bodies [{:title (qn some_title) :ops []}]})`)
+
+  expectDump(t,
+    Unindent(`
       file { '/tmp/foo': }`),
     `(resource {`+
         `:type (qn file) `+

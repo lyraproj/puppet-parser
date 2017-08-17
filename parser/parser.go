@@ -632,7 +632,14 @@ func (ctx *context) atomExpression() (expr Expression) {
     expr = ctx.ifExpression(true)
 
   case TOKEN_CLASS:
-    expr = ctx.classExpression()
+    name := ctx.tokenString()
+    ctx.nextToken()
+    if ctx.currentToken == TOKEN_LC {
+      // Class resource
+      expr = ctx.factory.QualifiedName(name, ctx.locator, atomStart, ctx.Pos()-atomStart)
+    } else {
+      expr = ctx.classExpression(atomStart)
+    }
 
   case TOKEN_TYPE:
     // look ahead for '(' in which case this is a named function call
@@ -1204,9 +1211,7 @@ func (ctx *context) typeName() Expression {
   return nil
 }
 
-func (ctx *context) classExpression() Expression {
-  start := ctx.tokenStartPos
-  ctx.nextToken()
+func (ctx *context) classExpression(start int) Expression {
   name := ctx.className()
   if HasPrefix(name, `::`) {
     name = name[2:]

@@ -129,8 +129,20 @@ func (v *Checker) Validate(e Expression) {
     v.check_RelationshipExpression(e.(*RelationshipExpression))
   case *ReservedWord:
     v.check_ReservedWord(e.(*ReservedWord))
+  case *ResourceBody:
+    v.check_ResourceBody(e.(*ResourceBody))
+  case *ResourceDefaultsExpression:
+    v.check_ResourceDefaultsExpression(e.(*ResourceDefaultsExpression))
+  case *ResourceExpression:
+    v.check_ResourceExpression(e.(*ResourceExpression))
+  case *ResourceOverrideExpression:
+    v.check_ResourceOverrideExpression(e.(*ResourceOverrideExpression))
   case *ResourceTypeDefinition:
     v.check_ResourceTypeDefinition(e.(*ResourceTypeDefinition))
+  case *SelectorEntry:
+    v.check_SelectorEntry(e.(*SelectorEntry))
+  case *SelectorExpression:
+    v.check_SelectorExpression(e.(*SelectorExpression))
   case *UnlessExpression:
     v.check_UnlessExpression(e.(*UnlessExpression))
 
@@ -368,11 +380,67 @@ func (v *Checker) check_ReservedWord(e *ReservedWord) {
   }
 }
 
+func (v *Checker) check_ResourceBody(e *ResourceBody) {
+  seenUnfolding := false
+  for _, ao := range e.Operations() {
+    if _, ok := ao.(*AttributesOperation); ok {
+      if seenUnfolding {
+        v.Accept(VALIDATE_MULTIPLE_ATTRIBUTES_UNFOLD, ao)
+      } else {
+        seenUnfolding = true
+      }
+    }
+  }
+}
+
+func (v *Checker) check_ResourceDefaultsExpression(e *ResourceDefaultsExpression) {
+  if e.Form() != `regular` {
+    v.Accept(VALIDATE_NOT_VIRTUALIZABLE, e)
+  }
+}
+
+func (v *Checker) check_ResourceExpression(e *ResourceExpression) {
+  // # The expression for type name cannot be statically checked - this is instead done at runtime
+  // to enable better error message of the result of the expression rather than the static instruction.
+  // (This can be revised as there are static constructs that are illegal, but require updating many
+  // tests that expect the detailed reporting).
+  if e.Form() != `regular` {
+    if typeName, ok := e.TypeName().(*QualifiedName); ok && typeName.Name() == `class` {
+      v.Accept(VALIDATE_NOT_VIRTUALIZABLE, e)
+    }
+  }
+}
+
+func (v *Checker) check_ResourceOverrideExpression(e *ResourceOverrideExpression) {
+  if e.Form() != `regular` {
+    v.Accept(VALIDATE_NOT_VIRTUALIZABLE, e)
+  }
+}
+
 func (v *Checker) check_ResourceTypeDefinition(e *ResourceTypeDefinition) {
   v.check_NamedDefinition(e)
   v.checkNoCapture(e, e.Parameters())
   v.checkReservedParams(e, e.Parameters())
   v.checkNoIdemLast(e, e.Body())
+}
+
+func (v *Checker) check_SelectorEntry(e *SelectorEntry) {
+  v.checkRValue(e.Matching())
+}
+
+func (v *Checker) check_SelectorExpression(e *SelectorExpression) {
+  v.checkRValue(e.Lhs())
+  seenDefault := false
+  for _, entry := range e.Selectors() {
+    se := entry.(*SelectorEntry)
+    if _, ok := se.Matching().(*LiteralDefault); ok {
+      if seenDefault {
+        v.Accept(VALIDATE_DUPLICATE_DEFAULT, se, e.Label())
+      } else {
+        seenDefault = true
+      }
+    }
+  }
 }
 
 func (v *Checker) check_UnlessExpression(e *UnlessExpression) {
