@@ -4,24 +4,61 @@ import (
   . "github.com/puppetlabs/go-parser/issue"
   . "github.com/puppetlabs/go-parser/parser"
   . "fmt"
+  . "strings"
 )
 
-type Validator interface {
-  // Validate the semantics of the given expression
-  Validate(e Expression)
+const (
+  STRICT_OFF = SEVERITY_IGNORE
+  STRICT_WARNING = SEVERITY_WARNING
+  STRICT_ERROR = SEVERITY_ERROR
+)
 
-  // Return all reported issues (should be called after validation)
-  Issues() []*ReportedIssue
+type (
+  Validator interface {
+    // Validate the semantics of the given expression
+    Validate(e Expression)
 
-  setPathAndSubject(path []Expression, expr Expression)
+    // Return all reported issues (should be called after validation)
+    Issues() []*ReportedIssue
+
+    setPathAndSubject(path []Expression, expr Expression)
+  }
+
+  // All validators should "inherit" from this struct
+  AbstractValidator struct {
+    path []Expression
+    subject Expression
+    issues []*ReportedIssue
+    severities map[IssueCode]Severity
+  }
+
+  Strictness int
+)
+
+func Strict(str string) Strictness {
+  switch ToLower(str) {
+  case ``, `off`:
+    return STRICT_OFF
+  case `warning`:
+    return STRICT_WARNING
+  case `error`:
+    return STRICT_ERROR
+  default:
+    panic(Sprintf(`Invalid Strictness value '%s'`, str))
+  }
 }
 
-// All validators should "inherit" from this struct
-type AbstractValidator struct {
-  path []Expression
-  subject Expression
-  issues []*ReportedIssue
-  severities map[IssueCode]Severity
+func (s Strictness) String() string {
+  switch s {
+  case STRICT_OFF:
+    return `off`
+  case STRICT_WARNING:
+    return `warning`
+  case STRICT_ERROR:
+    return `error`
+  default:
+    panic(Sprintf(`Invalid Strictness value %d`, s))
+  }
 }
 
 func (v *AbstractValidator) Demote(code IssueCode, severity Severity) {
@@ -39,7 +76,9 @@ func (v *AbstractValidator) Accept(code IssueCode, e Expression, args...interfac
   if !ok {
     severity = SEVERITY_ERROR
   }
-  v.issues = append(v.issues, NewReportedIssue(code, severity, args, e))
+  if severity != SEVERITY_IGNORE {
+    v.issues = append(v.issues, NewReportedIssue(code, severity, args, e))
+  }
 }
 
 // Returns the container of the currently validated expression
@@ -75,8 +114,8 @@ func (v *AbstractValidator) setPathAndSubject(path []Expression, subject Express
 }
 
 // Validate the expression using the Checker validator
-func ValidatePuppet(e Expression) Validator {
-  v := NewChecker()
+func ValidatePuppet(e Expression, strict Strictness) Validator {
+  v := NewChecker(strict)
   Validate(v, e)
   return v
 }

@@ -75,10 +75,10 @@ type Checker struct {
   AbstractValidator
 }
 
-func NewChecker() *Checker {
+func NewChecker(strict Strictness) *Checker {
   checker := &Checker{AbstractValidator{nil, nil, make([]*ReportedIssue, 0, 5), make(map[IssueCode]Severity, 5)}}
-  checker.Demote(VALIDATE_IDEM_EXPRESSION_NOT_LAST, SEVERITY_WARNING)
   checker.Demote(VALIDATE_FUTURE_RESERVED_WORD, SEVERITY_DEPRECATION)
+  checker.Demote(VALIDATE_IDEM_EXPRESSION_NOT_LAST, Severity(strict))
   return checker
 }
 
@@ -361,9 +361,9 @@ func (v *Checker) check_RelationshipExpression(e *RelationshipExpression) {
 
 func (v *Checker) check_ReservedWord(e *ReservedWord) {
   if e.Future() {
-    v.Accept(VALIDATE_FUTURE_RESERVED_WORD, e)
+    v.Accept(VALIDATE_FUTURE_RESERVED_WORD, e, e.Name())
   } else {
-    v.Accept(VALIDATE_RESERVED_WORD, e)
+    v.Accept(VALIDATE_RESERVED_WORD, e, e.Name())
   }
 }
 

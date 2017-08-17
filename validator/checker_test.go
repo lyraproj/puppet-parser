@@ -613,6 +613,10 @@ func TestResourceTypeDefinitionValidation(t *testing.T) {
   expectIssues(t, `node "not${here}" {}`, VALIDATE_ILLEGAL_HOSTNAME_INTERPOLATION)
 }
 
+func TestReservedWordValidation(t *testing.T) {
+  expectIssues(t, `$x = private`, VALIDATE_RESERVED_WORD)
+}
+
 func expectNoIssues(t *testing.T, str string) {
   expectIssuesX(t, str, false)
 }

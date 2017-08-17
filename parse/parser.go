@@ -8,22 +8,24 @@ import (
   . "github.com/puppetlabs/go-parser/json"
   . "github.com/puppetlabs/go-parser/parser"
   . "strings"
+  . "github.com/puppetlabs/go-parser/validator"
   "io/ioutil"
   "flag"
   "bytes"
-  "github.com/puppetlabs/go-parser/validator"
 )
 
 // Program to parse and validate a .pp or .epp file
 var validateOnly = flag.Bool("v", false, "validate only")
 var json = flag.Bool("j", false, "json output")
+var strict = flag.String("s", `off`, "strict (off, warning, or error)")
 
 func main() {
   flag.Parse()
 
   args := flag.Args()
   if len(args) != 1 {
-    Fprintln(Stderr, "usage: parse [-v][-j] <pp or epp file to parse>")
+    Fprintf(Stderr, "Usage: parse [options] <pp or epp file to parse>\nValid options are:\n")
+    flag.PrintDefaults()
     Exit(1)
   }
 
@@ -38,6 +40,8 @@ func main() {
     result = make(map[string]interface{}, 2)
   }
 
+  strictness := Strict(*strict)
+
   expr, err := Parse(args[0], string(content), HasSuffix(fileName, `.epp`))
   if *json {
     if err != nil {
@@ -51,7 +55,7 @@ func main() {
       Exit(1)
     }
 
-    v := validator.ValidatePuppet(expr)
+    v := ValidatePuppet(expr, strictness)
     if len(v.Issues()) > 0 {
       severity := Severity(SEVERITY_IGNORE)
       issues := make([]interface{}, len(v.Issues()))
@@ -81,7 +85,7 @@ func main() {
     Exit(1)
   }
 
-  v := validator.ValidatePuppet(expr)
+  v := ValidatePuppet(expr, strictness)
   if len(v.Issues()) > 0 {
     severity := Severity(SEVERITY_IGNORE)
     for _, issue := range v.Issues() {
