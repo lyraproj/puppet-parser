@@ -918,7 +918,7 @@ func (ctx *context) consumeFloat(start int, d rune) {
 func (ctx *context) skipDecimalDigits() (digitCount int) {
   digitCount = 0
   c, n := ctx.Peek()
-  if c == '-' {
+  if c == '-' || c == '+' {
     ctx.Advance(n)
     c, n = ctx.Peek()
   }

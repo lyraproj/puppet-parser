@@ -24,6 +24,7 @@ func TestMultipleVariableAssign(t *testing.T) {
 
 func TestAccessAssignValidation(t *testing.T) {
   expectIssues(t, `$x['h'] = 'y'`, VALIDATE_ILLEGAL_ASSIGNMENT_VIA_INDEX)
+  expectIssues(t, `$::x = 'y'`, VALIDATE_CROSS_SCOPE_ASSIGNMENT)
 }
 
 func TestAppendsDeletesValidation(t *testing.T) {
@@ -506,7 +507,7 @@ func TestLiteralListValidation(t *testing.T) {
     VALIDATE_NOT_TOP_LEVEL, VALIDATE_NOT_RVALUE)
 }
 
-func TestNodeDefinitionValidation(t *testing.T) {
+func TestReourceDefinitionValidation(t *testing.T) {
   expectNoIssues(t,
     Unindent(`
       define foo() {}`))
@@ -636,7 +637,7 @@ func TestResourceOverrideValidation(t *testing.T) {
   expectIssues(t, `@@Something['here'] { message => 'syntax ok' }`, VALIDATE_NOT_VIRTUALIZABLE)
 }
 
-func TestResourceTypeDefinitionValidation(t *testing.T) {
+func TestNodeDefinitionValidation(t *testing.T) {
   expectNoIssues(t, `node foo {}`)
 
   expectNoIssues(t, `node 'foo' {}`)

@@ -158,6 +158,8 @@ func (v *Checker) Validate(e Expression) {
     v.check_BinaryExpression(e.(BinaryExpression))
   case QueryExpression:
     v.check_QueryExpression(e.(QueryExpression))
+  case UnaryExpression:
+    v.check_UnaryExpression(e.(UnaryExpression))
   }
 }
 
@@ -494,6 +496,10 @@ func (v *Checker) check_TypeMapping(e *TypeMapping) {
       }
     }
   }
+}
+
+func (v *Checker) check_UnaryExpression(e UnaryExpression) {
+  v.checkRValue(e.Expr())
 }
 
 func (v *Checker) check_UnlessExpression(e *UnlessExpression) {

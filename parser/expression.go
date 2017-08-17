@@ -757,7 +757,7 @@ func (e *AttributesOperation) Contents(path []Expression, visitor PathVisitor) {
   shallowVisit(e, path, visitor, e.expr)
 }
 
-func (e *AttributesOperation) ToPN() PN { return NamedArray(`=>`, []PN{StringValue(`*`), e.Expr().ToPN()}) }
+func (e *AttributesOperation) ToPN() PN { return NamedArray(`*=>`, []PN{e.Expr().ToPN()}) }
 
 func (e *binaryExpression) Lhs() Expression {
   return e.lhs
@@ -1046,15 +1046,11 @@ func (e *FunctionDefinition) ToDefinition() Definition {
 func (e *FunctionDefinition) ToPN() PN {
   entries := make([]Entry, 0, 4)
   entries = append(entries, NamedString(`name`, e.Name()))
-  if len(e.Parameters()) > 0 {
-    entries = append(entries, NamedArray(`params`, pnElems(e.Parameters())))
-  }
+  entries = append(entries, NamedArray(`params`, pnElems(e.Parameters())))
   if e.ReturnType() != nil {
     entries = append(entries, NamedValue(`returns`, e.ReturnType().ToPN()))
   }
-  if e.Body() != nil {
-    entries = append(entries, e.Body().ToPN().WithName(`body`))
-  }
+  entries = append(entries, e.Body().ToPN().WithName(`body`))
   return NamedValue(`function`, Hash(entries))
 }
 

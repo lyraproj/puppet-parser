@@ -110,8 +110,8 @@ func TestDoubleQuoted(t *testing.T) {
 
   expectError(t,
     Unindent(`
-      $x = "y`),
-    "unterminated double quoted string at line 1:6")
+      $x = "y${var"`),
+    "unterminated double quoted string at line 1:13")
 
   expectDump(t, `"x\u2713y"`, `(concat "x✓y")`)
 }
@@ -565,6 +565,10 @@ func TestHash(t *testing.T) {
     `{a => 1, b => 2,}`,
     `(hash (=> (qn a) 1) (=> (qn b) 2))`)
 
+  expectDump(t,
+    `{type => consumes, function => site, application => produces,}`,
+    `(hash (=> (qn type) (qn consumes)) (=> (qn function) (qn site)) (=> (qn application) (qn produces)))`)
+
   expectError(t,
     `{a => 1, b, 2}`,
     `expected '=>' to follow hash key at line 1:12`)
@@ -697,9 +701,9 @@ func TestNodeDefinition(t *testing.T) {
 
   expectDump(t,
     Unindent(`
-      node /[a-f].*/, 192.168.0.1, 34, "$x.$y", {
+      node /[a-f].*/, 192.168.0.1, 34, 'some.string', {
       }`),
-    `(node {:matches [(regexp "[a-f].*") "192.168.0.1" "34" (concat (str ($ x)) "." (str ($ y)))] :body []})`)
+    `(node {:matches [(regexp "[a-f].*") "192.168.0.1" "34" "some.string"] :body []})`)
 
   expectDump(t,
     Unindent(`
@@ -798,18 +802,18 @@ func TestTypeAlias(t *testing.T) {
     `(type-alias (MyType) ([] (qr Object) (hash (=> (qn attributes) (hash (=> (qn name) (qr String)) (=> (qn number) (qr Integer)))))))`)
 
   expectError(t,
-    Unindent(`
-      type MyType[a, b] = Object[{
-        attributes => {
-        name => String,
-        number => Integer
-        }
-      }]`),
-    `expected type name to follow 'type' at line 1:20`)
-
-  expectError(t,
     `type Mod::myType[a, b] = Object[{}]`,
     `invalid type name at line 1:6`)
+}
+
+func TestTypeMapping(t *testing.T) {
+  expectDump(t,
+    `type Runtime[ruby, 'MyModule::MyObject'] = MyPackage::MyObject`,
+    `(type-mapping ([] (qr Runtime) (qn ruby) "MyModule::MyObject") (qr MyPackage::MyObject))`)
+
+  expectDump(t,
+    `type Runtime[ruby, [/^MyPackage::(\w+)$/, 'MyModule::\1']] = [/^MyModule::(\w+)$/, 'MyPackage::\1']`,
+    `(type-mapping ([] (qr Runtime) (qn ruby) (array (regexp "^MyPackage::(\\w+)$") "MyModule::\\1")) (array (regexp "^MyModule::(\\w+)$") "MyPackage::\\1"))`)
 }
 
 func TestClass(t *testing.T) {
@@ -943,6 +947,11 @@ func TestApplication(t *testing.T) {
         attr => $value
       }`),
     `(produces (qr MyCap) (Cap (=> (attr) ($ value))))`)
+
+  expectDump(t,
+    Unindent(`
+      attr produces Cap {}`),
+    `(produces (qn attr) (Cap))`)
 }
 
 func TestCapabilityMappping(t *testing.T) {
@@ -1367,7 +1376,7 @@ func TestResource(t *testing.T) {
       }`),
     `(resource {`+
         `:type (qn file) `+
-        `:bodies [{:title "/tmp/foo" :ops [(=> (ensure) (qn file)) (=> (*) ($ file_ownership))]}]})`)
+        `:bodies [{:title "/tmp/foo" :ops [(=> (ensure) (qn file)) (*=> ($ file_ownership))]}]})`)
 
   expectDump(t,
     Unindent(`
