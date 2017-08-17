@@ -824,6 +824,7 @@ func isUppercaseLetter(c rune) bool {
 }
 
 func (ctx *context) consumeQualifiedName(start int, token int) {
+  lastStartsWithUnderscore := false
   for {
     c, n := ctx.Peek()
     for isLetterOrDigit(c) {
@@ -850,8 +851,13 @@ func (ctx *context) consumeQualifiedName(start int, token int) {
     if token == TOKEN_TYPE_NAME && isUppercaseLetter(c) ||
       token != TOKEN_TYPE_NAME && (isLowercaseLetter(c) ||
         token == TOKEN_VARIABLE && c == '_') {
-      ctx.Advance(n)
-      continue
+      // Next segment starts here and only last segment is allowed to
+      // start with underscore
+      if !lastStartsWithUnderscore {
+        ctx.Advance(n)
+        lastStartsWithUnderscore = c == '_'
+        continue
+      }
     }
 
     ctx.SetPos(start)

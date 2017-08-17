@@ -502,6 +502,10 @@ func TestVariable(t *testing.T) {
     `($ ::var::b)`)
 
   expectDump(t,
+    `$::var::_b`,
+    `($ ::var::_b)`)
+
+  expectDump(t,
     `$2`,
     `($ 2)`)
 
@@ -524,6 +528,14 @@ func TestVariable(t *testing.T) {
   expectError(t,
     `$::var::B`,
     `invalid variable name at line 1:1`)
+
+  expectError(t,
+    `$::var::_b::c`,
+    `invalid variable name at line 1:1`)
+
+  expectError(t,
+    `$::_var::b`,
+    `unexpected token '_' at line 1:4`)
 }
 
 func TestArray(t *testing.T) {

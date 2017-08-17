@@ -78,6 +78,7 @@ type Checker struct {
 func NewChecker(strict Strictness) *Checker {
   checker := &Checker{AbstractValidator{nil, nil, make([]*ReportedIssue, 0, 5), make(map[IssueCode]Severity, 5)}}
   checker.Demote(VALIDATE_FUTURE_RESERVED_WORD, SEVERITY_DEPRECATION)
+  checker.Demote(VALIDATE_DUPLICATE_KEY, Severity(strict))
   checker.Demote(VALIDATE_IDEM_EXPRESSION_NOT_LAST, Severity(strict))
   return checker
 }
