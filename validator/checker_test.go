@@ -682,6 +682,42 @@ func TestSelectorExpressionValidation(t *testing.T) {
       }`), VALIDATE_DUPLICATE_DEFAULT)
 }
 
+func TestTypeAliasValidation(t *testing.T) {
+  expectNoIssues(t, `type MyType = Integer`)
+
+  expectNoIssues(t, `type MyType = Variant[Integer, String]`)
+
+  expectIssues(t, `type Variant = MyType`, VALIDATE_RESERVED_TYPE_NAME)
+
+  expectIssues(t, `type ::MyType = Integer`, VALIDATE_ILLEGAL_DEFINITION_NAME)
+}
+
+func TestTypeMappingValidation(t *testing.T) {
+  expectNoIssues(t, `type Runtime[ruby, 'MyModule::MyObject'] = MyPackage::MyObject`)
+
+  expectNoIssues(t, `type Runtime[ruby, [/^MyPackage::(\w+)$/, 'MyModule::\1']] = [/^MyModule::(\w+)$/, 'MyPackage::\1']`)
+
+  expectIssues(t,
+    `type Runtime[ruby, [/^MyPackage::(\w+)$/, 'MyModule::\1']] = MyPackage::MyObject`,
+    VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING)
+
+  expectIssues(t,
+    `type Runtime[ruby, 'MyModule::MyObject'] = [/^MyModule::(\w+)$/, 'MyPackage::\1']`,
+    VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING)
+
+  expectIssues(t,
+    `type Runtime[ruby, [/^MyPackage::(\w+)$/, 'MyModule::\1']] = $x`,
+    VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING)
+
+  expectIssues(t,
+    `type Runtime[ruby, 'MyModule::MyObject'] = $x`,
+    VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING)
+
+  expectIssues(t,
+    `type Pattern[/^MyPackage::(\w+)$/, 'MyModule::\1'] = [/^MyModule::(\w+)$/, 'MyPackage::\1']`,
+    VALIDATE_UNSUPPORTED_EXPRESSION)
+}
+
 func expectNoIssues(t *testing.T, str string) {
   expectIssuesX(t, str, false)
 }

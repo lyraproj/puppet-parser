@@ -5,6 +5,7 @@ import (
   . "github.com/puppetlabs/go-parser/issue"
   . "github.com/puppetlabs/go-parser/parser"
   . "github.com/puppetlabs/go-parser/literal"
+  "strings"
 )
 
 var NUMERIC_VAR_NAME_EXPR = MustCompile(`\A(?:0|(?:[1-9][0-9]*))\z`)
@@ -14,6 +15,8 @@ var DOUBLE_COLON_EXPR = MustCompile(`::`)
 // where each part must start with a capital letter A-Z.
 var CLASSREF_EXT = MustCompile(`\A(?:::)?[A-Z][\w]*(?:::[A-Z][\w]*)*\z`)
 
+// Same as CLASSREF_EXT but cannot start with '::'
+var CLASSREF_EXT_DECL = MustCompile(`\A[A-Z][\w]*(?:::[A-Z][\w]*)*\z`)
 
 // CLASSREF matches a class reference the way it is represented internally in the
 // model (i.e. in lower case).
@@ -143,6 +146,10 @@ func (v *Checker) Validate(e Expression) {
     v.check_SelectorEntry(e.(*SelectorEntry))
   case *SelectorExpression:
     v.check_SelectorExpression(e.(*SelectorExpression))
+  case *TypeAlias:
+    v.check_TypeAlias(e.(*TypeAlias))
+  case *TypeMapping:
+    v.check_TypeMapping(e.(*TypeMapping))
   case *UnlessExpression:
     v.check_UnlessExpression(e.(*UnlessExpression))
 
@@ -443,6 +450,52 @@ func (v *Checker) check_SelectorExpression(e *SelectorExpression) {
   }
 }
 
+func (v *Checker) check_TypeAlias(e *TypeAlias) {
+  v.checkTop(e, v.Container())
+  if !CLASSREF_EXT_DECL.MatchString(e.Name()) {
+    v.Accept(VALIDATE_ILLEGAL_DEFINITION_NAME, e, e.Name(), A_an(e))
+  }
+  v.checkReservedTypeName(e, e.Name())
+  v.checkTypeRef(e, e.Type())
+}
+
+func (v *Checker) check_TypeMapping(e *TypeMapping) {
+  v.checkTop(e, v.Container())
+  lhs := e.Type()
+  lhsType := 0 // Not Runtime
+  if ae, ok := lhs.(*AccessExpression); ok {
+    if left, ok := ae.Operand().(*QualifiedReference); ok && left.Name() == `Runtime` {
+      lhsType = 1 // Runtime
+      keys := ae.Keys()
+
+      // Must be a literal string or pattern replacement
+      if len(keys) == 2 && isPatternWithReplacement(keys[1]) {
+        lhsType = 2
+      }
+    }
+  }
+  if lhsType == 0 {
+    v.Accept(VALIDATE_UNSUPPORTED_EXPRESSION, e, A_an(e))
+  } else {
+    rhs := e.Mapping()
+    if isPatternWithReplacement(rhs) {
+      if lhsType == 1 {
+        v.Accept(VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING, e, A_an(e))
+      }
+    } else if isTypeRef(rhs) {
+      if lhsType == 2 {
+        v.Accept(VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING, e, A_an(e))
+      }
+    } else {
+      if lhsType == 1 {
+        v.Accept(VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING, e, A_an(e))
+      } else {
+        v.Accept(VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING, e, A_an(e))
+      }
+    }
+  }
+}
+
 func (v *Checker) check_UnlessExpression(e *UnlessExpression) {
   v.checkRValue(e.Test())
 }
@@ -589,7 +642,7 @@ func (v *Checker) checkReservedParams(container Expression, parameters []Express
 }
 
 func (v *Checker) checkReservedTypeName(e Expression, w string) {
-  if _, ok := RESERVED_TYPE_NAMES[w]; ok {
+  if _, ok := RESERVED_TYPE_NAMES[strings.ToLower(w)]; ok {
     v.Accept(VALIDATE_RESERVED_TYPE_NAME, e, w, A_an(e))
   }
 }
@@ -680,6 +733,26 @@ func (v *Checker) isIdem(e Expression) bool {
   default:
     return false
   }
+}
+
+func isPatternWithReplacement(e Expression) bool {
+  if v, ok := e.(*LiteralList); ok && len(v.Elements()) == 2 {
+    elems := v.Elements()
+    if _, ok := elems[0].(*RegexpExpression); ok {
+      _, ok := elems[1].(*LiteralString)
+      return ok
+    }
+  }
+  return false
+}
+
+func isTypeRef(e Expression) bool {
+  n := e
+  if ae, ok := e.(*AccessExpression); ok {
+    n = ae.Operand()
+  }
+  _, ok := n.(*QualifiedReference)
+  return ok
 }
 
 func (v *Checker) idem_BlockExpression(e *BlockExpression) bool {

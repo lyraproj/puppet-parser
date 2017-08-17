@@ -60,6 +60,7 @@ type ExpressionFactory interface {
   Text(expr Expression, locator *Locator, offset int, length int) Expression
   TypeAlias(name string, typeExpr Expression, locator *Locator, offset int, length int) Expression
   TypeDefinition(name string, parent string, body Expression, locator *Locator, offset int, length int) Expression
+  TypeMapping(typeExpr Expression, mapping Expression, locator *Locator, offset int, length int) Expression
   Undef(locator *Locator, offset int, length int) Expression
   Unfold(expr Expression, locator *Locator, offset int, length int) Expression
   Unless(condition Expression, thenPart Expression, elsePart Expression, locator *Locator, offset int, length int) Expression
@@ -309,6 +310,10 @@ func (f *defaultExpressionFactory) TypeAlias(name string, typeExpr Expression, l
 
 func (f *defaultExpressionFactory) TypeDefinition(name string, parent string, body Expression, locator *Locator, offset int, length int) Expression {
   return &TypeDefinition{qRefDefinition{positioned{locator, offset, length}, name}, parent, body}
+}
+
+func (f *defaultExpressionFactory) TypeMapping(typeExpr Expression, mapping Expression, locator *Locator, offset int, length int) Expression {
+  return &TypeMapping{positioned{locator, offset, length}, typeExpr, mapping}
 }
 
 func (f *defaultExpressionFactory) Undef(locator *Locator, offset int, length int) Expression {

@@ -967,6 +967,10 @@ func (ctx *context) typeAliasOrDefinition() Expression {
       ctx.nextToken()
       body = ctx.expression()
       return ctx.factory.TypeAlias(fqr.name, body, ctx.locator, start, ctx.Pos()-start)
+    } else if _, ok = typeExpr.(*AccessExpression); ok {
+      ctx.nextToken()
+      body = ctx.expression()
+      return ctx.factory.TypeMapping(typeExpr, body, ctx.locator, start, ctx.Pos()-start)
     }
     panic(ctx.parseIssue(PARSE_EXPECTED_TYPE_NAME_AFTER_TYPE))
 

@@ -25,6 +25,8 @@ const (
   VALIDATE_ILLEGAL_NUMERIC_PARAMETER           = `VALIDATE_ILLEGAL_NUMERIC_PARAMETER`
   VALIDATE_ILLEGAL_PARAMETER_NAME              = `VALIDATE_ILLEGAL_PARAMETER_NAME`
   VALIDATE_ILLEGAL_QUERY_EXPRESSION            = `VALIDATE_ILLEGAL_QUERY_EXPRESSION`
+  VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING         = `VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING`
+  VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING         = `VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING`
   VALIDATE_MULTIPLE_ATTRIBUTES_UNFOLD          = `VALIDATE_MULTIPLE_ATTRIBUTES_UNFOLD`
   VALIDATE_NOT_ABSOLUTE_TOP_LEVEL              = `VALIDATE_NOT_ABSOLUTE_TOP_LEVEL`
   VALIDATE_NOT_RVALUE                          = `VALIDATE_NOT_RVALUE`
@@ -33,6 +35,7 @@ const (
   VALIDATE_RESERVED_PARAMETER                  = `VALIDATE_RESERVED_PARAMETER`
   VALIDATE_RESERVED_TYPE_NAME                  = `VALIDATE_RESERVED_TYPE_NAME`
   VALIDATE_RESERVED_WORD                       = `VALIDATE_RESERVED_WORD`
+  VALIDATE_UNSUPPORTED_EXPRESSION              = `VALIDATE_UNSUPPORTED_EXPRESSION`
   VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT     = `VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT`
 )
 
@@ -59,6 +62,8 @@ func init() {
   HardIssue(VALIDATE_ILLEGAL_NUMERIC_PARAMETER, `The numeric parameter name '$%v' cannot be used (clashes with numeric match result variables)`)
   HardIssue(VALIDATE_ILLEGAL_PARAMETER_NAME, `Illegal parameter name. The given name '%v' does not conform to the naming rule /^[a-z_]\w*$/`)
   HardIssue(VALIDATE_ILLEGAL_QUERY_EXPRESSION, `Illegal query expression. %v cannot be used in a query`)
+  HardIssue(VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING, `Illegal type mapping. Expected a Tuple[Regexp,String] on the left side, got %v`)
+  HardIssue(VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING, `Illegal type mapping. Expected a Type on the left side, got %v`)
   HardIssue(VALIDATE_MULTIPLE_ATTRIBUTES_UNFOLD, `Unfolding of attributes from Hash can only be used once per resource body`)
   HardIssue(VALIDATE_NOT_ABSOLUTE_TOP_LEVEL, `%v may only appear at top level`)
   HardIssue(VALIDATE_NOT_TOP_LEVEL, `Classes, definitions, and nodes may only appear at top level or inside other classes`)
@@ -67,5 +72,6 @@ func init() {
   HardIssue(VALIDATE_RESERVED_PARAMETER, `The parameter $%v redefines a built in parameter in %v`)
   HardIssue(VALIDATE_RESERVED_TYPE_NAME, `The name: '%v' is already defined by Puppet and can not be used as the name of %v`)
   HardIssue(VALIDATE_RESERVED_WORD, `Use of reserved word: %v, must be quoted if intended to be a String value`)
+  HardIssue(VALIDATE_UNSUPPORTED_EXPRESSION, `Expressions of type %v are not supported in this version of Puppet`)
   HardIssue(VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT, `The operator '%v' in %v is not supported`)
 }
