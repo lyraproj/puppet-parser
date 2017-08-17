@@ -19,6 +19,15 @@ var CLASSREF_EXT = MustCompile(`\A(?:::)?[A-Z][\w]*(?:::[A-Z][\w]*)*\z`)
 // model (i.e. in lower case).
 var CLASSREF_DECL = MustCompile(`\A[a-z][\w]*(?:::[a-z][\w]*)*\z`)
 
+// ILLEGAL_P3_1_HOSTNAME matches if a hostname contains illegal characters.
+// This check does not prevent pathological names like 'a....b', '.....', "---". etc.
+var ILLEGAL_HOSTNAME_CHARS = MustCompile(`[^-\w.]`)
+
+// PARAM_NAME matches the name part of a parameter (The $ character is not included)
+var PARAM_NAME = MustCompile(`\A[a-z_]\w*\z`)
+
+var STARTS_WITH_NUMBER = MustCompile(`\A[0-9]`)
+
 var RESERVED_TYPE_NAMES = map[string]bool {
   `type`: true,
   `any`: true,
@@ -107,6 +116,18 @@ func (v *Checker) Validate(e Expression) {
     v.check_LambdaExpression(e.(*LambdaExpression))
   case *LiteralHash:
     v.check_LiteralHash(e.(*LiteralHash))
+  case *LiteralList:
+    v.check_LiteralList(e.(*LiteralList))
+  case *NamedAccessExpression:
+    v.check_NamedAccessExpression(e.(*NamedAccessExpression))
+  case *NodeDefinition:
+    v.check_NodeDefinition(e.(*NodeDefinition))
+  case *Parameter:
+    v.check_Parameter(e.(*Parameter))
+  case *RelationshipExpression:
+    v.check_RelationshipExpression(e.(*RelationshipExpression))
+  case *ReservedWord:
+    v.check_ReservedWord(e.(*ReservedWord))
   case *ResourceTypeDefinition:
     v.check_ResourceTypeDefinition(e.(*ResourceTypeDefinition))
   case *UnlessExpression:
@@ -115,13 +136,15 @@ func (v *Checker) Validate(e Expression) {
   // Interface switches
   case BinaryExpression:
     v.check_BinaryExpression(e.(BinaryExpression))
+  case QueryExpression:
+    v.check_QueryExpression(e.(QueryExpression))
   }
 }
 
 func (v *Checker) check_AssignmentExpression(e *AssignmentExpression) {
   switch e.Operator() {
   case `=`:
-    checkAssign(v, e.Lhs())
+    v.checkAssign(e.Lhs())
   default:
     v.Accept(VALIDATE_APPENDS_DELETES_NO_LONGER_SUPPORTED, e, e.Operator())
   }
@@ -177,7 +200,7 @@ func (v *Checker) check_CallNamedFunctionExpression(e *CallNamedFunctionExpressi
       return
     }
   }
-  v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Functor(), A_an(e.Functor()), `function name`, A_an(e))
+  v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Functor(), A_anUc(e.Functor()), `function name`, A_an(e))
 }
 
 func (v *Checker) check_CapabilityMapping(e *CapabilityMapping) {
@@ -201,7 +224,7 @@ func (v *Checker) check_CapabilityMapping(e *CapabilityMapping) {
   }
 
   if !exprOk {
-    v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Component(), A_an(e.Component()), `capability mapping`, A_an(e))
+    v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Component(), A_anUc(e.Component()), `capability mapping`, A_an(e))
   }
 
   if !CLASSREF_EXT.MatchString(e.Capability()) {
@@ -233,7 +256,7 @@ func (v *Checker) check_CaseOption(e *CaseOption) {
 
 func (v *Checker) check_CollectExpression(e *CollectExpression) {
   if _, ok := e.ResourceType().(*QualifiedReference); !ok {
-    v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.ResourceType(), A_an(e), `type name`)
+    v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.ResourceType(), A_anUc(e.ResourceType()), `type name`, A_an(e))
   }
 }
 
@@ -255,7 +278,7 @@ func (v *Checker) check_HostClassDefinition(e *HostClassDefinition) {
   v.check_NamedDefinition(e)
   v.checkNoCapture(e, e.Parameters())
   v.checkReservedParams(e, e.Parameters())
-  v.checkNoIdemLast(e)
+  v.checkNoIdemLast(e, e.Body())
 }
 
 func (v *Checker) check_IfExpression(e *IfExpression) {
@@ -286,6 +309,18 @@ func (v *Checker) check_LiteralHash(e *LiteralHash) {
   }
 }
 
+func (v *Checker) check_LiteralList(e *LiteralList) {
+  for _, element := range e.Elements() {
+    v.checkRValue(element)
+  }
+}
+
+func (v *Checker) check_NamedAccessExpression(e *NamedAccessExpression) {
+  if _, ok := e.Rhs().(*QualifiedName); !ok {
+    v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Rhs(), A_anUc(e.Rhs()), `method name`, A_an(v.Container()))
+  }
+}
+
 func (v *Checker) check_NamedDefinition(e NamedDefinition) {
   v.checkTop(e, v.Container())
   if !CLASSREF_DECL.MatchString(e.Name()) {
@@ -296,11 +331,47 @@ func (v *Checker) check_NamedDefinition(e NamedDefinition) {
   v.checkParameterNameUniqueness(e, e.Parameters())
 }
 
+func (v *Checker) check_NodeDefinition(e *NodeDefinition) {
+  v.checkHostname(e, e.HostMatches())
+  v.checkTop(e, v.Container())
+  v.checkNoIdemLast(e, e.Body())
+}
+
+func (v *Checker) check_Parameter(e *Parameter) {
+  if STARTS_WITH_NUMBER.MatchString(e.Name()) {
+    v.Accept(VALIDATE_ILLEGAL_NUMERIC_PARAMETER, e, e.Name())
+  } else if !PARAM_NAME.MatchString(e.Name()) {
+    v.Accept(VALIDATE_ILLEGAL_PARAMETER_NAME, e, e.Name())
+  }
+  if e.Value() != nil {
+    v.checkIllegalAssignment(e.Value())
+  }
+}
+
+func (v *Checker) check_QueryExpression(e QueryExpression) {
+  if e.Expr() != nil {
+    v.checkQuery(e.Expr())
+  }
+}
+
+func (v *Checker) check_RelationshipExpression(e *RelationshipExpression) {
+  v.checkRelation(e.Lhs())
+  v.checkRelation(e.Rhs())
+}
+
+func (v *Checker) check_ReservedWord(e *ReservedWord) {
+  if e.Future() {
+    v.Accept(VALIDATE_FUTURE_RESERVED_WORD, e)
+  } else {
+    v.Accept(VALIDATE_RESERVED_WORD, e)
+  }
+}
+
 func (v *Checker) check_ResourceTypeDefinition(e *ResourceTypeDefinition) {
   v.check_NamedDefinition(e)
   v.checkNoCapture(e, e.Parameters())
   v.checkReservedParams(e, e.Parameters())
-  v.checkNoIdemLast(e)
+  v.checkNoIdemLast(e, e.Body())
 }
 
 func (v *Checker) check_UnlessExpression(e *UnlessExpression) {
@@ -310,14 +381,14 @@ func (v *Checker) check_UnlessExpression(e *UnlessExpression) {
 // TODO: Add more validations here
 
 // Helper functions
-func checkAssign(v *Checker, e Expression) {
+func (v *Checker) checkAssign(e Expression) {
   switch e.(type) {
   case *AccessExpression:
     v.Accept(VALIDATE_ILLEGAL_ASSIGNMENT_VIA_INDEX, e)
 
   case *LiteralList:
     for _, elem := range e.(*LiteralList).Elements() {
-      checkAssign(v, elem)
+      v.checkAssign(elem)
     }
 
   case *VariableExpression:
@@ -331,34 +402,53 @@ func checkAssign(v *Checker, e Expression) {
   }
 }
 
+func (v *Checker) checkCaptureLast(container Expression, parameters []Expression) {
+  last := len(parameters) - 1
+  for idx := 0; idx < last; idx++ {
+    if param, ok := parameters[idx].(*Parameter); ok && param.CapturesRest() {
+      v.Accept(VALIDATE_CAPTURES_REST_NOT_LAST, param, param.Name())
+    }
+  }
+}
+
 func (v *Checker) checkFutureReservedWord(e Expression, w string) {
   if _, ok := FUTURE_RESERVED_WORDS[w]; ok {
     v.Accept(VALIDATE_FUTURE_RESERVED_WORD, e, w)
   }
 }
 
-func (v *Checker) checkNoIdemLast(e NamedDefinition) {
-  if violator := v.endsWithIdem(e.Body().(*BlockExpression)); violator != nil && !v.isResourceWithoutTitle(violator) {
-    v.Accept(VALIDATE_IDEM_NOT_ALLOWED_LAST, violator, violator.Label(), A_anUc(e))
-  }
-}
-
-func (v *Checker) endsWithIdem(e *BlockExpression) Expression {
-  top := len(e.Statements())
-  if top > 0 {
-    last := e.Statements()[top-1]
-    if v.isIdem(last) {
-      return last
+func (v *Checker) checkHostname(e Expression, hostMatches []Expression) {
+  for _, hostMatch := range hostMatches {
+    // Parser syntax prevents a hostMatch from being something other
+    // than a ConcatenatedString or LiteralString. It converts numbers and identifiers
+    // to LiteralString.
+    switch hostMatch.(type) {
+    case *ConcatenatedString:
+      if lit, ok := ToLiteral(hostMatch); ok {
+        v.checkHostnameString(hostMatch, lit.(string))
+      } else {
+        v.Accept(VALIDATE_ILLEGAL_HOSTNAME_INTERPOLATION, hostMatch)
+      }
+    case *LiteralString:
+      v.checkHostnameString(hostMatch, hostMatch.(*LiteralString).StringValue())
     }
   }
-  return nil
 }
 
-func (v *Checker) checkCaptureLast(container Expression, parameters []Expression) {
-  last := len(parameters) - 1
-  for idx := 0; idx < last; idx++ {
-    if param, ok := parameters[idx].(*Parameter); ok && param.CapturesRest() {
-      v.Accept(VALIDATE_CAPTURES_REST_NOT_LAST, param, param.Name())
+func (v *Checker) checkHostnameString(e Expression, str string) {
+  if ILLEGAL_HOSTNAME_CHARS.MatchString(str) {
+    v.Accept(VALIDATE_ILLEGAL_HOSTNAME_CHARS, e, str)
+  }
+}
+
+func (v *Checker) checkIllegalAssignment(e Expression) {
+  if _, ok := e.(*AssignmentExpression); ok {
+    v.Accept(VALIDATE_ILLEGAL_ASSIGNMENT_CONTEXT, e)
+  } else {
+    if _, ok := e.(*LambdaExpression); !ok {
+      e.Contents(v.path, func(path []Expression, child Expression) {
+        v.checkIllegalAssignment(child)
+      })
     }
   }
 }
@@ -371,6 +461,12 @@ func (v *Checker) checkNoCapture(container Expression, parameters []Expression) 
   }
 }
 
+func (v *Checker) checkNoIdemLast(e Definition, body Expression) {
+  if violator := v.endsWithIdem(body.(*BlockExpression)); violator != nil {
+    v.Accept(VALIDATE_IDEM_NOT_ALLOWED_LAST, violator, violator.Label(), A_anUc(e))
+  }
+}
+
 func (v *Checker) checkParameterNameUniqueness(container Expression, parameters []Expression) {
   unique := make(map[string]bool, 10)
   for _, parameter := range parameters {
@@ -380,6 +476,37 @@ func (v *Checker) checkParameterNameUniqueness(container Expression, parameters 
     } else {
       unique[param.Name()] = true
     }
+  }
+}
+
+func (v *Checker) checkQuery(e Expression) {
+    switch e.(type) {
+    case *ComparisonExpression:
+      switch e.(*ComparisonExpression).Operator() {
+      case `==`, `!=`:
+        // OK
+      default:
+        v.Accept(VALIDATE_ILLEGAL_QUERY_EXPRESSION, e, A_anUc(e))
+      }
+    case *ParenthesizedExpression:
+      v.checkQuery(e.(*ParenthesizedExpression).Expr())
+    case *VariableExpression, *QualifiedName, *LiteralInteger, *LiteralFloat, *LiteralString, *LiteralBoolean:
+      // OK
+    case BooleanExpression:
+      be := e.(BooleanExpression)
+      v.checkQuery(be.Lhs())
+      v.checkQuery(be.Rhs())
+    default:
+      v.Accept(VALIDATE_ILLEGAL_QUERY_EXPRESSION, e, A_anUc(e))
+    }
+}
+
+func (v *Checker) checkRelation(e Expression) {
+  switch e.(type) {
+  case *CollectExpression, *RelationshipExpression:
+    // OK
+  default:
+    v.checkRValue(e)
   }
 }
 
@@ -431,20 +558,31 @@ func (v *Checker) checkTop(e Expression, c Expression) {
     v.checkTop(e, c)
 
   default:
-    v.Accept(VALIDATE_NOT_TOP_LEVEL, e, A_anUc(e))
+    v.Accept(VALIDATE_NOT_TOP_LEVEL, e)
   }
 }
 
 func (v *Checker) checkTypeRef(function Expression, r Expression) {
   n := r
   if ae, ok := r.(*AccessExpression); ok {
-    n = ae.Operand();
+    n = ae.Operand()
   }
   if qr, ok := n.(*QualifiedReference); ok {
     v.checkFutureReservedWord(r, qr.DowncasedName())
   } else {
-    v.Accept(VALIDATE_ILLEGAL_EXPRESSION, r, `a type reference`, A_an(function))
+    v.Accept(VALIDATE_ILLEGAL_EXPRESSION, r, A_anUc(r), `a type reference`, A_an(function))
   }
+}
+
+func (v *Checker) endsWithIdem(e *BlockExpression) Expression {
+  top := len(e.Statements())
+  if top > 0 {
+    last := e.Statements()[top-1]
+    if v.isIdem(last) {
+      return last
+    }
+  }
+  return nil
 }
 
 // Checks if the expression has side effect ('idem' is latin for 'the same', here meaning that the evaluation state
@@ -507,18 +645,4 @@ func (v *Checker) idem_CaseOption(e *CaseOption) bool {
 
 func (v *Checker) idem_IfExpression(e *IfExpression) bool {
   return v.isIdem(e.Test()) && v.isIdem(e.Then()) && v.isIdem(e.Else())
-}
-
-func (v *Checker) isResourceWithoutTitle(e Expression) bool {
-  if be, ok := e.(*BlockExpression); ok {
-    statements := be.Statements()
-    if len(statements) == 2 {
-      _, ok = statements[0].(*QualifiedReference)
-      if ok {
-        _, ok = statements[1].(*LiteralHash)
-        return ok
-      }
-    }
-  }
-  return false
 }

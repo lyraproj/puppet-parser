@@ -160,7 +160,7 @@ func (f *defaultExpressionFactory) EppExpression(params []Expression, body Expre
 }
 
 func (f *defaultExpressionFactory) ExportedQuery(queryExpr Expression, locator *Locator, offset int, length int) Expression {
-  return &ExportedQuery{QueryExpression{positioned{locator, offset, length}, queryExpr}}
+  return &ExportedQuery{queryExpression{positioned{locator, offset, length}, queryExpr}}
 }
 
 func (f *defaultExpressionFactory) Float(value float64, locator *Locator, offset int, length int) Expression {
@@ -328,7 +328,7 @@ func (f *defaultExpressionFactory) Variable(expr Expression, locator *Locator, o
 }
 
 func (f *defaultExpressionFactory) VirtualQuery(queryExpr Expression, locator *Locator, offset int, length int) Expression {
-  return &VirtualQuery{QueryExpression{positioned{locator, offset, length}, queryExpr}}
+  return &VirtualQuery{queryExpression{positioned{locator, offset, length}, queryExpr}}
 }
 
 func (f *defaultExpressionFactory) When(values []Expression, thenExpr Expression, locator *Locator, offset int, length int) Expression {

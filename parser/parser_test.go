@@ -70,11 +70,11 @@ func TestSingleQuoted(t *testing.T) {
 func TestDoubleQuoted(t *testing.T) {
   expectDump(t,
     `"string\nwith\t\\t,\s\\s, \\r, and \\n\r\n"`,
-    `"string\nwith\t\\t, \\s, \\r, and \\n\r\n"`)
+    `(concat "string\nwith\t\\t, \\s, \\r, and \\n\r\n")`)
 
   expectDump(t,
     `"unknown \k escape"`,
-    `"unknown \\k escape"`)
+    `(concat "unknown \\k escape")`)
 
   expectDump(t,
     `"$var"`,
@@ -94,9 +94,9 @@ func TestDoubleQuoted(t *testing.T) {
 
   expectDump(t,
     `"Before ${{ a => true, b => "hello"}} and after"`,
-    `(concat "Before " (str (hash (=> (qn a) true) (=> (qn b) "hello"))) " and after")`)
+    `(concat "Before " (str (hash (=> (qn a) true) (=> (qn b) (concat "hello")))) " and after")`)
 
-  expectDump(t, `"x\u{1f452}y"`, `"x👒y"`)
+  expectDump(t, `"x\u{1f452}y"`, `(concat "x👒y")`)
 
   expectError(t,
     `"$Var"`,
@@ -113,7 +113,7 @@ func TestDoubleQuoted(t *testing.T) {
       $x = "y`),
     "unterminated double quoted string at line 1:6")
 
-  expectDump(t, `"x\u2713y"`, `"x✓y"`)
+  expectDump(t, `"x\u2713y"`, `(concat "x✓y")`)
 }
 
 func TestRegexp(t *testing.T) {
@@ -537,11 +537,11 @@ func TestArray(t *testing.T) {
 
   expectError(t,
     `[1,2 3]`,
-    `expected token ']' at line 1:6`)
+    `expected one of ',' or ']', got 'integer literal' at line 1:6`)
 
   expectError(t,
     `[1,2,3`,
-    `expected token ']' at line 1:7`)
+    `expected one of ',' or ']', got 'EOF' at line 1:7`)
 }
 
 func TestHash(t *testing.T) {
@@ -559,11 +559,11 @@ func TestHash(t *testing.T) {
 
   expectError(t,
     `{a => 1 b => 2}`,
-    `expected token '}' at line 1:9`)
+    `expected one of ',' or '}', got 'identifier' at line 1:9`)
 
   expectError(t,
     `{a => 1, b => 2`,
-    `expected token '}' at line 1:16`)
+    `expected one of ',' or '}', got 'EOF' at line 1:16`)
 }
 
 func TestBlock(t *testing.T) {
@@ -644,12 +644,12 @@ func TestFunctionDefintion(t *testing.T) {
   expectError(t,
     Unindent(`
       function myFunc() true`),
-    `expected token '{' at line 1:19`)
+    `expected token '{', got 'boolean literal' at line 1:19`)
 
   expectError(t,
     Unindent(`
       function myFunc() >> Boolean true`),
-    `expected token '{' at line 1:30`)
+    `expected token '{', got 'boolean literal' at line 1:30`)
 }
 
 func TestNodeDefinition(t *testing.T) {
@@ -669,7 +669,7 @@ func TestNodeDefinition(t *testing.T) {
     Unindent(`
       node /[a-f].*/, "example.com" {
       }`),
-    `(node {:matches [(regexp "[a-f].*") "example.com"] :body []})`)
+    `(node {:matches [(regexp "[a-f].*") (concat "example.com")] :body []})`)
 
   expectDump(t,
     Unindent(`
@@ -750,7 +750,7 @@ func TestTypeDefinition(t *testing.T) {
       type MyType inherits OtherType [{
         # What statements that can be included here is not yet speced
       }]`),
-    `expected token '{' at line 1:32`)
+    `expected token '{', got '[' at line 1:32`)
 
   expectError(t,
     Unindent(`
@@ -806,12 +806,6 @@ func TestClass(t *testing.T) {
       class myclass {
       }`),
     `(class {:name myclass :body []})`)
-
-  expectDump(t,
-    Unindent(`
-      class private {
-      }`),
-    `(class {:name private :body []})`)
 
   expectDump(t,
     Unindent(`
@@ -1029,12 +1023,12 @@ func TestCallNamed(t *testing.T) {
   expectError(t,
     Unindent(`
       $x = myFunc(3`),
-    `expected token ')' at line 1:14`)
+    `expected one of ',' or ')', got 'EOF' at line 1:14`)
 
   expectError(t,
     Unindent(`
       $x = myFunc() || $r + 2 }`),
-    `expected token '{' at line 1:18`)
+    `expected token '{', got 'variable' at line 1:18`)
 
 }
 
@@ -1460,7 +1454,7 @@ func TestResource(t *testing.T) {
         mode => '0640',
         ensure => present
       `),
-    `expected token '}' at line 4:1`)
+    `expected token '}', got 'EOF' at line 4:1`)
 
   expectError(t,
     Unindent(`

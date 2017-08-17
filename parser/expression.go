@@ -27,9 +27,11 @@ type (
     // Return the location in source for this expression.
     Location
 
-    // Let the given visitor iterate all contents. The iteration starts with this
-    // expression and will then traverse, depth first, into all contained expressions
+    // Let the given visitor recursively iterate all contained expressions, depth first.
     AllContents(path []Expression, visitor PathVisitor)
+
+    // Let the given visitor iterate all contained expressions.
+    Contents(path []Expression, visitor PathVisitor)
 
     // Returns a very brief description of this expression suitable to use in error messages
     Label() string
@@ -97,6 +99,15 @@ type (
     Name()       string
     Parameters() []Expression
     Body()       Expression
+  }
+
+  QueryExpression interface {
+    Expression
+
+    Expr() Expression
+
+    // Marker method, to ensure unique interface
+    ToQueryExpression() QueryExpression
   }
 
   UnaryExpression interface {
@@ -224,7 +235,7 @@ type (
   }
 
   ExportedQuery struct {
-    QueryExpression
+    queryExpression
   }
 
   FunctionDefinition struct {
@@ -369,11 +380,6 @@ type (
     downcasedName string
   }
 
-  QueryExpression struct {
-    positioned
-    expr Expression
-  }
-
   RegexpExpression struct {
     positioned
     value string
@@ -485,7 +491,7 @@ type (
   }
 
   VirtualQuery struct {
-    QueryExpression
+    queryExpression
   }
 
   // Abstract types
@@ -519,6 +525,11 @@ type (
     locator *Locator
     offset  int
     length  int
+  }
+
+  queryExpression struct {
+    positioned
+    expr Expression
   }
 
   unaryExpression struct {
@@ -601,17 +612,34 @@ func (e *positioned) updateOffsetAndLength(offset int, length int) {
 }
 
 func deepVisit(e Expression, path []Expression, visitor PathVisitor, children ...interface{}) {
-  visitor(path, e)
   if len(children) == 0 {
     return
   }
-  path = append(path, e)
+  childPath := append(path, e)
   for _, child := range children {
     if expr, ok := child.(Expression); ok {
-      expr.AllContents(path, visitor)
+      visitor(childPath, expr)
+      expr.AllContents(childPath, visitor)
     } else if exprs, ok := child.([]Expression); ok {
       for _, expr := range exprs {
-        expr.AllContents(path, visitor)
+        visitor(childPath, expr)
+        expr.AllContents(childPath, visitor)
+      }
+    }
+  }
+}
+
+func shallowVisit(e Expression, path []Expression, visitor PathVisitor, children ...interface{}) {
+  if len(children) == 0 {
+    return
+  }
+  childPath := append(path, e)
+  for _, child := range children {
+    if expr, ok := child.(Expression); ok {
+      visitor(childPath, expr)
+    } else if exprs, ok := child.([]Expression); ok {
+      for _, expr := range exprs {
+        visitor(childPath, expr)
       }
     }
   }
@@ -623,6 +651,10 @@ func (e *abstractResource) Form() string {
 
 func (e *AccessExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.operand, e.keys)
+}
+
+func (e *AccessExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.operand, e.keys)
 }
 
 func (e *AccessExpression) Operand() Expression {
@@ -639,6 +671,10 @@ func (e *AndExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.lhs, e.rhs)
 }
 
+func (e *AndExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.lhs, e.rhs)
+}
+
 func (e *AndExpression) ToBooleanExpression() BooleanExpression {
   return e
 }
@@ -649,6 +685,10 @@ func (e *Application) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.parameters, e.body)
 }
 
+func (e *Application) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.parameters, e.body)
+}
+
 func (e *Application) ToDefinition() Definition {
   return e
 }
@@ -657,6 +697,10 @@ func (e *Application) ToPN() PN { return e.pnNamedDefinition(`application`) }
 
 func (e *ArithmeticExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.lhs, e.rhs)
+}
+
+func (e *ArithmeticExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.lhs, e.rhs)
 }
 
 func (e *ArithmeticExpression) ToPN() PN { return e.binaryOp(e.Operator()) }
@@ -671,6 +715,10 @@ func (e *AssignmentExpression) Operator() string {
 
 func (e *AssignmentExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.lhs, e.rhs)
+}
+
+func (e *AssignmentExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.lhs, e.rhs)
 }
 
 func (e *AssignmentExpression) ToPN() PN { return e.binaryOp(e.Operator()) }
@@ -691,6 +739,10 @@ func (e *AttributeOperation) AllContents(path []Expression, visitor PathVisitor)
   deepVisit(e, path, visitor, e.value)
 }
 
+func (e *AttributeOperation) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.value)
+}
+
 func (e *AttributeOperation) ToPN() PN { return NamedArray(e.Operator(), []PN{StringValue(e.Name()), e.Value().ToPN()}) }
 
 func (e *AttributesOperation) Expr() Expression {
@@ -699,6 +751,10 @@ func (e *AttributesOperation) Expr() Expression {
 
 func (e *AttributesOperation) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.expr)
+}
+
+func (e *AttributesOperation) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.expr)
 }
 
 func (e *AttributesOperation) ToPN() PN { return NamedArray(`=>`, []PN{StringValue(`*`), e.Expr().ToPN()}) }
@@ -717,6 +773,10 @@ func (e *BlockExpression) Statements() []Expression {
 
 func (e *BlockExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.statements)
+}
+
+func (e *BlockExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.statements)
 }
 
 func (e *BlockExpression) ToPN() PN { return NamedArray(`block`, pnElems(e.Statements())) }
@@ -741,6 +801,10 @@ func (e *CallFunctionExpression) AllContents(path []Expression, visitor PathVisi
   deepVisit(e, path, visitor, e.functor, e.arguments, e.lambda)
 }
 
+func (e *CallFunctionExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.functor, e.arguments, e.lambda)
+}
+
 func (e *CallFunctionExpression) ToPN() PN {
   s := `invoke_lambda`
   if e.RvalRequired() {
@@ -757,6 +821,10 @@ func (e *CallMethodExpression) AllContents(path []Expression, visitor PathVisito
   deepVisit(e, path, visitor, e.functor, e.arguments, e.lambda)
 }
 
+func (e *CallMethodExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.functor, e.arguments, e.lambda)
+}
+
 func (e *CallMethodExpression) ToPN() PN {
   s := `invoke_method`
   if e.RvalRequired() {
@@ -771,6 +839,10 @@ func (e *CallMethodExpression) ToPN() PN {
 
 func (e *CallNamedFunctionExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.functor, e.arguments, e.lambda)
+}
+
+func (e *CallNamedFunctionExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.functor, e.arguments, e.lambda)
 }
 
 func (e *CallNamedFunctionExpression) ToPN() PN {
@@ -805,6 +877,10 @@ func (e *CapabilityMapping) AllContents(path []Expression, visitor PathVisitor) 
   deepVisit(e, path, visitor, e.component, e.mappings)
 }
 
+func (e *CapabilityMapping) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.component, e.mappings)
+}
+
 func (e *CapabilityMapping) ToDefinition() Definition {
   return e
 }
@@ -823,6 +899,10 @@ func (e *CaseExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.test, e.options)
 }
 
+func (e *CaseExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.test, e.options)
+}
+
 func (e *CaseExpression) ToPN() PN { return NamedArray(`case`, pnElems(e.Options())) }
 
 func (e *CaseOption) Values() []Expression {
@@ -835,6 +915,10 @@ func (e *CaseOption) Then() Expression {
 
 func (e *CaseOption) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.values, e.then)
+}
+
+func (e *CaseOption) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.values, e.then)
 }
 
 func (e *CaseOption) ToPN() PN {
@@ -859,6 +943,10 @@ func (e *CollectExpression) AllContents(path []Expression, visitor PathVisitor) 
   deepVisit(e, path, visitor, e.resourceType, e.query, e.operations)
 }
 
+func (e *CollectExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.resourceType, e.query, e.operations)
+}
+
 func (e *CollectExpression) ToPN() PN {
   entries := make([]Entry, 0, 3)
   entries = append(entries, NamedValue(`type`, e.ResourceType().ToPN()), NamedValue(`query`, e.Query().ToPN()))
@@ -876,6 +964,10 @@ func (e *ComparisonExpression) AllContents(path []Expression, visitor PathVisito
   deepVisit(e, path, visitor, e.lhs, e.rhs)
 }
 
+func (e *ComparisonExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.lhs, e.rhs)
+}
+
 func (e *ComparisonExpression) ToPN() PN { return e.binaryOp(e.Operator()) }
 
 func (e *ConcatenatedString) Segments() []Expression {
@@ -884,6 +976,10 @@ func (e *ConcatenatedString) Segments() []Expression {
 
 func (e *ConcatenatedString) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.segments)
+}
+
+func (e *ConcatenatedString) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.segments)
 }
 
 func (e *ConcatenatedString) ToPN() PN { return NamedArray(`concat`, pnElems(e.Segments())) }
@@ -900,12 +996,28 @@ func (e *EppExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.body)
 }
 
+func (e *EppExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.body)
+}
+
 func (e *EppExpression) ToPN() PN {
   return e.Body().ToPN().WithName(`epp`)
 }
 
 func (e *ExportedQuery) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.expr)
+}
+
+func (e *ExportedQuery) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.expr)
+}
+
+func (e *ExportedQuery) Expr() Expression {
+  return e.expr
+}
+
+func (e *ExportedQuery) ToQueryExpression() QueryExpression {
+  return e
 }
 
 func (e *ExportedQuery) ToPN() PN {
@@ -921,6 +1033,10 @@ func (e *FunctionDefinition) ReturnType() Expression {
 
 func (e *FunctionDefinition) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.parameters, e.body)
+}
+
+func (e *FunctionDefinition) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.parameters, e.body)
 }
 
 func (e *FunctionDefinition) ToDefinition() Definition {
@@ -954,6 +1070,10 @@ func (e *HeredocExpression) AllContents(path []Expression, visitor PathVisitor) 
   deepVisit(e, path, visitor, e.text)
 }
 
+func (e *HeredocExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.text)
+}
+
 func (e *HeredocExpression) ToPN() PN {
   entries := make([]Entry, 0, 2)
   if e.Syntax() != `` {
@@ -969,6 +1089,10 @@ func (e *HostClassDefinition) ParentClass() string {
 
 func (e *HostClassDefinition) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.parameters, e.body)
+}
+
+func (e *HostClassDefinition) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.parameters, e.body)
 }
 
 func (e *HostClassDefinition) ToDefinition() Definition {
@@ -1006,10 +1130,18 @@ func (e *IfExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.test, e.then, e.elseExpr)
 }
 
+func (e *IfExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.test, e.then, e.elseExpr)
+}
+
 func (e *IfExpression) ToPN() PN { return e.pnIf(`if`) }
 
 func (e *InExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.lhs, e.rhs)
+}
+
+func (e *InExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.lhs, e.rhs)
 }
 
 func (e *InExpression) ToPN() PN { return e.binaryOp(`in`) }
@@ -1024,6 +1156,10 @@ func (e *KeyedEntry) Value() Expression {
 
 func (e *KeyedEntry) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.key, e.value)
+}
+
+func (e *KeyedEntry) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.key, e.value)
 }
 
 func (e *KeyedEntry) ToPN() PN { return NamedArray(`=>`, pnArgs(e.Key(), e.Value())) }
@@ -1042,6 +1178,10 @@ func (e *LambdaExpression) ReturnType() Expression {
 
 func (e *LambdaExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.parameters, e.body, e.returnType)
+}
+
+func (e *LambdaExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.parameters, e.body, e.returnType)
 }
 
 func (e *LambdaExpression) ToPN() PN {
@@ -1069,7 +1209,9 @@ func (e *LiteralBoolean) Value() interface{} {
 }
 
 func (e *LiteralBoolean) AllContents(path []Expression, visitor PathVisitor) {
-  visitor(path, e)
+}
+
+func (e *LiteralBoolean) Contents(path []Expression, visitor PathVisitor) {
 }
 
 func (e *LiteralBoolean) ToLiteralValue() LiteralValue {
@@ -1081,7 +1223,9 @@ func (e *LiteralDefault) Value() interface{} {
 }
 
 func (e *LiteralDefault) AllContents(path []Expression, visitor PathVisitor) {
-  visitor(path, e)
+}
+
+func (e *LiteralDefault) Contents(path []Expression, visitor PathVisitor) {
 }
 
 func (e *LiteralDefault) ToLiteralValue() LiteralValue {
@@ -1103,7 +1247,9 @@ func (e *LiteralFloat) Int() int64 {
 }
 
 func (e *LiteralFloat) AllContents(path []Expression, visitor PathVisitor) {
-  visitor(path, e)
+}
+
+func (e *LiteralFloat) Contents(path []Expression, visitor PathVisitor) {
 }
 
 func (e *LiteralFloat) ToLiteralValue() LiteralValue {
@@ -1130,6 +1276,10 @@ func (e *LiteralHash) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.entries)
 }
 
+func (e *LiteralHash) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.entries)
+}
+
 func (e *LiteralHash) ToPN() PN { return NamedArray(`hash`, pnElems(e.Entries())) }
 
 func (e *LiteralInteger) Float() float64 {
@@ -1149,7 +1299,9 @@ func (e *LiteralInteger) Radix() int {
 }
 
 func (e *LiteralInteger) AllContents(path []Expression, visitor PathVisitor) {
-  visitor(path, e)
+}
+
+func (e *LiteralInteger) Contents(path []Expression, visitor PathVisitor) {
 }
 
 func (e *LiteralInteger) ToLiteralValue() LiteralValue {
@@ -1166,9 +1318,13 @@ func (e *LiteralList) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.elements)
 }
 
+func (e *LiteralList) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.elements)
+}
+
 func (e *LiteralList) ToPN() PN { return NamedArray(`array`, pnElems(e.Elements())) }
 
-func (e *LiteralString) String() string {
+func (e *LiteralString) StringValue() string {
   return e.value
 }
 
@@ -1177,7 +1333,9 @@ func (e *LiteralString) Value() interface{} {
 }
 
 func (e *LiteralString) AllContents(path []Expression, visitor PathVisitor) {
-  visitor(path, e)
+}
+
+func (e *LiteralString) Contents(path []Expression, visitor PathVisitor) {
 }
 
 func (e *LiteralString) ToLiteralValue() LiteralValue {
@@ -1191,7 +1349,9 @@ func (e *LiteralUndef) Value() interface{} {
 }
 
 func (e *LiteralUndef) AllContents(path []Expression, visitor PathVisitor) {
-  visitor(path, e)
+}
+
+func (e *LiteralUndef) Contents(path []Expression, visitor PathVisitor) {
 }
 
 func (e *LiteralUndef) ToLiteralValue() LiteralValue {
@@ -1206,6 +1366,10 @@ func (e *MatchExpression) Operator() string {
 
 func (e *MatchExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.lhs, e.rhs)
+}
+
+func (e *MatchExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.lhs, e.rhs)
 }
 
 func (e *MatchExpression) ToPN() PN { return e.binaryOp(e.Operator()) }
@@ -1226,6 +1390,10 @@ func (e *NamedAccessExpression) AllContents(path []Expression, visitor PathVisit
   deepVisit(e, path, visitor, e.lhs, e.rhs)
 }
 
+func (e *NamedAccessExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.lhs, e.rhs)
+}
+
 func (e *NamedAccessExpression) ToPN() PN { return e.binaryOp(`.`) }
 
 func (e *NodeDefinition) Body() Expression {
@@ -1242,6 +1410,10 @@ func (e *NodeDefinition) Parent() Expression {
 
 func (e *NodeDefinition) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.parent, e.hostMatches, e.body)
+}
+
+func (e *NodeDefinition) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.parent, e.hostMatches, e.body)
 }
 
 func (e *NodeDefinition) ToDefinition() Definition {
@@ -1263,13 +1435,19 @@ func (e *NodeDefinition) ToPN() PN {
 func (e *Nop) IsNop() bool { return true }
 
 func (e *Nop) AllContents(path []Expression, visitor PathVisitor) {
-  visitor(path, e)
+}
+
+func (e *Nop) Contents(path []Expression, visitor PathVisitor) {
 }
 
 func (e *Nop) ToPN() PN { return StringValue(`nop`) }
 
 func (e *NotExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.expr)
+}
+
+func (e *NotExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.expr)
 }
 
 func (e *NotExpression) ToUnaryExpression() UnaryExpression {
@@ -1282,6 +1460,10 @@ func (e *OrExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.lhs, e.rhs)
 }
 
+func (e *OrExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.lhs, e.rhs)
+}
+
 func (e *OrExpression) ToBooleanExpression() BooleanExpression {
   return e
 }
@@ -1290,6 +1472,10 @@ func (e *OrExpression) ToPN() PN { return e.binaryOp(`or`) }
 
 func (e *Parameter) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.typeExpr, e.value)
+}
+
+func (e *Parameter) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.typeExpr, e.value)
 }
 
 func (e *Parameter) CapturesRest() bool {
@@ -1327,6 +1513,10 @@ func (e *ParenthesizedExpression) AllContents(path []Expression, visitor PathVis
   deepVisit(e, path, visitor, e.expr)
 }
 
+func (e *ParenthesizedExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.expr)
+}
+
 func (e *ParenthesizedExpression) ToUnaryExpression() UnaryExpression {
   return e
 }
@@ -1345,6 +1535,10 @@ func (e *Program) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.body)
 }
 
+func (e *Program) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.body)
+}
+
 func (e *Program) ToPN() PN { return e.Body().ToPN() }
 
 func (e *qRefDefinition) Name() string {
@@ -1352,7 +1546,9 @@ func (e *qRefDefinition) Name() string {
 }
 
 func (e *QualifiedName) AllContents(path []Expression, visitor PathVisitor) {
-  visitor(path, e)
+}
+
+func (e *QualifiedName) Contents(path []Expression, visitor PathVisitor) {
 }
 
 func (e *QualifiedName) Name() string {
@@ -1370,7 +1566,9 @@ func (e *QualifiedName) ToLiteralValue() LiteralValue {
 }
 
 func (e *QualifiedReference) AllContents(path []Expression, visitor PathVisitor) {
-  visitor(path, e)
+}
+
+func (e *QualifiedReference) Contents(path []Expression, visitor PathVisitor) {
 }
 
 func (e *QualifiedReference) DowncasedName() string {
@@ -1386,18 +1584,10 @@ func (e *QualifiedReference) Name() string {
 
 func (e *QualifiedReference) ToPN() PN { return NamedString(`qr`, e.Name()) }
 
-func (e *QueryExpression) Expr() Expression {
-  return e.expr
-}
-
-func (e *QueryExpression) AllContents(path []Expression, visitor PathVisitor) {
-  deepVisit(e, path, visitor, e.expr)
-}
-
-func (e *QueryExpression) ToPN() PN { return NamedValue(`query`, e.Expr().ToPN()) }
-
 func (e *RegexpExpression) AllContents(path []Expression, visitor PathVisitor) {
-  visitor(path, e)
+}
+
+func (e *RegexpExpression) Contents(path []Expression, visitor PathVisitor) {
 }
 
 func (e *RegexpExpression) Value() interface{} {
@@ -1414,6 +1604,10 @@ func (e *RelationshipExpression) AllContents(path []Expression, visitor PathVisi
   deepVisit(e, path, visitor, e.lhs, e.rhs)
 }
 
+func (e *RelationshipExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.lhs, e.rhs)
+}
+
 func (e *RelationshipExpression) Operator() string {
   return e.operator
 }
@@ -1422,6 +1616,10 @@ func (e *RelationshipExpression) ToPN() PN { return e.binaryOp(e.Operator()) }
 
 func (e *RenderExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.expr)
+}
+
+func (e *RenderExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.expr)
 }
 
 func (e *RenderExpression) ToPN() PN { return NamedValue(`render`, e.Expr().ToPN()) }
@@ -1434,10 +1632,16 @@ func (e *RenderStringExpression) AllContents(path []Expression, visitor PathVisi
   deepVisit(e, path, visitor)
 }
 
+func (e *RenderStringExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor)
+}
+
 func (e *RenderStringExpression) ToPN() PN { return NamedValue(`render-s`, Literal(e.Value())) }
 
 func (e *ReservedWord) AllContents(path []Expression, visitor PathVisitor) {
-  visitor(path, e)
+}
+
+func (e *ReservedWord) Contents(path []Expression, visitor PathVisitor) {
 }
 
 func (e *ReservedWord) ToPN() PN { return NamedString(`reserved`, e.Name()) }
@@ -1470,6 +1674,10 @@ func (e *ResourceBody) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.title, e.operations)
 }
 
+func (e *ResourceBody) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.title, e.operations)
+}
+
 func (e *ResourceBody) ToPN() PN {
   return Hash([]Entry{
     NamedValue(`title`, e.Title().ToPN()),
@@ -1486,6 +1694,10 @@ func (e *ResourceDefaultsExpression) Operations() []Expression {
 
 func (e *ResourceDefaultsExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.typeRef, e.operations)
+}
+
+func (e *ResourceDefaultsExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.typeRef, e.operations)
 }
 
 func (e *ResourceDefaultsExpression) ToPN() PN {
@@ -1510,6 +1722,10 @@ func (e *ResourceExpression) AllContents(path []Expression, visitor PathVisitor)
   deepVisit(e, path, visitor, e.typeName, e.bodies)
 }
 
+func (e *ResourceExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.typeName, e.bodies)
+}
+
 func (e *ResourceExpression) ToPN() PN {
   entries := make([]Entry, 0, 3)
   if e.Form() != `regular` {
@@ -1532,6 +1748,10 @@ func (e *ResourceOverrideExpression) AllContents(path []Expression, visitor Path
   deepVisit(e, path, visitor, e.resources, e.operations)
 }
 
+func (e *ResourceOverrideExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.resources, e.operations)
+}
+
 func (e *ResourceOverrideExpression) ToPN() PN {
   entries := make([]Entry, 0, 3)
   if e.Form() != `regular` {
@@ -1544,6 +1764,10 @@ func (e *ResourceOverrideExpression) ToPN() PN {
 
 func (e *ResourceTypeDefinition) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.parameters, e.body)
+}
+
+func (e *ResourceTypeDefinition) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.parameters, e.body)
 }
 
 func (e *ResourceTypeDefinition) ToDefinition() Definition {
@@ -1564,10 +1788,18 @@ func (e *SelectorEntry) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.matching, e.value)
 }
 
+func (e *SelectorEntry) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.matching, e.value)
+}
+
 func (e *SelectorEntry) ToPN() PN { return NamedArray(`=>`, pnArgs(e.Matching(), e.Value())) }
 
 func (e *SelectorExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.lhs, e.selectors)
+}
+
+func (e *SelectorExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.lhs, e.selectors)
 }
 
 func (e *SelectorExpression) Lhs() Expression {
@@ -1582,6 +1814,10 @@ func (e *SelectorExpression) ToPN() PN { return NamedArray(`?`, []PN{e.Lhs().ToP
 
 func (e *SiteDefinition) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.body)
+}
+
+func (e *SiteDefinition) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.body)
 }
 
 func (e *SiteDefinition) Body() Expression {
@@ -1600,6 +1836,10 @@ func (e *TextExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.expr)
 }
 
+func (e *TextExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.expr)
+}
+
 func (e *TextExpression) ToPN() PN { return NamedValue(`str`, e.Expr().ToPN()) }
 
 func (e *TextExpression) ToUnaryExpression() UnaryExpression {
@@ -1608,6 +1848,10 @@ func (e *TextExpression) ToUnaryExpression() UnaryExpression {
 
 func (e *TypeAlias) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.typeExpr)
+}
+
+func (e *TypeAlias) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.typeExpr)
 }
 
 func (e *TypeAlias) ToDefinition() Definition {
@@ -1632,6 +1876,10 @@ func (e *TypeDefinition) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.body)
 }
 
+func (e *TypeDefinition) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.body)
+}
+
 func (e *TypeDefinition) ToDefinition() Definition {
   return e
 }
@@ -1650,6 +1898,10 @@ func (e *TypeMapping) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.typeExpr, e.mappingExpr)
 }
 
+func (e *TypeMapping) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.typeExpr, e.mappingExpr)
+}
+
 func (e *TypeMapping) ToDefinition() Definition {
   return e
 }
@@ -1660,8 +1912,12 @@ func (e *unaryExpression) Expr() Expression {
   return e.expr
 }
 
-func (e *UnaryMinusExpression) AllContents(path []Expression, visitor PathVisitor) {
+func (e *UnaryMinusExpression) Contents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.expr)
+}
+
+func (e *UnaryMinusExpression) AllContents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.expr)
 }
 
 func (e *UnaryMinusExpression) ToUnaryExpression() UnaryExpression {
@@ -1674,6 +1930,10 @@ func (e *UnfoldExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.expr)
 }
 
+func (e *UnfoldExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.expr)
+}
+
 func (e *UnfoldExpression) ToUnaryExpression() UnaryExpression {
   return e
 }
@@ -1682,6 +1942,10 @@ func (e *UnfoldExpression) ToPN() PN { return NamedValue(`unfold`, e.Expr().ToPN
 
 func (e *UnlessExpression) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.test, e.then, e.elseExpr)
+}
+
+func (e *UnlessExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.test, e.then, e.elseExpr)
 }
 
 func (e *UnlessExpression) ToPN() PN { return e.pnIf(`unless`) }
@@ -1694,6 +1958,10 @@ func (e *VariableExpression) AllContents(path []Expression, visitor PathVisitor)
   deepVisit(e, path, visitor, e.expr)
 }
 
+func (e *VariableExpression) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.expr)
+}
+
 func (e *VariableExpression) ToPN() PN { return NamedString(`$`, e.Expr().(*QualifiedName).Name()) }
 
 func (e *VariableExpression) ToUnaryExpression() UnaryExpression {
@@ -1704,11 +1972,23 @@ func (e *VirtualQuery) AllContents(path []Expression, visitor PathVisitor) {
   deepVisit(e, path, visitor, e.expr)
 }
 
+func (e *VirtualQuery) Contents(path []Expression, visitor PathVisitor) {
+  shallowVisit(e, path, visitor, e.expr)
+}
+
+func (e *VirtualQuery) Expr() Expression {
+  return e.expr
+}
+
 func (e *VirtualQuery) ToPN() PN {
   if e.Expr().IsNop() {
     return StringValue(`<| |>`)
   }
   return NamedValue(`<| |>`, e.Expr().ToPN())
+}
+
+func (e *VirtualQuery) ToQueryExpression() QueryExpression {
+  return e
 }
 
 func (e *IfExpression) pnIf(name string) PN {

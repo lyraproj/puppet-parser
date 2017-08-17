@@ -198,6 +198,18 @@ func TestBlockValidation(t *testing.T) {
       `))
 }
 
+func TestCallMethodValidation(t *testing.T) {
+  expectNoIssues(t,
+    Unindent(`
+      $x = $y.size()
+    `))
+
+  expectIssues(t,
+    Unindent(`
+      $x = $y.Size()`),
+    VALIDATE_ILLEGAL_EXPRESSION)
+}
+
 func TestCapabilityMappingValidation(t *testing.T) {
   expectNoIssues(t,
     Unindent(`
@@ -260,9 +272,62 @@ func TestCollectValidation(t *testing.T) {
     Unindent(`
       User <| groups == 'admin' |>`))
 
+  expectNoIssues(t,
+    Unindent(`
+      User <| (groups == 'admin') |>`))
+
+  expectNoIssues(t,
+    Unindent(`
+      User <| present |>`))
+
+  expectNoIssues(t,
+    Unindent(`
+      User <| present and groups == 'admin' |>`))
+
+  expectIssues(t,
+    Unindent(`
+      User <| $x + 1 |>`),
+    VALIDATE_ILLEGAL_QUERY_EXPRESSION)
+
+  expectIssues(t,
+    Unindent(`
+      User <| groups >= 'admin' |>`),
+    VALIDATE_ILLEGAL_QUERY_EXPRESSION)
+
   expectIssues(t,
     Unindent(`
       user <| groups == 'admin' |>`),
+    VALIDATE_ILLEGAL_EXPRESSION)
+
+  expectNoIssues(t,
+    Unindent(`
+      User <<| groups == 'admin' |>>`))
+
+  expectNoIssues(t,
+    Unindent(`
+      User <<| (groups == 'admin') |>>`))
+
+  expectNoIssues(t,
+    Unindent(`
+      User <<| present |>>`))
+
+  expectNoIssues(t,
+    Unindent(`
+      User <<| present and groups == 'admin' |>>`))
+
+  expectIssues(t,
+    Unindent(`
+      User <<| $x + 1 |>>`),
+    VALIDATE_ILLEGAL_QUERY_EXPRESSION)
+
+  expectIssues(t,
+    Unindent(`
+      User <<| groups >= 'admin' |>>`),
+    VALIDATE_ILLEGAL_QUERY_EXPRESSION)
+
+  expectIssues(t,
+    Unindent(`
+      user <<| groups == 'admin' |>>`),
     VALIDATE_ILLEGAL_EXPRESSION)
 }
 
@@ -298,6 +363,25 @@ func TestFunctionDefinitionValidation(t *testing.T) {
     Unindent(`
       function foo($a, *$b, $c) {}`),
     VALIDATE_CAPTURES_REST_NOT_LAST)
+
+  expectIssues(t,
+    Unindent(`
+      function foo($1) {}`),
+    VALIDATE_ILLEGAL_NUMERIC_PARAMETER)
+
+  expectIssues(t,
+    Unindent(`
+      function foo($a::b) {}`),
+    VALIDATE_ILLEGAL_PARAMETER_NAME)
+
+  expectIssues(t,
+    Unindent(`
+      function foo($a = ($x = 3)) {}`),
+    VALIDATE_ILLEGAL_ASSIGNMENT_CONTEXT)
+
+  expectNoIssues(t,
+    Unindent(`
+      function foo($a = bar() |$p| { $p = 1 }) {}`))
 
   expectIssues(t,
     Unindent(`
@@ -400,9 +484,29 @@ func TestLiteralHashValidation(t *testing.T) {
         1 => 'one again'
       }`),
     VALIDATE_DUPLICATE_KEY)
+
+  expectIssues(t,
+    Unindent(`
+      $x = {
+        'func' => define foo() {}
+      }`),
+    VALIDATE_NOT_TOP_LEVEL, VALIDATE_NOT_RVALUE)
 }
 
-func TestResourceTypeDefinitionValidation(t *testing.T) {
+func TestLiteralListValidation(t *testing.T) {
+  expectNoIssues(t,
+    Unindent(`
+      $x = [
+        1, '2', 3.0, four, 'five', true, undef, default, [1, 2], {'one' => 1}
+      ]`))
+
+  expectIssues(t,
+    Unindent(`
+      $x = [define foo() {}]`),
+    VALIDATE_NOT_TOP_LEVEL, VALIDATE_NOT_RVALUE)
+}
+
+func TestNodeDefinitionValidation(t *testing.T) {
   expectNoIssues(t,
     Unindent(`
       define foo() {}`))
@@ -458,6 +562,57 @@ func TestResourceTypeDefinitionValidation(t *testing.T) {
     VALIDATE_ILLEGAL_DEFINITION_NAME)
 }
 
+func TestRelationshipValidation(t *testing.T) {
+  expectNoIssues(t,
+    Unindent(`
+      package { 'openssh-server':
+        ensure => present,
+      } ->
+      file { '/etc/ssh/sshd_config':
+        ensure => file,
+        mode   => '0600',
+        source => 'puppet:///modules/sshd/sshd_config',
+      }`))
+
+  expectIssues(t,
+    Unindent(`
+      package { 'openssh-server':
+        ensure => present,
+      } ->
+      node example.com {}`),
+    VALIDATE_NOT_RVALUE, VALIDATE_NOT_TOP_LEVEL)
+
+  expectIssues(t,
+    Unindent(`
+      class my_class {} ->
+      package { 'openssh-server':
+        ensure => present,
+      }`),
+    VALIDATE_NOT_RVALUE, VALIDATE_NOT_TOP_LEVEL)
+}
+
+func TestResourceTypeDefinitionValidation(t *testing.T) {
+  expectNoIssues(t, `node foo {}`)
+
+  expectNoIssues(t, `node 'foo' {}`)
+
+  expectNoIssues(t, `node "foo" {}`)
+
+  expectNoIssues(t, `node MyNode {}`)
+
+  expectNoIssues(t, `node 192.168.0.10 {}`)
+
+  expectNoIssues(t, `node /.*\.example\.com/ {}`)
+
+  expectNoIssues(t, `node example.com {}`)
+
+  expectIssues(t, `node 'bad char' {}`, VALIDATE_ILLEGAL_HOSTNAME_CHARS)
+
+  expectIssues(t, `node "bad char" {}`, VALIDATE_ILLEGAL_HOSTNAME_CHARS)
+
+  expectIssues(t, `node "not${here}" {}`, VALIDATE_ILLEGAL_HOSTNAME_INTERPOLATION)
+}
+
 func expectNoIssues(t *testing.T, str string) {
   expectIssuesX(t, str, false)
 }
@@ -479,13 +634,15 @@ func expectIssuesX(t *testing.T, str string, eppMode bool, expectedIssueCodes...
   if issues == nil {
     return
   }
+  fail := false
   nextCode: for _, expectedIssueCode := range expectedIssueCodes {
     for _, issue := range issues {
       if expectedIssueCode == issue.Code() {
         continue nextCode
       }
     }
-    t.Errorf(`Expected issue '%s' but it was not produced`, expectedIssueCode)
+    fail = true
+    t.Logf(`Expected issue '%s' but it was not produced`, expectedIssueCode)
   }
 
   nextIssue: for _, issue := range issues {
@@ -494,7 +651,11 @@ func expectIssuesX(t *testing.T, str string, eppMode bool, expectedIssueCodes...
         continue nextIssue
       }
     }
-    t.Errorf(`Unexpected issue %s: '%s'`, issue.Code(), issue.String())
+    fail = true
+    t.Logf(`Unexpected issue %s: '%s'`, issue.Code(), issue.String())
+  }
+  if fail {
+    t.Fail()
   }
 }
 

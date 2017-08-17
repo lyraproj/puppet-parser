@@ -3,6 +3,7 @@ package parser
 import (
   . `strconv`
   . `strings`
+  "fmt"
 )
 
 // Recursive descent parser for the Puppet language.
@@ -144,7 +145,7 @@ func (ctx *context) parse(expectedEnd int, singleExpression bool) (expr Expressi
 func (ctx *context) assertToken(token int) {
   if ctx.currentToken != token {
     ctx.SetPos(ctx.tokenStartPos)
-    panic(ctx.parseIssue(PARSE_EXPECTED_TOKEN, tokenMap[token]))
+    panic(ctx.parseIssue(PARSE_EXPECTED_TOKEN, tokenMap[token], tokenMap[ctx.currentToken]))
   }
 }
 
@@ -216,7 +217,12 @@ func (ctx *context) expressions(endToken int, producer producerFunc) (exprs []Ex
     }
     exprs = append(exprs, producer(ctx))
     if ctx.currentToken != TOKEN_COMMA {
-      ctx.assertToken(endToken)
+      if ctx.currentToken != endToken {
+        ctx.SetPos(ctx.tokenStartPos)
+        panic(ctx.parseIssue(PARSE_EXPECTED_ONE_OF_TOKENS,
+          fmt.Sprintf(`'%s' or '%s'`, tokenMap[TOKEN_COMMA], tokenMap[endToken]),
+          tokenMap[ctx.currentToken]))
+      }
       ctx.nextToken()
       return
     }
@@ -237,6 +243,17 @@ func (ctx *context) syntacticStatement() (expr Expression) {
   }
   if args != nil {
     expr = &commaSeparatedList{LiteralList{positioned{ctx.locator, expr.byteOffset(), ctx.Pos() - expr.byteOffset()}, args}}
+  }
+  return
+}
+
+func (ctx *context) collectionEntry() (expr Expression) {
+  switch ctx.currentToken {
+  case TOKEN_TYPE, TOKEN_FUNCTION, TOKEN_APPLICATION, TOKEN_CONSUMES, TOKEN_PRODUCES, TOKEN_SITE:
+    expr = ctx.factory.QualifiedName(ctx.tokenString(), ctx.locator, ctx.tokenStartPos, ctx.Pos()-ctx.tokenStartPos)
+    ctx.nextToken()
+  default:
+    expr = ctx.assignment()
   }
   return
 }
@@ -434,16 +451,16 @@ func (ctx *context) inExpression() (expr Expression) {
 }
 
 func (ctx *context) arrayExpression() (elements []Expression) {
-  return ctx.expressions(TOKEN_RB, assignment)
+  return ctx.expressions(TOKEN_RB, collectionEntry)
 }
 
 func hashEntry(ctx *context) Expression {
-  key := ctx.assignment()
+  key := ctx.collectionEntry()
   if ctx.currentToken != TOKEN_FARROW {
     panic(ctx.parseIssue(PARSE_EXPECTED_FARROW_AFTER_KEY))
   }
   ctx.nextToken()
-  value := ctx.assignment()
+  value := ctx.collectionEntry()
   return ctx.factory.KeyedEntry(key, value, ctx.locator, key.byteOffset(), ctx.Pos()-key.byteOffset())
 }
 
@@ -572,7 +589,7 @@ func (ctx *context) atomExpression() (expr Expression) {
     expr = ctx.factory.String(ctx.tokenString(), ctx.locator, atomStart, ctx.Pos()-atomStart)
     ctx.nextToken()
 
-  case TOKEN_KEYWORD:
+  case TOKEN_ATTR, TOKEN_PRIVATE:
     expr = ctx.factory.ReservedWord(ctx.tokenString(), false, ctx.locator, atomStart, ctx.Pos()-atomStart)
     ctx.nextToken()
 
@@ -872,11 +889,16 @@ func (ctx *context) attributeOperation() (op Expression) {
 
 func (ctx *context) attributeName() (name string) {
   switch ctx.currentToken {
-  case TOKEN_IDENTIFIER, TOKEN_KEYWORD, TOKEN_TYPE:
+  case TOKEN_IDENTIFIER:
     name = ctx.tokenString()
     ctx.nextToken()
     return
   default:
+    if word, ok := ctx.keyword(); ok {
+      name = word
+      ctx.nextToken()
+      return
+    }
     ctx.SetPos(ctx.tokenStartPos)
     panic(ctx.parseIssue(PARSE_EXPECTED_ATTRIBUTE_NAME))
   }
@@ -999,6 +1021,10 @@ func (ctx *context) lambda() (result Expression) {
   return ctx.factory.Lambda(parameterList, block, returnType, ctx.locator, start, ctx.Pos()-start)
 }
 
+func collectionEntry(ctx *context) Expression {
+  return ctx.collectionEntry()
+}
+
 func assignment(ctx *context) Expression {
   return ctx.assignment()
 }
@@ -1012,7 +1038,7 @@ func (ctx *context) functionDefinition() Expression {
   ctx.nextToken()
   var name string
   switch ctx.currentToken {
-  case TOKEN_IDENTIFIER, TOKEN_TYPE_NAME, TOKEN_KEYWORD:
+  case TOKEN_IDENTIFIER, TOKEN_TYPE_NAME:
     name = ctx.tokenString()
   default:
     ctx.SetPos(ctx.tokenStartPos)
@@ -1212,7 +1238,7 @@ func (ctx *context) classExpression() Expression {
 
 func (ctx *context) className() (name string) {
   switch ctx.currentToken {
-  case TOKEN_TYPE_NAME, TOKEN_IDENTIFIER, TOKEN_KEYWORD:
+  case TOKEN_TYPE_NAME, TOKEN_IDENTIFIER:
     name = ctx.tokenString()
     ctx.nextToken()
     return
@@ -1226,6 +1252,16 @@ func (ctx *context) className() (name string) {
     ctx.SetPos(ctx.tokenStartPos)
     panic(ctx.parseIssue(PARSE_EXPECTED_CLASS_NAME))
   }
+}
+
+func (ctx* context) keyword() (word string, ok bool) {
+  if ctx.currentToken != TOKEN_BOOLEAN {
+    str := tokenMap[ctx.currentToken]
+    if _, ok = keywords[str]; ok {
+      word = str
+    }
+  }
+  return
 }
 
 func (ctx *context) qualifiedName(name string) string {

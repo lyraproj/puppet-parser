@@ -121,9 +121,9 @@ const (
   TOKEN_TYPE_NAME = 159
 
   // Keywords
-  TOKEN_KEYWORD = 200
-  TOKEN_AND = 201
-  TOKEN_APPLICATION = 202
+  TOKEN_AND = 200
+  TOKEN_APPLICATION = 201
+  TOKEN_ATTR = 202
   TOKEN_CASE = 203
   TOKEN_CLASS = 204
   TOKEN_CONSUMES = 205
@@ -137,11 +137,12 @@ const (
   TOKEN_ELSIF = 213
   TOKEN_NODE = 214
   TOKEN_OR = 215
-  TOKEN_PRODUCES = 216
-  TOKEN_SITE = 217
-  TOKEN_TYPE = 218
-  TOKEN_UNDEF = 219
-  TOKEN_UNLESS = 220
+  TOKEN_PRIVATE = 216
+  TOKEN_PRODUCES = 217
+  TOKEN_SITE = 218
+  TOKEN_TYPE = 219
+  TOKEN_UNDEF = 220
+  TOKEN_UNLESS = 221
 )
 
 var tokenMap = map[int]string {
@@ -236,9 +237,9 @@ var tokenMap = map[int]string {
   TOKEN_TYPE_NAME: `type name`,
 
   // Keywords
-  TOKEN_KEYWORD: ``,
   TOKEN_AND: `and`,
   TOKEN_APPLICATION: `application`,
+  TOKEN_ATTR: `attr`,
   TOKEN_CASE: `case`,
   TOKEN_CLASS: `class`,
   TOKEN_CONSUMES: `consumes`,
@@ -252,6 +253,7 @@ var tokenMap = map[int]string {
   TOKEN_ELSIF: `elsif`,
   TOKEN_NODE: `node`,
   TOKEN_OR: `or`,
+  TOKEN_PRIVATE: `private`,
   TOKEN_PRODUCES: `produces`,
   TOKEN_SITE: `site`,
   TOKEN_TYPE: `type`,
@@ -262,7 +264,7 @@ var tokenMap = map[int]string {
 var keywords = map[string]int {
   tokenMap[TOKEN_APPLICATION]: TOKEN_APPLICATION,
   tokenMap[TOKEN_AND]: TOKEN_AND,
-  `attr`: TOKEN_KEYWORD,
+  tokenMap[TOKEN_ATTR]: TOKEN_ATTR,
   tokenMap[TOKEN_CASE]: TOKEN_CASE,
   tokenMap[TOKEN_CLASS]: TOKEN_CLASS,
   tokenMap[TOKEN_CONSUMES]: TOKEN_CONSUMES,
@@ -277,7 +279,7 @@ var keywords = map[string]int {
   tokenMap[TOKEN_INHERITS]: TOKEN_INHERITS,
   tokenMap[TOKEN_NODE]: TOKEN_NODE,
   tokenMap[TOKEN_OR]: TOKEN_OR,
-  `private`: TOKEN_KEYWORD,
+  tokenMap[TOKEN_PRIVATE]: TOKEN_PRIVATE,
   tokenMap[TOKEN_PRODUCES]: TOKEN_PRODUCES,
   tokenMap[TOKEN_SITE]: TOKEN_SITE,
   `true`: TOKEN_BOOLEAN,
@@ -1159,9 +1161,11 @@ func (ctx *context) consumeDoubleQuotedString() {
         segments = append(segments, ctx.factory.String(tail, ctx.locator, ctx.tokenStartPos, ctx.Pos() - ctx.tokenStartPos))
       }
     }
-    firstPos := segments[0].byteOffset()
-    ctx.setTokenValue(TOKEN_CONCATENATED_STRING, ctx.factory.ConcatenatedString(segments, ctx.locator, firstPos, ctx.Pos() - firstPos))
+  } else {
+    segments = append(segments, ctx.factory.String(ctx.tokenValue.(string), ctx.locator, ctx.tokenStartPos, ctx.Pos() - ctx.tokenStartPos))
   }
+  firstPos := segments[0].byteOffset()
+  ctx.setTokenValue(TOKEN_CONCATENATED_STRING, ctx.factory.ConcatenatedString(segments, ctx.locator, firstPos, ctx.Pos() - firstPos))
 }
 
 func (ctx *context) consumeSingleQuotedString() {

@@ -55,7 +55,7 @@ func (v *AbstractValidator) Container() Expression {
 // Note: This will return nil for the expression that is currently validated
 func (v *AbstractValidator) ContainerOf(e Expression) Expression {
   if e == v.subject {
-    return v.Container();
+    return v.Container()
   }
   for last := len(v.path) - 1; last > 0; last-- {
     if e == v.path[last] {
@@ -86,6 +86,8 @@ func ValidatePuppet(e Expression) Validator {
 func Validate(v Validator, e Expression) {
   path := make([]Expression, 0, 16)
 
+  v.setPathAndSubject(path, e)
+  v.Validate(e)
   e.AllContents(path, func(path []Expression, expr Expression) {
     v.setPathAndSubject(path, expr)
     v.Validate(expr)
