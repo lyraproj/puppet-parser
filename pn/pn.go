@@ -20,97 +20,105 @@ type (
     //
     ToData() interface{}
 
-    // Give this PN a name, or change the name if it already has one
+    // Turn this PN into an argument in a call or change the name if the PN Is a call already
+    AsCall(name string) PN
+
+    // Return the PN as a parameter list
+    AsParameters() []PN
+
+    // Create a key/value pair from the given name and this PN
     WithName(name string) Entry
   }
 
   // Entry in hash
   Entry interface {
-    PN
-    formatEntry(b *Buffer)
-    key() string
-    value() interface{}
+    Key() string
+    Value() PN
   }
 
-  hash struct {
+  mapEntry struct {
+    key string
+    value PN
+  }
+
+  listPN struct {
+    elements []PN
+  }
+
+  mapPN struct {
     entries []Entry
   }
 
-  array struct {
-    elements []PN
-  }
-
-  stringValue struct {
-    val string
-  }
-
-  literal struct {
+  literalPN struct {
     val interface{}
   }
 
-  namedArray struct {
+  callNamedPN struct {
+    mapPN
     name string
-    elements []PN
   }
 
-  namedValue struct {
+  callPN struct {
+    listPN
     name string
-    val PN
-  }
-
-  namedStringValue struct {
-    name string
-    val string
   }
 )
 
-func Array(elements []PN) PN {
-  return &array{elements}
+func ListPN(elements []PN) PN {
+  return &listPN{elements}
 }
 
-func Hash(entries []Entry) PN {
-  return &hash{entries}
+func MapPN(entries []Entry) PN {
+  return &mapPN{entries}
 }
 
-func StringValue(val string) PN {
-  return &stringValue{val}
+func LiteralPN(val interface{}) PN {
+  return &literalPN{val}
 }
 
-func Literal(val interface{}) PN {
-  return &literal{val}
+func CallPN(name string, elements ...PN) PN {
+  return &callPN{listPN{elements}, name}
 }
 
-func NamedValue(name string, val PN) Entry {
-  return &namedValue{name, val}
+func CallNamedPN(name string, entries ...Entry) PN {
+  return &callNamedPN{mapPN{entries}, name}
 }
 
-func NamedArray(name string, elements []PN) Entry {
-  return &namedArray{name, elements}
+func (pn *listPN) AsCall(name string) PN {
+  return CallPN(name, pn.elements...)
 }
 
-func NamedString(name string, val string) Entry {
-  return &namedStringValue{name, val}
+func (pn *listPN) AsParameters() []PN {
+  return pn.elements
 }
 
-func (pn *array) Format(b *Buffer) {
+func (pn *listPN) Format(b *Buffer) {
   b.WriteByte('[')
   formatElements(pn.elements, b)
   b.WriteByte(']')
 }
 
-func (pn *array) ToData() interface{} {
-  me := make([]interface{}, 0, 1 + len(pn.elements))
-  for _, op := range pn.elements {
-    me = append(me, op.ToData())
+func (pn *listPN) ToData() interface{} {
+  me := make([]interface{}, len(pn.elements))
+  for idx, op := range pn.elements {
+    me[idx] = op.ToData()
   }
   return me
 }
 
-func (pn *array) WithName(name string) Entry {
-  return &namedArray{name, pn.elements}
+func (pn *listPN) WithName(name string) Entry {
+  return &mapEntry{name, pn}
 }
 
-func (pn *namedArray) Format(b *Buffer) {
+func (pn *callPN) AsCall(name string) PN {
+  return &callPN{listPN{pn.elements}, name}
+}
+
+func (pn *callPN) AsParameters() []PN {
+  return pn.elements
+}
+
+func (pn *callPN) Format(b *Buffer) {
   b.WriteByte('(')
   b.WriteString(pn.name)
   if len(pn.elements) > 0 {
@@ -120,134 +128,94 @@ func (pn *namedArray) Format(b *Buffer) {
   b.WriteByte(')')
 }
 
-func (pn *namedArray) ToData() interface{} {
-  me := make([]interface{}, 0, len(pn.elements))
-  for _, op := range pn.elements {
-    me = append(me, op.ToData())
-  }
-  return []interface{} { pn.name, me }
+func (pn *callPN) ToData() interface{} {
+  return []interface{} { pn.name, pn.listPN.ToData() }
 }
 
-func (pn *namedArray) formatEntry(b *Buffer) {
-  b.WriteByte(':')
-  b.WriteString(pn.name)
-  b.WriteString(` [`)
-  formatElements(pn.elements, b)
-  b.WriteByte(']')
+func (pn *callPN) WithName(name string) Entry {
+  return &mapEntry{name, pn}
 }
 
-func (pn *namedArray) WithName(name string) Entry {
-  return &namedArray{name, pn.elements}
+func (pn *callNamedPN) AsCall(name string) PN {
+  return &callNamedPN{mapPN{pn.entries}, name}
 }
 
-func (pn *namedArray) key() string {
-  return pn.name
+func (pn *callNamedPN) AsParameters() []PN {
+  return pn.mapPN.AsParameters()
 }
 
-func (pn *namedArray) value() interface{} {
-  de := make([]interface{}, len(pn.elements))
-  for idx := range pn.elements {
-    de[idx] = pn.elements[idx].ToData()
-  }
-  return de
-}
-
-func (pn *namedValue) Format(b *Buffer) {
+func (pn *callNamedPN) Format(b *Buffer) {
   b.WriteByte('(')
   b.WriteString(pn.name)
   b.WriteByte(' ')
-  pn.val.Format(b)
+  pn.mapPN.Format(b)
   b.WriteByte(')')
 }
 
-func (pn *namedValue) formatEntry(b *Buffer) {
-  b.WriteByte(':')
-  b.WriteString(pn.name)
-  b.WriteByte(' ')
-  pn.val.Format(b)
+func (pn *callNamedPN) ToData() interface{} {
+  return []interface{} { pn.name, pn.mapPN.ToData() }
 }
 
-func (pn *namedValue) ToData() interface{} {
-  return []interface{} { pn.name, pn.val.ToData() }
+func (pn *callNamedPN) WithName(name string) Entry {
+  return &mapEntry{name, pn}
 }
 
-func (pn *namedValue) WithName(name string) Entry {
-  return &namedValue{name, pn.val}
+func (e *mapEntry) Key() string {
+  return e.key
 }
 
-func (pn *namedValue) key() string {
-  return pn.name
+func (e *mapEntry) Value() PN {
+  return e.value
 }
 
-func (pn *namedValue) value() interface{} {
-  return pn.val.ToData()
+func (pn *mapPN) AsCall(name string) PN {
+  return &callNamedPN{mapPN{pn.entries}, name}
 }
 
-func (pn *hash) Format(b *Buffer) {
+func (pn *mapPN) AsParameters() []PN {
+  return []PN { pn }
+}
+
+func (pn *mapPN) Format(b *Buffer) {
   b.WriteByte('{')
-  formatEntries(pn.entries, b)
+  if top := len(pn.entries); top > 0 {
+    formatEntry(pn.entries[0], b)
+    for idx := 1; idx < top; idx++ {
+      b.WriteByte(' ')
+      formatEntry(pn.entries[idx], b)
+    }
+  }
   b.WriteByte('}')
 }
 
-func (pn *hash) ToData() interface{} {
+func formatEntry(entry Entry, b *Buffer) {
+  b.WriteByte(':')
+  b.WriteString(entry.Key())
+  b.WriteByte(' ')
+  entry.Value().Format(b)
+}
+
+func (pn *mapPN) ToData() interface{} {
   me := make(map[string]interface{}, len(pn.entries))
-  for _, op := range pn.entries {
-    entry, _ := op.(Entry)
-    me[entry.key()] = entry.value()
+  for _, entry := range pn.entries {
+    me[entry.Key()] = entry.Value().ToData()
   }
   return me
 }
 
-func (pn *hash) WithName(name string) Entry {
-  return &namedValue{name, pn}
+func (pn *mapPN) WithName(name string) Entry {
+  return &mapEntry{name, pn}
 }
 
-func (pn *stringValue) Format(b *Buffer) {
-  b.WriteByte('(')
-  b.WriteString(pn.val)
-  b.WriteByte(')')
+func (pn *literalPN) AsCall(name string) PN {
+  return CallPN(name, pn)
 }
 
-func (pn *stringValue) ToData() interface{} {
-  return []interface{} { pn.val }
+func (pn *literalPN) AsParameters() []PN {
+  return []PN { pn }
 }
 
-func (pn *stringValue) WithName(name string) Entry {
-  return &namedStringValue{name, pn.val}
-}
-
-func (pn *namedStringValue) Format(b *Buffer) {
-  b.WriteByte('(')
-  b.WriteString(pn.name)
-  b.WriteByte(' ')
-  b.WriteString(pn.val)
-  b.WriteByte(')')
-}
-
-func (pn *namedStringValue) ToData() interface{} {
-  return []interface{} { pn.name, pn.val }
-}
-
-func (pn *namedStringValue) formatEntry(b *Buffer) {
-  b.WriteByte(':')
-  b.WriteString(pn.name)
-  b.WriteByte(' ')
-  b.WriteString(pn.val)
-}
-
-func (pn *namedStringValue) WithName(name string) Entry {
-  return &namedStringValue{name, pn.val}
-}
-
-func (pn *namedStringValue) key() string {
-  return pn.name
-}
-
-func (pn *namedStringValue) value() interface{} {
-  return pn.val
-}
-
-func (pn *literal) Format(b *Buffer) {
+func (pn *literalPN) Format(b *Buffer) {
   switch pn.val.(type) {
   case string:
     DoubleQuote(pn.val.(string), b)
@@ -262,12 +230,12 @@ func (pn *literal) Format(b *Buffer) {
   }
 }
 
-func (pn *literal) ToData() interface{} {
+func (pn *literalPN) ToData() interface{} {
   return pn.val
 }
 
-func (pn *literal) WithName(name string) Entry {
-  return &namedValue{name, pn}
+func (pn *literalPN) WithName(name string) Entry {
+  return &mapEntry{name, pn}
 }
 
 func formatElements(elements []PN, b *Buffer) {
@@ -277,17 +245,6 @@ func formatElements(elements []PN, b *Buffer) {
     for idx := 1; idx < top; idx++ {
       b.WriteByte(' ')
       elements[idx].Format(b)
-    }
-  }
-}
-
-func formatEntries(elements []Entry, b *Buffer) {
-  top := len(elements)
-  if top > 0 {
-    elements[0].formatEntry(b)
-    for idx := 1; idx < top; idx++ {
-      b.WriteByte(' ')
-      elements[idx].formatEntry(b)
     }
   }
 }

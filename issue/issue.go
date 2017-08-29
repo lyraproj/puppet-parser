@@ -126,10 +126,10 @@ func (e *ReportedIssue) Severity() Severity {
 
 // Represent the reported using polish notation
 func (e *ReportedIssue) ToPN() PN {
-  return Hash([]Entry{
-    NamedValue(`code`, Literal(e.issueCode)),
-    NamedValue(`severity`, Literal(e.severity.String())),
-    NamedValue(`message`, Literal(e.Error()))})
+  return MapPN([]Entry{
+    LiteralPN(e.issueCode).WithName(`code`),
+    LiteralPN(e.severity.String()).WithName(`severity`),
+    LiteralPN(e.Error()).WithName(`message`)})
 }
 
 func appendLocation(str string, location Location) string {

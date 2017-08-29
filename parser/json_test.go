@@ -27,21 +27,21 @@ func TestManifest(t *testing.T) {
     `["block",[`+
       `["resource",{`+
         `"bodies":[`+
-          `{"ops":[["=>",[["mode"],"0640"]],["=>",[["ensure"],["qn","present"]]]],"title":"/tmp/foo"},`+
-          `{"ops":[["=>",[["mode"],"0640"]],["=>",[["ensure"],["qn","present"]]]],"title":"/tmp/bar"}],`+
-        `"type":["qn","file"]}],`+
-      `["=",[["$","rootgroup"],["?",[["[]",[["[]",[["$","facts"],"os"]],"family"]],[["=>",["Solaris","wheel"]]]]]]],`+
+          `{"ops":[["=>",["mode","0640"]],["=>",["ensure",["qn",["present"]]]]],"title":"/tmp/foo"},`+
+          `{"ops":[["=>",["mode","0640"]],["=>",["ensure",["qn",["present"]]]]],"title":"/tmp/bar"}],`+
+        `"type":["qn",["file"]]}],`+
+      `["=",[["$",["rootgroup"]],["?",[["access",[["access",[["$",["facts"]],"os"]],"family"]],[["=>",["Solaris","wheel"]]]]]]],`+
       `["function",{`+
         `"body":[`+
           `["invoke",{`+
-            `"args":[["concat",["show the ",["str",["$","n"]]]]],`+
-            `"functor":["qn","notice"]}],`+
-          `["*",[["$","in"],3.14]]],`+
+            `"args":[["concat",["show the ",["str",[["$",["n"]]]]]]],`+
+            `"functor":["qn",["notice"]]}],`+
+          `["*",[["$",["in"]],3.14]]],`+
         `"name":"foo",`+
-        `"params":[`+
-          `{"name":"in","type":["[]",[["qr","Integer"],2,3]]},`+
-          `{"name":"n","type":["qr","String"],"value":"vi"}],`+
-        `"returns":["[]",[["qr","Float"],0]]}]]]`)
+        `"params":{`+
+          `"in":{"type":["access",[["qr",["Integer"]],2,3]]},`+
+          `"n":{"type":["qr",["String"]],"value":"vi"}},`+
+        `"returns":["access",[["qr",["Float"]],0]]}]]]`)
 }
 
 func toJSON(e Expression) string {
