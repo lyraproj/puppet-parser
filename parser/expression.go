@@ -1334,7 +1334,7 @@ func (e *LiteralUndef) ToLiteralValue() LiteralValue {
   return e
 }
 
-func (e *LiteralUndef) ToPN() PN { return CallPN(`undef`) }
+func (e *LiteralUndef) ToPN() PN { return LiteralPN(nil) }
 
 func (e *MatchExpression) Operator() string {
   return e.operator
@@ -1497,7 +1497,7 @@ func (e *ParenthesizedExpression) ToUnaryExpression() UnaryExpression {
   return e
 }
 
-func (e *ParenthesizedExpression) ToPN() PN { return CallPN(`()`, e.Expr().ToPN()) }
+func (e *ParenthesizedExpression) ToPN() PN { return CallPN(`paren`, e.Expr().ToPN()) }
 
 func (e *Program) Definitions() []Definition {
   return e.definitions
@@ -1940,7 +1940,7 @@ func (e *VariableExpression) Contents(path []Expression, visitor PathVisitor) {
   shallowVisit(e, path, visitor, e.expr)
 }
 
-func (e *VariableExpression) ToPN() PN { return CallPN(`$`, LiteralPN(e.Expr().(*QualifiedName).Name())) }
+func (e *VariableExpression) ToPN() PN { return CallPN(`var`, LiteralPN(e.Expr().(*QualifiedName).Name())) }
 
 func (e *VariableExpression) ToUnaryExpression() UnaryExpression {
   return e

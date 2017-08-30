@@ -42,7 +42,7 @@ func main() {
 
   strictness := Strict(*strict)
 
-  expr, err := Parse(args[0], string(content), HasSuffix(fileName, `.epp`))
+  expr, err := CreateParser().Parse(args[0], string(content), HasSuffix(fileName, `.epp`), false)
   if *json {
     if err != nil {
       if issue, ok := err.(*ReportedIssue); ok {

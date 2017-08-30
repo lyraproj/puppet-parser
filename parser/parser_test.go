@@ -58,7 +58,7 @@ func TestDefault(t *testing.T) {
 }
 
 func TestUndef(t *testing.T) {
-  expectDump(t, `undef`, `(undef)`)
+  expectDump(t, `undef`, `null`)
 }
 
 func TestSingleQuoted(t *testing.T) {
@@ -78,19 +78,19 @@ func TestDoubleQuoted(t *testing.T) {
 
   expectDump(t,
     `"$var"`,
-    `(concat (str ($ "var")))`)
+    `(concat (str (var "var")))`)
 
   expectDump(t,
     `"hello $var"`,
-    `(concat "hello " (str ($ "var")))`)
+    `(concat "hello " (str (var "var")))`)
 
   expectDump(t,
     `"hello ${var}"`,
-    `(concat "hello " (str ($ "var")))`)
+    `(concat "hello " (str (var "var")))`)
 
   expectDump(t,
     `"hello ${}"`,
-    `(concat "hello " (str (undef)))`)
+    `(concat "hello " (str null))`)
 
   expectDump(t,
     `"Before ${{ a => true, b => "hello"}} and after"`,
@@ -119,7 +119,7 @@ func TestDoubleQuoted(t *testing.T) {
 func TestRegexp(t *testing.T) {
   expectDump(t,
     `$a = /.*/`,
-    `(= ($ "a") (regexp ".*"))`)
+    `(= (var "a") (regexp ".*"))`)
 
   expectDump(t, `/pattern\/with\/slash/`, `(regexp "pattern/with/slash")`)
   expectDump(t, `/pattern\/with\\\/slash/`, `(regexp "pattern/with\\\\/slash")`)
@@ -140,11 +140,11 @@ func TestRegexp(t *testing.T) {
 func TestReserved(t *testing.T) {
   expectDump(t,
     `$a = attr`,
-    `(= ($ "a") (reserved "attr"))`)
+    `(= (var "a") (reserved "attr"))`)
 
   expectDump(t,
     `$a = private`,
-    `(= ($ "a") (reserved "private"))`)
+    `(= (var "a") (reserved "private"))`)
 }
 
 func TestHeredoc(t *testing.T) {
@@ -317,7 +317,7 @@ func TestHeredocInterpolate(t *testing.T) {
         This is
         heredoc $text
         |- END`),
-    `(heredoc {:text (concat "This is\nheredoc " (str ($ "text")))})`)
+    `(heredoc {:text (concat "This is\nheredoc " (str (var "text")))})`)
 
   expectHeredoc(t,
     Unindent(`
@@ -325,7 +325,7 @@ func TestHeredocInterpolate(t *testing.T) {
         This is
         heredoc $a \$b
         |- END`),
-    `(heredoc {:text (concat "This is\nheredoc " (str ($ "a")) " \\" (str ($ "b")))})`)
+    `(heredoc {:text (concat "This is\nheredoc " (str (var "a")) " \\" (str (var "b")))})`)
 
   expectHeredoc(t,
     Unindent(`
@@ -333,7 +333,7 @@ func TestHeredocInterpolate(t *testing.T) {
         This is
         heredoc $a \$b
         |- END`),
-    `(heredoc {:text (concat "This is\nheredoc " (str ($ "a")) " $b")})`)
+    `(heredoc {:text (concat "This is\nheredoc " (str (var "a")) " $b")})`)
 
   expectHeredoc(t,
     Unindent(`
@@ -491,27 +491,27 @@ func TestCommentAfterHeredocTag(t *testing.T) {
 func TestVariable(t *testing.T) {
   expectDump(t,
     `$var`,
-    `($ "var")`)
+    `(var "var")`)
 
   expectDump(t,
     `$var::b`,
-    `($ "var::b")`)
+    `(var "var::b")`)
 
   expectDump(t,
     `$::var::b`,
-    `($ "::var::b")`)
+    `(var "::var::b")`)
 
   expectDump(t,
     `$::var::_b`,
-    `($ "::var::_b")`)
+    `(var "::var::_b")`)
 
   expectDump(t,
     `$2`,
-    `($ "2")`)
+    `(var "2")`)
 
   expectDump(t,
     `$`,
-    `($ "")`)
+    `(var "")`)
 
   expectError(t,
     `$var:b`,
@@ -559,7 +559,7 @@ func TestArray(t *testing.T) {
 func TestHash(t *testing.T) {
   expectDump(t,
     `{ a => true, b => false, c => undef, d => 12, e => 23.5, c => 'hello' }`,
-    `(hash (=> (qn "a") true) (=> (qn "b") false) (=> (qn "c") (undef)) (=> (qn "d") 12) (=> (qn "e") 23.5) (=> (qn "c") "hello"))`)
+    `(hash (=> (qn "a") true) (=> (qn "b") false) (=> (qn "c") null) (=> (qn "d") 12) (=> (qn "e") 23.5) (=> (qn "c") "hello"))`)
 
   expectDump(t,
     `{a => 1, b => 2,}`,
@@ -590,10 +590,10 @@ func TestBlock(t *testing.T) {
       $map = {'ipl' => 'meaning', 42.0 => 'life'}
       "$t ${map['ipl']} of ${map[42.0]}${[3, " is not ${r}"][1]} here"`),
     `(block `+
-        `(= ($ "t") "the") `+
-        `(= ($ "r") "revealed") `+
-        `(= ($ "map") (hash (=> "ipl" "meaning") (=> 42 "life"))) `+
-        `(concat (str ($ "t")) " " (str (access ($ "map") "ipl")) " of " (str (access ($ "map") 42)) (str (access (array 3 (concat " is not " (str ($ "r")))) 1)) " here"))`)
+        `(= (var "t") "the") `+
+        `(= (var "r") "revealed") `+
+        `(= (var "map") (hash (=> "ipl" "meaning") (=> 4.2e+01 "life"))) `+
+        `(concat (str (var "t")) " " (str (access (var "map") "ipl")) " of " (str (access (var "map") 4.2e+01)) (str (access (array 3 (concat " is not " (str (var "r")))) 1)) " here"))`)
 
   expectBlock(t,
     Unindent(`
@@ -602,10 +602,10 @@ func TestBlock(t *testing.T) {
       $map = {'ipl' => 'meaning', 42.0 => 'life'};
       "$t ${map['ipl']} of ${map[42.0]}${[3, " is not ${r}"][1]} here"`),
     `(block `+
-        `(= ($ "t") "the") `+
-        `(= ($ "r") "revealed") `+
-        `(= ($ "map") (hash (=> "ipl" "meaning") (=> 42 "life"))) `+
-        `(concat (str ($ "t")) " " (str (access ($ "map") "ipl")) " of " (str (access ($ "map") 42)) (str (access (array 3 (concat " is not " (str ($ "r")))) 1)) " here"))`)
+        `(= (var "t") "the") `+
+        `(= (var "r") "revealed") `+
+        `(= (var "map") (hash (=> "ipl" "meaning") (=> 4.2e+01 "life"))) `+
+        `(concat (str (var "t")) " " (str (access (var "map") "ipl")) " of " (str (access (var "map") 4.2e+01)) (str (access (array 3 (concat " is not " (str (var "r")))) 1)) " here"))`)
 }
 
 func TestFunctionDefintion(t *testing.T) {
@@ -633,7 +633,7 @@ func TestFunctionDefintion(t *testing.T) {
       `:params {`+
         `:numbers {:type (qr "Integer") :splat true}} `+
       `:body [`+
-        `(call-method {:functor (. ($ "numbers") (qn "size")) :args []})] `+
+        `(call-method {:functor (. (var "numbers") (qn "size")) :args []})] `+
       `:returns (qr "Integer")})`)
 
   expectError(t,
@@ -697,7 +697,7 @@ func TestNodeDefinition(t *testing.T) {
     Unindent(`
       node /[a-f].*/, 192.168.0.1, 34, "$x.$y" {
       }`),
-    `(node {:matches [(regexp "[a-f].*") "192.168.0.1" "34" (concat (str ($ "x")) "." (str ($ "y")))] :body []})`)
+    `(node {:matches [(regexp "[a-f].*") "192.168.0.1" "34" (concat (str (var "x")) "." (str (var "y")))] :body []})`)
 
   expectDump(t,
     Unindent(`
@@ -920,16 +920,16 @@ func TestDefinition(t *testing.T) {
       `:params {`+
         `:port {:type (qr "Integer")} `+
         `:docroot {:type (access (qr "String") 1)} `+
-        `:servername {:type (access (qr "String") 1) :value ($ "title")} `+
+        `:servername {:type (access (qr "String") 1) :value (var "title")} `+
         `:vhost_name {:type (qr "String") :value "*"}} `+
       `:body [`+
         `(invoke {:functor (qn "include") :args [(qn "apache")]}) `+
         `(invoke {:functor (qn "include") :args [(qn "apache::params")]}) `+
-        `(= ($ "vhost_dir") ($ "apache::params::vhost_dir")) `+
+        `(= (var "vhost_dir") (var "apache::params::vhost_dir")) `+
         `(resource {`+
           `:type (qn "file") `+
           `:bodies [{`+
-            `:title (concat (str ($ "vhost_dir")) "/" (str ($ "servername")) ".conf") `+
+            `:title (concat (str (var "vhost_dir")) "/" (str (var "servername")) ".conf") `+
             `:ops [`+
               `(=> "ensure" (qn "file")) `+
               `(=> "owner" "www") `+
@@ -946,7 +946,7 @@ func TestApplication(t *testing.T) {
       MyCap produces Cap {
         attr => $value
       }`),
-    `(produces (qr "MyCap") ["Cap" (=> "attr" ($ "value"))])`)
+    `(produces (qr "MyCap") ["Cap" (=> "attr" (var "value"))])`)
 
   expectDump(t,
     Unindent(`
@@ -989,25 +989,25 @@ func TestCapabilityMappping(t *testing.T) {
         `(resource {`+
 					`:type (qn "lamp::web") `+
 					`:bodies [{`+
-            `:title ($ "name") `+
-            `:ops [(=> "docroot" ($ "docroot")) (=> "export" (access (qr "Http") (concat "lamp-" (str ($ "name")))))]}]}) `+
+            `:title (var "name") `+
+            `:ops [(=> "docroot" (var "docroot")) (=> "export" (access (qr "Http") (concat "lamp-" (str (var "name")))))]}]}) `+
         `(resource {`+
 					`:type (qn "lamp::app") `+
 					`:bodies [{`+
-            `:title ($ "name") `+
-					  `:ops [(=> "consume" (access (qr "Sql") (concat "lamp-" (str ($ "name"))))) (=> "export" (access (qr "Http") (concat "lamp-" (str ($ "name")))))]}]}) `+
+            `:title (var "name") `+
+					  `:ops [(=> "consume" (access (qr "Sql") (concat "lamp-" (str (var "name"))))) (=> "export" (access (qr "Http") (concat "lamp-" (str (var "name")))))]}]}) `+
         `(resource {`+
 					`:type (qn "lamp::db") `+
 					`:bodies [{`+
-            `:title ($ "name") `+
-					  `:ops [(=> "db_user" ($ "db_user")) (=> "db_name" ($ "db_name")) (=> "export" (access (qr "Sql") (concat "lamp-" (str ($ "name")))))]}]})]})`)
+            `:title (var "name") `+
+					  `:ops [(=> "db_user" (var "db_user")) (=> "db_name" (var "db_name")) (=> "export" (access (qr "Sql") (concat "lamp-" (str (var "name")))))]}]})]})`)
 }
 
 func TestCallNamed(t *testing.T) {
   expectDump(t,
     Unindent(`
       $x = wrap(myFunc(3, 'vx', 'd"x') |Integer $r| >> Integer { $r + 2 })`),
-      `(= ($ "x") (call {:functor (qn "wrap") :args [(call {:functor (qn "myFunc") :args [3 "vx" "d\"x"] :block (lambda {:params {:r {:type (qr "Integer")}} :returns (qr "Integer") :body [(+ ($ "r") 2)]})})]}))`)
+      `(= (var "x") (call {:functor (qn "wrap") :args [(call {:functor (qn "myFunc") :args [3 "vx" "d\"x"] :block (lambda {:params {:r {:type (qr "Integer")}} :returns (qr "Integer") :body [(+ (var "r") 2)]})})]}))`)
 
   expectDump(t,
     `notice hello()`, `(invoke {:functor (qn "notice") :args [(call {:functor (qn "hello") :args []})]})`)
@@ -1020,7 +1020,7 @@ func TestCallNamed(t *testing.T) {
       $x = $y.myFunc
       callIt(*$x)
       (2 + 3).with() |$x| { notice $x }`),
-    `(block (= ($ "x") (call-method {:functor (. ($ "y") (qn "myFunc")) :args []})) (invoke {:functor (qn "callIt") :args [(unfold ($ "x"))]}) (call-method {:functor (. (() (+ 2 3)) (qn "with")) :args [] :block (lambda {:params {:x {}} :body [(invoke {:functor (qn "notice") :args [($ "x")]})]})}))`)
+    `(block (= (var "x") (call-method {:functor (. (var "y") (qn "myFunc")) :args []})) (invoke {:functor (qn "callIt") :args [(unfold (var "x"))]}) (call-method {:functor (. (paren (+ 2 3)) (qn "with")) :args [] :block (lambda {:params {:x {}} :body [(invoke {:functor (qn "notice") :args [(var "x")]})]})}))`)
 
   expectError(t,
     Unindent(`
@@ -1038,49 +1038,49 @@ func TestCallNamedNoArgs(t *testing.T) {
   expectDump(t,
     Unindent(`
       $x = wrap(myFunc |Integer $r| >> Integer { $r + 2 })`),
-    `(= ($ "x") (call {:functor (qn "wrap") :args [(call {:functor (qn "myFunc") :args [] :block (lambda {:params {:r {:type (qr "Integer")}} :returns (qr "Integer") :body [(+ ($ "r") 2)]})})]}))`)
+    `(= (var "x") (call {:functor (qn "wrap") :args [(call {:functor (qn "myFunc") :args [] :block (lambda {:params {:r {:type (qr "Integer")}} :returns (qr "Integer") :body [(+ (var "r") 2)]})})]}))`)
 }
 
 func TestCallMethod(t *testing.T) {
   expectDump(t,
     Unindent(`
       $x = $y.max(23)`),
-    `(= ($ "x") (call-method {:functor (. ($ "y") (qn "max")) :args [23]}))`)
+    `(= (var "x") (call-method {:functor (. (var "y") (qn "max")) :args [23]}))`)
 }
 
 func TestCallMethodArgsLambda(t *testing.T) {
   expectDump(t,
     Unindent(`
       $x = $y.max(23) |$x| { $x }`),
-    `(= ($ "x") (call-method {:functor (. ($ "y") (qn "max")) :args [23] :block (lambda {:params {:x {}} :body [($ "x")]})}))`)
+    `(= (var "x") (call-method {:functor (. (var "y") (qn "max")) :args [23] :block (lambda {:params {:x {}} :body [(var "x")]})}))`)
 }
 
 func TestCallMethodNoArgs(t *testing.T) {
   expectDump(t,
     Unindent(`
       $x = $y.max`),
-    `(= ($ "x") (call-method {:functor (. ($ "y") (qn "max")) :args []}))`)
+    `(= (var "x") (call-method {:functor (. (var "y") (qn "max")) :args []}))`)
 }
 
 func TestCallMethodNoArgsLambda(t *testing.T) {
   expectDump(t,
     Unindent(`
       $x = $y.max |$x| { $x }`),
-    `(= ($ "x") (call-method {:functor (. ($ "y") (qn "max")) :args [] :block (lambda {:params {:x {}} :body [($ "x")]})}))`)
+    `(= (var "x") (call-method {:functor (. (var "y") (qn "max")) :args [] :block (lambda {:params {:x {}} :body [(var "x")]})}))`)
 }
 
 func TestCallType(t *testing.T) {
   expectDump(t,
     Unindent(`
       $x = type(3)`),
-    `(= ($ "x") (call {:functor (qn "type") :args [3]}))`)
+    `(= (var "x") (call {:functor (qn "type") :args [3]}))`)
 }
 
 func TestCallTypeMethod(t *testing.T) {
   expectDump(t,
     Unindent(`
       $x = $x.type(3)`),
-    `(= ($ "x") (call-method {:functor (. ($ "x") (qn "type")) :args [3]}))`)
+    `(= (var "x") (call-method {:functor (. (var "x") (qn "type")) :args [3]}))`)
 }
 
 func TestLineComment(t *testing.T) {
@@ -1092,7 +1092,7 @@ func TestLineComment(t *testing.T) {
       # value
       #
       notice($y)`),
-    `(block (= ($ "x") "y") (invoke {:functor (qn "notice") :args [($ "y")]}))`)
+    `(block (= (var "x") "y") (invoke {:functor (qn "notice") :args [(var "y")]}))`)
 }
 
 func TestIdentifiers(t *testing.T) {
@@ -1110,7 +1110,7 @@ func TestIdentifiers(t *testing.T) {
 
   expectDump(t,
     `$x = ::assertType(::TheType, $y)`,
-    `(= ($ "x") (call {:functor (qn "::assertType") :args [(qr "::TheType") ($ "y")]}))`)
+    `(= (var "x") (call {:functor (qn "::assertType") :args [(qr "::TheType") (var "y")]}))`)
 
   expectError(t,
     `abc:cde`,
@@ -1130,7 +1130,7 @@ func TestRestOfLineComment(t *testing.T) {
     Unindent(`
       $x = 'y' # A variable assignment
       notice($y)`),
-    `(block (= ($ "x") "y") (invoke {:functor (qn "notice") :args [($ "y")]}))`)
+    `(block (= (var "x") "y") (invoke {:functor (qn "notice") :args [(var "y")]}))`)
 
   expectBlock(t,
     Unindent(`
@@ -1149,13 +1149,13 @@ func TestMultilineComment(t *testing.T) {
          value
       */
       notice($y)`),
-    `(block (= ($ "x") "y") (invoke {:functor (qn "notice") :args [($ "y")]}))`)
+    `(block (= (var "x") "y") (invoke {:functor (qn "notice") :args [(var "y")]}))`)
 }
 
 func TestSingleQuote(t *testing.T) {
-  expectDump(t, `$x = 'a string'`, `(= ($ "x") "a string")`)
+  expectDump(t, `$x = 'a string'`, `(= (var "x") "a string")`)
 
-  expectDump(t, `$x = 'a \'string\' with \\'`, `(= ($ "x") "a 'string' with \\")`)
+  expectDump(t, `$x = 'a \'string\' with \\'`, `(= (var "x") "a 'string' with \\")`)
 
   expectError(t,
     Unindent(`
@@ -1204,7 +1204,7 @@ func TestIf(t *testing.T) {
       } else {
         false
       }`),
-    `(= ($ "x") (if {:test ($ "y") :then [true] :else [false]}))`)
+    `(= (var "x") (if {:test (var "y") :then [true] :else [false]}))`)
 
   expectDump(t,
     Unindent(`
@@ -1212,7 +1212,7 @@ func TestIf(t *testing.T) {
       } else {
         false
       }`),
-    `(= ($ "x") (if {:test (> ($ "y") 2) :then [] :else [false]}))`)
+    `(= (var "x") (if {:test (> (var "y") 2) :then [] :else [false]}))`)
 
   expectDump(t,
     Unindent(`
@@ -1220,7 +1220,7 @@ func TestIf(t *testing.T) {
         true
       } else {
       }`),
-    `(= ($ "x") (if {:test (!= ($ "y") 34) :then [true] :else []}))`)
+    `(= (var "x") (if {:test (!= (var "y") 34) :then [true] :else []}))`)
 
   expectDump(t,
     Unindent(`
@@ -1231,14 +1231,14 @@ func TestIf(t *testing.T) {
       } else {
         3
       }`),
-    `(= ($ "x") (if {:test ($ "y") :then [1] :else (if {:test ($ "z") :then [2] :else [3]})}))`)
+    `(= (var "x") (if {:test (var "y") :then [1] :else (if {:test (var "z") :then [2] :else [3]})}))`)
 
   expectDump(t,
     Unindent(`
       $x = if $y == if $x {
         true
       } { false }`),
-    `(= ($ "x") (if {:test (== ($ "y") (if {:test ($ "x") :then [true]})) :then [false]}))`)
+    `(= (var "x") (if {:test (== (var "y") (if {:test (var "x") :then [true]})) :then [false]}))`)
 
   expectError(t,
     `$x = else { 3 }`,
@@ -1253,7 +1253,7 @@ func TestUnless(t *testing.T) {
       } else {
         false
       }`),
-    `(= ($ "x") (unless {:test ($ "y") :then [true] :else [false]}))`)
+    `(= (var "x") (unless {:test (var "y") :then [true] :else [false]}))`)
 
   expectDump(t,
     Unindent(`
@@ -1261,7 +1261,7 @@ func TestUnless(t *testing.T) {
       } else {
         false
       }`),
-    `(= ($ "x") (unless {:test ($ "y") :then [] :else [false]}))`)
+    `(= (var "x") (unless {:test (var "y") :then [] :else [false]}))`)
 
   expectDump(t,
     Unindent(`
@@ -1269,14 +1269,14 @@ func TestUnless(t *testing.T) {
         true
       } else {
       }`),
-    `(= ($ "x") (unless {:test ($ "y") :then [true] :else []}))`)
+    `(= (var "x") (unless {:test (var "y") :then [true] :else []}))`)
 
   expectDump(t,
     Unindent(`
       $x = if $y == unless $x {
         true
       } { false }`),
-    `(= ($ "x") (if {:test (== ($ "y") (unless {:test ($ "x") :then [true]})) :then [false]}))`)
+    `(= (var "x") (if {:test (== (var "y") (unless {:test (var "x") :then [true]})) :then [false]}))`)
 
   expectError(t,
     Unindent(`
@@ -1293,7 +1293,7 @@ func TestUnless(t *testing.T) {
 func TestSelector(t *testing.T) {
   expectDump(t,
     `$rootgroup = $facts['os']['family'] ? 'Solaris' => 'wheel'`,
-    `(= ($ "rootgroup") (? (access (access ($ "facts") "os") "family") [(=> "Solaris" "wheel")]))`)
+    `(= (var "rootgroup") (? (access (access (var "facts") "os") "family") [(=> "Solaris" "wheel")]))`)
 
   expectDump(t,
     Unindent(`
@@ -1302,7 +1302,7 @@ func TestSelector(t *testing.T) {
         /(Darwin|FreeBSD)/ => 'wheel',
         default            => 'root'
       }`),
-    `(= ($ "rootgroup") (? (access (access ($ "facts") "os") "family") [(=> "Solaris" "wheel") (=> (regexp "(Darwin|FreeBSD)") "wheel") (=> (default) "root")]))`)
+    `(= (var "rootgroup") (? (access (access (var "facts") "os") "family") [(=> "Solaris" "wheel") (=> (regexp "(Darwin|FreeBSD)") "wheel") (=> (default) "root")]))`)
 
   expectDump(t,
     Unindent(`
@@ -1311,7 +1311,7 @@ func TestSelector(t *testing.T) {
         /(Darwin|FreeBSD)/ => 'wheel',
         default            => 'root',
       }`),
-    `(= ($ "rootgroup") (? (access (access ($ "facts") "os") "family") [(=> "Solaris" "wheel") (=> (regexp "(Darwin|FreeBSD)") "wheel") (=> (default) "root")]))`)
+    `(= (var "rootgroup") (? (access (access (var "facts") "os") "family") [(=> "Solaris" "wheel") (=> (regexp "(Darwin|FreeBSD)") "wheel") (=> (default) "root")]))`)
 }
 
 func TestCase(t *testing.T) {
@@ -1349,7 +1349,7 @@ func TestResource(t *testing.T) {
       }`),
     `(resource {`+
         `:type (qn "file") `+
-        `:bodies [{:title "/tmp/foo" :ops [(=> "ensure" (qn "file")) (splat-hash ($ "file_ownership"))]}]})`)
+        `:bodies [{:title "/tmp/foo" :ops [(=> "ensure" (qn "file")) (splat-hash (var "file_ownership"))]}]})`)
 
   expectDump(t,
     Unindent(`
@@ -1592,47 +1592,47 @@ func TestExportedResourceCollector(t *testing.T) {
 func TestOperators(t *testing.T) {
   expectDump(t,
     `$x = a or b and c < d == e << f + g * -h`,
-    `(= ($ "x") (or (qn "a") (and (qn "b") (< (qn "c") (== (qn "d") (<< (qn "e") (+ (qn "f") (* (qn "g") (- (qn "h"))))))))))`)
+    `(= (var "x") (or (qn "a") (and (qn "b") (< (qn "c") (== (qn "d") (<< (qn "e") (+ (qn "f") (* (qn "g") (- (qn "h"))))))))))`)
 
   expectDump(t,
     `$x = -h / g + f << e == d <= c and b or a`,
-    `(= ($ "x") (or (and (<= (== (<< (+ (/ (- (qn "h")) (qn "g")) (qn "f")) (qn "e")) (qn "d")) (qn "c")) (qn "b")) (qn "a")))`)
+    `(= (var "x") (or (and (<= (== (<< (+ (/ (- (qn "h")) (qn "g")) (qn "f")) (qn "e")) (qn "d")) (qn "c")) (qn "b")) (qn "a")))`)
 
   expectDump(t,
     `$x = !a == b`,
-    `(= ($ "x") (== (! (qn "a")) (qn "b")))`)
+    `(= (var "x") (== (! (qn "a")) (qn "b")))`)
 
   expectDump(t,
     `$x = a > b`,
-    `(= ($ "x") (> (qn "a") (qn "b")))`)
+    `(= (var "x") (> (qn "a") (qn "b")))`)
 
   expectDump(t,
     `$x = a >= b`,
-    `(= ($ "x") (>= (qn "a") (qn "b")))`)
+    `(= (var "x") (>= (qn "a") (qn "b")))`)
 
   expectDump(t,
     `$x = a +b`,
-    `(= ($ "x") (+ (qn "a") (qn "b")))`)
+    `(= (var "x") (+ (qn "a") (qn "b")))`)
 
   expectDump(t,
     `$x = +4`,
-    `(= ($ "x") 4)`)
+    `(= (var "x") 4)`)
 
   expectDump(t,
     `$x = a * (b + c)`,
-    `(= ($ "x") (* (qn "a") (() (+ (qn "b") (qn "c")))))`)
+    `(= (var "x") (* (qn "a") (paren (+ (qn "b") (qn "c")))))`)
 
   expectDump(t,
     `$x = $y -= $z`,
-    `(= ($ "x") (-= ($ "y") ($ "z")))`)
+    `(= (var "x") (-= (var "y") (var "z")))`)
 
   expectDump(t,
     `$x = $y + $z % 5`,
-    `(= ($ "x") (+ ($ "y") (% ($ "z") 5)))`)
+    `(= (var "x") (+ (var "y") (% (var "z") 5)))`)
 
   expectDump(t,
     `$x = $y += $z`,
-    `(= ($ "x") (+= ($ "y") ($ "z")))`)
+    `(= (var "x") (+= (var "y") (var "z")))`)
 
   expectError(t,
     `$x = +b`,
@@ -1706,7 +1706,7 @@ func TestEPP(t *testing.T) {
   expectDumpEPP(t,
     Unindent(`
       <%-||-%> some <%- $x = 3 %> text`),
-    `(lambda {:body (epp (render-s "some") (= ($ "x") 3) (render-s " text"))})`)
+    `(lambda {:body (epp (render-s "some") (= (var "x") 3) (render-s " text"))})`)
 
   expectErrorEPP(t,
     Unindent(`
@@ -1722,11 +1722,11 @@ func TestEPP(t *testing.T) {
       }`),
     `(block `+
         `(render-s "vcenter: {\n  host: \"") `+
-        `(render ($ "host")) `+
+        `(render (var "host")) `+
         `(render-s "\"\n  user: \"") `+
-        `(render ($ "username")) `+
+        `(render (var "username")) `+
         `(render-s "\"\n  password: \"") `+
-        `(render ($ "password")) `+
+        `(render (var "password")) `+
         `(render-s "\"\n}"))`)
 
   expectDumpEPP(t,
@@ -1765,27 +1765,27 @@ func TestEPP(t *testing.T) {
       `:body (epp `+
         `(render-s "\n\n\n") `+
         `(if {`+
-          `:test ($ "keys_enable") `+
+          `:test (var "keys_enable") `+
           `:then [(render-s "\n\nkeys ") `+
-            `(render ($ "keys_file")) `+
+            `(render (var "keys_file")) `+
             `(render-s "\n") `+
             `(unless {`+
-              `:test (=~ ($ "keys_trusted") (access (qr "Array") (qr "Data") 0 0)) `+
+              `:test (=~ (var "keys_trusted") (access (qr "Array") (qr "Data") 0 0)) `+
               `:then [`+
                 `(render-s "trustedkey ") `+
-                `(render (call-method {:functor (. ($ "keys_trusted") (qn "join")) :args [" "]})) `+
+                `(render (call-method {:functor (. (var "keys_trusted") (qn "join")) :args [" "]})) `+
                 `(render-s "\n")]}) `+
             `(if {`+
-              `:test (=~ ($ "keys_requestkey") (access (qr "String") 1)) `+
+              `:test (=~ (var "keys_requestkey") (access (qr "String") 1)) `+
               `:then [`+
                 `(render-s "requestkey ") `+
-                `(render ($ "keys_requestkey")) `+
+                `(render (var "keys_requestkey")) `+
                 `(render-s "\n")]}) `+
             `(if {`+
-              `:test (=~ ($ "keys_controlkey") (access (qr "String") 1)) `+
+              `:test (=~ (var "keys_controlkey") (access (qr "String") 1)) `+
               `:then [`+
                 `(render-s "controlkey ") `+
-                `(render ($ "keys_controlkey")) `+
+                `(render (var "keys_controlkey")) `+
                 `(render-s "\n")]}) `+
                 `(render-s "\n")]}))})`)
 
@@ -1836,7 +1836,7 @@ func expectBlock(t *testing.T, source string, expected string) {
 }
 
 func expectBlockX(t *testing.T, source string, expected string, eppMode bool) {
-  expr, err := Parse(``, source, eppMode)
+  expr, err := CreateParser().Parse(``, source, eppMode, false)
   if err != nil {
     t.Errorf(err.Error())
   } else {
@@ -1856,7 +1856,7 @@ func expectErrorEPP(t *testing.T, source string, expected string) {
 }
 
 func expectErrorX(t *testing.T, source string, expected string, eppMode bool) {
-  _, err := Parse(``, source, eppMode)
+  _, err := CreateParser().Parse(``, source, eppMode, false)
   if err == nil {
     t.Errorf("Expected error '%s' but nothing was raised", expected)
   } else {
@@ -1893,7 +1893,7 @@ func expectHeredoc(t *testing.T, str string, args ...interface{}) {
 }
 
 func parse(t *testing.T, str string, eppMode bool) Expression {
-  expr, err := Parse(``, str, eppMode)
+  expr, err := CreateParser().Parse(``, str, eppMode, false)
   if err != nil {
     t.Errorf(err.Error())
     return nil

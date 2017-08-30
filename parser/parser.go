@@ -4,17 +4,18 @@ import (
   . `strconv`
   . `strings`
   "fmt"
+  "github.com/puppetlabs/go-parser/issue"
 )
 
-// Recursive descent parser for the Puppet language.
+// Recursive descent context for the Puppet language.
 //
-// This is actually the lexer with added functionality. Having the lexer and parser being the
+// This is actually the lexer with added functionality. Having the lexer and context being the
 // same instance is very beneficial when the lexer must parse expressions (as is the case when
 // it encounters double quoted strings or heredoc with interpolation).
 
 type(
   ExpressionParser interface {
-    Parse(s string) Expression
+    Parse(filename string, source string, eppMode bool, singleExpression bool) (expr Expression, err error)
   }
 
   // For argument lists that are not within parameters
@@ -45,33 +46,97 @@ var statementCalls = map[string]bool{
   `return`: true,
 }
 
-// Parse the contents of the given source. The filename is optional and will be used
-// in warnings and errors issued by the parser.
-//
-// If eppMode is true, the parser will treat the given source as text with embedded puppet
-// expressions.
-func Parse(filename string, source string, eppMode bool) (expr Expression, err error) {
-  ctx := context{
-    stringReader:  stringReader{text: source},
-    locator:       &Locator{string: source, file: filename},
-    definitions:   make([]Definition, 0, 8),
-    factory:       DefaultFactory(),
-    eppMode:       eppMode,
-    nextLineStart: -1}
+type Lexer interface {
+  CurrentToken() int
 
-  expr, err = ctx.parseTopBlock(filename, source, eppMode)
-  if err == nil {
+  NextToken() int
+
+  SyntaxError()
+
+  TokenValue() interface{}
+
+  TokenString() string
+
+  AssertToken(token int)
+}
+
+type lexer struct {
+  context
+}
+
+func NewSimpleLexer(filename string, source string) Lexer {
+  // Essentially a lexer that has no knowledge of interpolations
+  return &lexer{context{
+    stringReader: stringReader{text: source},
+    factory: nil,
+    locator: &Locator{string: source, file: filename},
+    handleBacktickStrings: false}}
+}
+
+func (l *lexer) CurrentToken() int {
+  return l.context.currentToken
+}
+
+func (l *lexer) NextToken() int {
+  l.context.nextToken()
+  return l.context.currentToken
+}
+
+func (l *lexer) SyntaxError() {
+  panic(l.context.parseIssue(LEX_UNEXPECTED_TOKEN, tokenMap[l.context.currentToken]))
+}
+
+func (l *lexer) TokenString() string {
+  return l.context.tokenString()
+}
+
+func (l *lexer) TokenValue() interface{} {
+  return l.context.tokenValue
+}
+
+func (l *lexer) AssertToken(token int) {
+  l.context.assertToken(token)
+}
+
+func CreatePspecParser() ExpressionParser {
+  return &context{factory: DefaultFactory(), handleBacktickStrings: true}
+}
+
+func CreateParser() ExpressionParser {
+  return &context{factory: DefaultFactory(), handleBacktickStrings: false}
+}
+
+// Parse the contents of the given source. The filename is optional and will be used
+// in warnings and errors issued by the context.
+//
+// If eppMode is true, the context will treat the given source as text with embedded puppet
+// expressions.
+func (ctx *context) Parse(filename string, source string, eppMode bool, singleExpression bool) (expr Expression, err error) {
+  ctx.stringReader = stringReader{text: source}
+  ctx.locator = &Locator{string: source, file: filename}
+  ctx.definitions = make([]Definition, 0, 8)
+  ctx.eppMode = eppMode
+  ctx.nextLineStart = -1
+
+  expr, err = ctx.parseTopExpression(filename, source, eppMode, singleExpression)
+  if err == nil && !singleExpression {
      expr = ctx.factory.Program(expr, ctx.definitions, ctx.locator, 0, ctx.Pos())
   }
   return
 }
 
-func (ctx *context) parseTopBlock(filename string, source string, eppMode bool) (expr Expression, err error) {
+func (ctx *context) parseTopExpression(filename string, source string, eppMode bool, singleExpression bool) (expr Expression, err error) {
   defer func() {
     if r := recover(); r != nil {
-      err, _ = r.(error)
+      var ok bool
+      if err, ok = r.(*issue.ReportedIssue); !ok {
+        if err, ok = r.(*ParseError); !ok {
+          panic(r)
+        }
+      }
     }
   }()
+
 
   if eppMode {
     ctx.consumeEPP()
@@ -114,7 +179,7 @@ func (ctx *context) parseTopBlock(filename string, source string, eppMode bool) 
   }
 
   ctx.nextToken()
-  expr = ctx.parse(TOKEN_END, false)
+  expr = ctx.parse(TOKEN_END, singleExpression)
   return
 }
 
@@ -153,7 +218,10 @@ func (ctx *context) tokenString() string {
   if ctx.tokenValue == nil {
     return tokenMap[ctx.currentToken]
   }
-  return ctx.tokenValue.(string)
+  if str, ok := ctx.tokenValue.(string); ok {
+    return str
+  }
+  panic(fmt.Sprintf("Token '%s' has no string representation", tokenMap[ctx.currentToken]))
 }
 
 // Iterates all statements in a block and transforms qualified names that names a "statement call" and are followed
@@ -618,9 +686,11 @@ func (ctx *context) atomExpression() (expr Expression) {
     ctx.nextToken()
 
   case TOKEN_VARIABLE:
-    expr := ctx.tokenValue.(Expression)
+    varName := ctx.tokenString()
     ctx.nextToken()
-    return expr
+    expr = ctx.factory.Variable(
+      ctx.factory.QualifiedName(varName, ctx.locator, atomStart + 1, len(varName)),
+      ctx.locator, atomStart, ctx.Pos()-atomStart)
 
   case TOKEN_CASE:
     expr = ctx.caseExpression()
@@ -1179,7 +1249,7 @@ func parameter(ctx *context) Expression {
   if ctx.currentToken != TOKEN_VARIABLE {
     panic(ctx.parseIssue(PARSE_EXPECTED_VARIABLE))
   }
-  variable := ctx.tokenValue.(*VariableExpression)
+  variable := ctx.tokenString()
   ctx.nextToken()
 
   if ctx.currentToken == TOKEN_ASSIGN {
@@ -1187,7 +1257,7 @@ func parameter(ctx *context) Expression {
     defaultExpression = ctx.expression()
   }
   return ctx.factory.Parameter(
-    variable.Name(),
+    variable,
     defaultExpression, typeExpr, capturesRest, ctx.locator, start, ctx.Pos()-start)
 }
 

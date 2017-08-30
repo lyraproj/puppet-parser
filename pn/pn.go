@@ -3,6 +3,8 @@ package pn
 import (
   . "fmt"
   . "bytes"
+  "regexp"
+  "strings"
 )
 
 type (
@@ -28,6 +30,9 @@ type (
 
     // Create a key/value pair from the given name and this PN
     WithName(name string) Entry
+
+    // Returns the Format output as a string
+    String() string
   }
 
   // Entry in hash
@@ -80,6 +85,12 @@ func CallPN(name string, elements ...PN) PN {
   return &callPN{listPN{elements}, name}
 }
 
+func ToString(pn PN) string {
+  b := NewBufferString(``)
+  pn.Format(b)
+  return b.String()
+}
+
 func CallNamedPN(name string, entries ...Entry) PN {
   return &callNamedPN{mapPN{entries}, name}
 }
@@ -104,6 +115,10 @@ func (pn *listPN) ToData() interface{} {
     me[idx] = op.ToData()
   }
   return me
+}
+
+func (pn *listPN) String() string {
+  return ToString(pn)
 }
 
 func (pn *listPN) WithName(name string) Entry {
@@ -132,6 +147,10 @@ func (pn *callPN) ToData() interface{} {
   return []interface{} { pn.name, pn.listPN.ToData() }
 }
 
+func (pn *callPN) String() string {
+  return ToString(pn)
+}
+
 func (pn *callPN) WithName(name string) Entry {
   return &mapEntry{name, pn}
 }
@@ -154,6 +173,10 @@ func (pn *callNamedPN) Format(b *Buffer) {
 
 func (pn *callNamedPN) ToData() interface{} {
   return []interface{} { pn.name, pn.mapPN.ToData() }
+}
+
+func (pn *callNamedPN) String() string {
+  return ToString(pn)
 }
 
 func (pn *callNamedPN) WithName(name string) Entry {
@@ -203,6 +226,10 @@ func (pn *mapPN) ToData() interface{} {
   return me
 }
 
+func (pn *mapPN) String() string {
+  return ToString(pn)
+}
+
 func (pn *mapPN) WithName(name string) Entry {
   return &mapEntry{name, pn}
 }
@@ -215,14 +242,33 @@ func (pn *literalPN) AsParameters() []PN {
   return []PN { pn }
 }
 
+// Strip zeroes between last significant digit and end or exponent. The
+// zero following the decimal point is considered significant.
+var STRIP_TRAILING_ZEROES = regexp.MustCompile("\\A(.*(?:\\.0|[1-9]))0+(e[+-]?\\d+)?\\z")
+
 func (pn *literalPN) Format(b *Buffer) {
   switch pn.val.(type) {
+  case nil:
+    b.WriteString(`null`)
   case string:
     DoubleQuote(pn.val.(string), b)
   case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
     Fprintf(b, `%d`, pn.val)
   case float32, float64:
-    Fprintf(b, `%g`, pn.val)
+    str := Sprintf(`%.16g`, pn.val)
+    // We want 16 digit precision that overflows into scientific notation and no trailing zeroes
+    if strings.IndexByte(str, '.') < 0 && strings.IndexByte(str, 'e') < 0 {
+      // %g sometimes yields an integer number without decimals or scientific
+      // notation. Scientific notation must then be used to retain type information
+      str = Sprintf(`%.16e`, pn.val)
+    }
+
+    if groups := STRIP_TRAILING_ZEROES.FindStringSubmatch(str); groups != nil {
+      b.WriteString(groups[1])
+      b.WriteString(groups[2])
+    } else {
+      b.WriteString(str)
+    }
   case bool:
     Fprintf(b, `%t`, pn.val)
   default:
@@ -232,6 +278,10 @@ func (pn *literalPN) Format(b *Buffer) {
 
 func (pn *literalPN) ToData() interface{} {
   return pn.val
+}
+
+func (pn *literalPN) String() string {
+  return ToString(pn)
 }
 
 func (pn *literalPN) WithName(name string) Entry {

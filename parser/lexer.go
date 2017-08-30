@@ -295,17 +295,18 @@ type defaultStruct struct {
 
 type context struct {
   stringReader
-  locator         *Locator
-  factory         ExpressionFactory
-  nameStack       []string
-  definitions     []Definition
-  eppMode         bool
-  nextLineStart   int
-  currentToken    int
-  beginningOfLine int
-  tokenStartPos   int
-  tokenValue      interface{}
-  radix           int
+  locator               *Locator
+  eppMode               bool
+  handleBacktickStrings bool
+  nextLineStart         int
+  currentToken          int
+  beginningOfLine       int
+  tokenStartPos         int
+  tokenValue            interface{}
+  radix                 int
+  factory               ExpressionFactory
+  nameStack             []string
+  definitions           []Definition
 }
 
 func (ctx *context) setToken(token int) {
@@ -323,8 +324,10 @@ func (ctx *context)unterminatedQuote(start int, delimiter rune) *ReportedIssue {
   var stringType string
   if delimiter == '"' {
     stringType = `double`
-  } else {
+  } else if delimiter == '\'' {
     stringType = `single`
+  } else {
+    stringType = `backtick`
   }
   return ctx.parseIssue(LEX_UNTERMINATED_STRING, stringType)
 }
@@ -647,9 +650,7 @@ func (ctx *context)nextToken() {
       } else {
         ctx.tokenValue = ``
       }
-      ctx.setTokenValue(TOKEN_VARIABLE, ctx.factory.Variable(
-        ctx.factory.QualifiedName(ctx.tokenValue.(string), ctx.locator, start+1, ctx.Pos()-(start+1)),
-        ctx.locator, start, ctx.Pos()-start))
+      ctx.setTokenValue(TOKEN_VARIABLE, ctx.tokenValue.(string))
 
     case '0':
       ctx.radix = 10
@@ -697,6 +698,14 @@ func (ctx *context)nextToken() {
           ctx.setTokenValue(TOKEN_INTEGER, int64(0))
         }
       }
+
+
+    case '`':
+      if ctx.handleBacktickStrings {
+        ctx.consumeBacktickedString()
+        break
+      }
+      fallthrough
 
     default:
       ctx.SetPos(start)
@@ -1105,7 +1114,7 @@ func (ctx *context) interpolate(start int) (Expression) {
   if c == '{' {
     ctx.Advance(sz)
 
-    // Call parser recursively and expect the ending token to be the ending curly brace
+    // Call context recursively and expect the ending token to be the ending curly brace
     ctx.nextToken()
     expr := ctx.parse(TOKEN_RC, true)
 
@@ -1136,11 +1145,34 @@ func (ctx *context) interpolate(start int) (Expression) {
   return ctx.factory.Text(ctx.factory.Variable(textExpr, ctx.locator, start, ctx.Pos() - start), ctx.locator, start, ctx.Pos() - start)
 }
 
+func (ctx *context) consumeBacktickedString() {
+  start := ctx.Pos()
+  c, sz := ctx.Peek()
+  for c != 0 && c != '`' {
+    ctx.Advance(sz)
+    c, sz = ctx.Peek()
+  }
+  if c == 0 {
+    panic(ctx.unterminatedQuote(start - 1, '`'))
+  }
+  ctx.setTokenValue(TOKEN_STRING, ctx.From(start))
+  ctx.Advance(sz)
+}
+
 func (ctx *context) consumeDoubleQuotedString() {
-  segments := ctx.consumeDelimitedString('"', make([]Expression, 0, 4),
+  var segments []Expression
+  if ctx.factory != nil {
+    segments = make([]Expression, 0, 4)
+  }
+  segments = ctx.consumeDelimitedString('"', segments,
     func(buf *Buffer, ctx *context, ec rune) {
     switch ec {
-    case '\\', '$', '\'':
+    case '\\', '\'':
+      buf.WriteRune(ec)
+    case '$':
+      if ctx.factory == nil {
+        buf.WriteRune('\\')
+      }
       buf.WriteRune(ec)
     case 'n':
       buf.WriteRune('\n')
@@ -1158,6 +1190,10 @@ func (ctx *context) consumeDoubleQuotedString() {
       buf.WriteRune(ec)
     }
   })
+  if ctx.factory == nil {
+    // currentToken will be TOKEN_STRING
+    return
+  }
 
   if len(segments) > 0 {
     // Result of the consumeDelimitedString is just the tail
@@ -1401,7 +1437,7 @@ func (ctx *context) consumeHeredocString() {
   if flags != nil || quoteStart >= 0 || indentStrip > 0 {
     ctx.SetPos(heredocContentStart)
     var segments []Expression
-    if quoteStart >= 0 {
+    if quoteStart >= 0 && ctx.factory != nil {
       segments = make([]Expression, 0, 4)
     }
     heredoc, segments = ctx.applyEscapes(heredocContentEnd, indentStrip, flags, segments)
@@ -1422,8 +1458,12 @@ func (ctx *context) consumeHeredocString() {
 
   ctx.SetPos(heredocTagEnd) // Normal parsing continues here
   ctx.nextLineStart = heredocEnd + 1 // and next newline will jump to here
-  textExpr := ctx.factory.String(heredoc, ctx.locator, heredocContentStart, heredocContentEnd -heredocContentStart)
-  ctx.setTokenValue(TOKEN_HEREDOC, ctx.factory.Heredoc(textExpr, syntax, ctx.locator, heredocStart, heredocContentEnd - heredocStart))
+  if ctx.factory != nil {
+    textExpr := ctx.factory.String(heredoc, ctx.locator, heredocContentStart, heredocContentEnd -heredocContentStart)
+    ctx.setTokenValue(TOKEN_HEREDOC, ctx.factory.Heredoc(textExpr, syntax, ctx.locator, heredocStart, heredocContentEnd - heredocStart))
+  } else {
+    ctx.setTokenValue(TOKEN_STRING, heredoc)
+  }
 }
 
 func (ctx *context)extractFlags(start int) ([]byte) {

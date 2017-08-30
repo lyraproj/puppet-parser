@@ -774,7 +774,7 @@ func parseAndValidate(t *testing.T, str string, eppMode bool) []*ReportedIssue {
 }
 
 func parse(t *testing.T, str string, eppMode bool) *Program {
-  expr, err := Parse(``, str, eppMode)
+  expr, err := CreateParser().Parse(``, str, eppMode, false)
   if err != nil {
     t.Errorf(err.Error())
     return nil

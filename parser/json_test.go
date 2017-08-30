@@ -54,7 +54,7 @@ func toJSON(e Expression) string {
 }
 
 func expectJSON(t *testing.T, source string, expected string) {
-  expr, err := Parse(``, source, false)
+  expr, err := CreateParser().Parse(``, source, false, false)
   if err != nil {
     t.Errorf(err.Error())
   } else {
