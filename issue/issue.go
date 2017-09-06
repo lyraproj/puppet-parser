@@ -8,10 +8,10 @@ import (
 
 // this would be an enum in most other languages
 const (
-  SEVERITY_IGNORE = 1
-  SEVERITY_DEPRECATION = 2
-  SEVERITY_WARNING = 3
-  SEVERITY_ERROR = 4
+  SEVERITY_IGNORE = Severity(1)
+  SEVERITY_DEPRECATION = Severity(2)
+  SEVERITY_WARNING = Severity(3)
+  SEVERITY_ERROR = Severity(4)
 )
 
 type (
