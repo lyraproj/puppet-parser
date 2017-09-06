@@ -4,12 +4,10 @@ import (
   "testing"
   "bytes"
   "encoding/json"
-  . "github.com/puppetlabs/go-parser/internal/testutils"
 )
 
 func TestManifest(t *testing.T) {
-  expectJSON(t,
-    Unindent(`
+  expectJSON(t, Unindent(`
       file { '/tmp/foo':
         mode => '0640',
         ensure => present;
@@ -24,24 +22,7 @@ func TestManifest(t *testing.T) {
           notice("show the ${n}")
         $in * 3.14
       }`),
-    `["block",[`+
-      `["resource",{`+
-        `"bodies":[`+
-          `{"ops":[["=>",["mode","0640"]],["=>",["ensure",["qn",["present"]]]]],"title":"/tmp/foo"},`+
-          `{"ops":[["=>",["mode","0640"]],["=>",["ensure",["qn",["present"]]]]],"title":"/tmp/bar"}],`+
-        `"type":["qn",["file"]]}],`+
-      `["=",[["$",["rootgroup"]],["?",[["access",[["access",[["$",["facts"]],"os"]],"family"]],[["=>",["Solaris","wheel"]]]]]]],`+
-      `["function",{`+
-        `"body":[`+
-          `["invoke",{`+
-            `"args":[["concat",["show the ",["str",[["$",["n"]]]]]]],`+
-            `"functor":["qn",["notice"]]}],`+
-          `["*",[["$",["in"]],3.14]]],`+
-        `"name":"foo",`+
-        `"params":{`+
-          `"in":{"type":["access",[["qr",["Integer"]],2,3]]},`+
-          `"n":{"type":["qr",["String"]],"value":"vi"}},`+
-        `"returns":["access",[["qr",["Float"]],0]]}]]]`)
+    `{"^":["block",{"^":["resource",{"bodies":[{"ops":[{"^":["=>","mode","0640"]},{"^":["=>","ensure",{"^":["qn","present"]}]}],"title":"/tmp/foo"},{"ops":[{"^":["=>","mode","0640"]},{"^":["=>","ensure",{"^":["qn","present"]}]}],"title":"/tmp/bar"}],"type":{"^":["qn","file"]}}]},{"^":["=",{"^":["var","rootgroup"]},{"^":["?",{"^":["access",{"^":["access",{"^":["var","facts"]},"os"]},"family"]},[{"^":["=>","Solaris","wheel"]}]]}]},{"^":["function",{"body":[{"^":["invoke",{"args":[{"^":["concat","show the ",{"^":["str",{"^":["var","n"]}]}]}],"functor":{"^":["qn","notice"]}}]},{"^":["*",{"^":["var","in"]},3.14]}],"name":"foo","params":{"in":{"type":{"^":["access",{"^":["qr","Integer"]},2,3]}},"n":{"type":{"^":["qr","String"]},"value":"vi"}},"returns":{"^":["access",{"^":["qr","Float"]},0]}}]}]}`)
 }
 
 func toJSON(e Expression) string {

@@ -3,7 +3,6 @@ package parser
 import (
   `testing`
   `bytes`
-  . "github.com/puppetlabs/go-parser/internal/testutils"
 )
 
 func TestEmpty(t *testing.T) {

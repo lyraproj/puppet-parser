@@ -58,11 +58,6 @@ type (
     val interface{}
   }
 
-  callNamedPN struct {
-    mapPN
-    name string
-  }
-
   callPN struct {
     listPN
     name string
@@ -89,10 +84,6 @@ func ToString(pn PN) string {
   b := NewBufferString(``)
   pn.Format(b)
   return b.String()
-}
-
-func CallNamedPN(name string, entries ...Entry) PN {
-  return &callNamedPN{mapPN{entries}, name}
 }
 
 func (pn *listPN) AsCall(name string) PN {
@@ -144,7 +135,16 @@ func (pn *callPN) Format(b *Buffer) {
 }
 
 func (pn *callPN) ToData() interface{} {
-  return []interface{} { pn.name, pn.listPN.ToData() }
+  hash := make(map[string]interface{}, 2)
+  top := len(pn.elements)
+  args := make([]interface{}, 0, top + 1)
+  args = append(args, pn.name)
+  if(top > 0) {
+    params := pn.listPN.ToData()
+    args = append(args, params.([]interface{})...)
+  }
+  hash[`^`] = args
+  return hash
 }
 
 func (pn *callPN) String() string {
@@ -152,34 +152,6 @@ func (pn *callPN) String() string {
 }
 
 func (pn *callPN) WithName(name string) Entry {
-  return &mapEntry{name, pn}
-}
-
-func (pn *callNamedPN) AsCall(name string) PN {
-  return &callNamedPN{mapPN{pn.entries}, name}
-}
-
-func (pn *callNamedPN) AsParameters() []PN {
-  return pn.mapPN.AsParameters()
-}
-
-func (pn *callNamedPN) Format(b *Buffer) {
-  b.WriteByte('(')
-  b.WriteString(pn.name)
-  b.WriteByte(' ')
-  pn.mapPN.Format(b)
-  b.WriteByte(')')
-}
-
-func (pn *callNamedPN) ToData() interface{} {
-  return []interface{} { pn.name, pn.mapPN.ToData() }
-}
-
-func (pn *callNamedPN) String() string {
-  return ToString(pn)
-}
-
-func (pn *callNamedPN) WithName(name string) Entry {
   return &mapEntry{name, pn}
 }
 
@@ -192,7 +164,7 @@ func (e *mapEntry) Value() PN {
 }
 
 func (pn *mapPN) AsCall(name string) PN {
-  return &callNamedPN{mapPN{pn.entries}, name}
+  return CallPN(name, pn)
 }
 
 func (pn *mapPN) AsParameters() []PN {
