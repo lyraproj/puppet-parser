@@ -1570,6 +1570,10 @@ func (e *RegexpExpression) Value() interface{} {
   return e.value
 }
 
+func (e *RegexpExpression) PatternString() string {
+  return e.value
+}
+
 func (e *RegexpExpression) ToLiteralValue() LiteralValue {
   return e
 }
@@ -1928,8 +1932,27 @@ func (e *UnlessExpression) Contents(path []Expression, visitor PathVisitor) {
 
 func (e *UnlessExpression) ToPN() PN { return e.pnIf(`unless`) }
 
-func (e *VariableExpression) Name() string {
-  return e.expr.(*QualifiedName).name
+func (e *VariableExpression) Index() (index int64, ok bool) {
+  var ix *LiteralInteger
+  if ix, ok = e.expr.(*LiteralInteger); ok {
+    index = ix.value
+  }
+  return
+}
+
+func (e *VariableExpression) Name() (name string, ok bool) {
+  var qn *QualifiedName
+  if qn, ok = e.expr.(*QualifiedName); ok {
+    name = qn.name
+  }
+  return
+}
+
+func (e *VariableExpression) NameOrIndex() interface{} {
+  if qn, ok := e.expr.(*QualifiedName); ok {
+    return qn.name
+  }
+  return e.expr.(*LiteralInteger).value
 }
 
 func (e *VariableExpression) AllContents(path []Expression, visitor PathVisitor) {
@@ -1940,7 +1963,7 @@ func (e *VariableExpression) Contents(path []Expression, visitor PathVisitor) {
   shallowVisit(e, path, visitor, e.expr)
 }
 
-func (e *VariableExpression) ToPN() PN { return CallPN(`var`, LiteralPN(e.Expr().(*QualifiedName).Name())) }
+func (e *VariableExpression) ToPN() PN { return CallPN(`var`, LiteralPN(e.NameOrIndex())) }
 
 func (e *VariableExpression) ToUnaryExpression() UnaryExpression {
   return e

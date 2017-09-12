@@ -29,4 +29,3 @@ func DoubleQuote(str string, b *Buffer) {
   }
   b.WriteByte('"')
 }
-

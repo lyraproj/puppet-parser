@@ -4,7 +4,7 @@ import (
   "testing"
   . "github.com/puppetlabs/go-parser/issue"
   . "github.com/puppetlabs/go-parser/parser"
-  . "github.com/puppetlabs/go-parser/internal/testutils"
+  . "github.com/puppetlabs/go-pspec/testutils"
 )
 
 func TestVariableAssignValidation(t *testing.T) {
@@ -364,11 +364,6 @@ func TestFunctionDefinitionValidation(t *testing.T) {
     Unindent(`
       function foo($a, *$b, $c) {}`),
     VALIDATE_CAPTURES_REST_NOT_LAST)
-
-  expectIssues(t,
-    Unindent(`
-      function foo($1) {}`),
-    VALIDATE_ILLEGAL_NUMERIC_PARAMETER)
 
   expectIssues(t,
     Unindent(`

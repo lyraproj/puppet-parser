@@ -686,11 +686,15 @@ func (ctx *context) atomExpression() (expr Expression) {
     ctx.nextToken()
 
   case TOKEN_VARIABLE:
-    varName := ctx.tokenString()
+    vni := ctx.tokenValue
     ctx.nextToken()
-    expr = ctx.factory.Variable(
-      ctx.factory.QualifiedName(varName, ctx.locator, atomStart + 1, len(varName)),
-      ctx.locator, atomStart, ctx.Pos()-atomStart)
+    var name Expression
+    if s, ok := vni.(string); ok {
+      name = ctx.factory.QualifiedName(s, ctx.locator, atomStart + 1, len(s))
+    } else {
+      name = ctx.factory.Integer(vni.(int64), 10, ctx.locator, atomStart + 1, ctx.Pos()-(atomStart+1))
+    }
+    expr = ctx.factory.Variable(name, ctx.locator, atomStart, ctx.Pos()-atomStart)
 
   case TOKEN_CASE:
     expr = ctx.caseExpression()
@@ -1250,7 +1254,10 @@ func parameter(ctx *context) Expression {
   if ctx.currentToken != TOKEN_VARIABLE {
     panic(ctx.parseIssue(PARSE_EXPECTED_VARIABLE))
   }
-  variable := ctx.tokenString()
+  variable, ok := ctx.tokenValue.(string)
+  if !ok {
+    panic(ctx.parseIssue(PARSE_EXPECTED_VARIABLE))
+  }
   ctx.nextToken()
 
   if ctx.currentToken == TOKEN_ASSIGN {

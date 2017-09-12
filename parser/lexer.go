@@ -644,13 +644,13 @@ func (ctx *context)nextToken() {
       } else if isDecimalDigit(c) {
         ctx.Advance(sz)
         ctx.skipDecimalDigits()
-        ctx.tokenValue = ctx.Text()[start + 1:ctx.Pos()]
+        ctx.tokenValue, _ = ParseInt(ctx.From(start + 1), 10, 64)
       } else if unicode.IsLetter(c) {
         panic(ctx.parseIssue(LEX_INVALID_VARIABLE_NAME))
       } else {
         ctx.tokenValue = ``
       }
-      ctx.setTokenValue(TOKEN_VARIABLE, ctx.tokenValue.(string))
+      ctx.setTokenValue(TOKEN_VARIABLE, ctx.tokenValue)
 
     case '0':
       ctx.radix = 10

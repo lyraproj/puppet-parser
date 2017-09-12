@@ -24,7 +24,7 @@ func main() {
 
   args := flag.Args()
   if len(args) != 1 {
-    Fprintf(Stderr, "Usage: parse [options] <pp or epp file to parse>\nValid options are:\n")
+    Fprintln(Stderr, "Usage: parse [options] <pp or epp file to parse>\nValid options are:")
     flag.PrintDefaults()
     Exit(1)
   }

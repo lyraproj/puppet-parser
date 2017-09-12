@@ -8,7 +8,6 @@ import (
   "strings"
 )
 
-var NUMERIC_VAR_NAME_EXPR = MustCompile(`\A(?:0|(?:[1-9][0-9]*))\z`)
 var DOUBLE_COLON_EXPR = MustCompile(`::`)
 
 // CLASSREF_EXT matches a class reference the same way as the lexer - i.e. the external source form
@@ -520,12 +519,14 @@ func (v *Checker) checkAssign(e Expression) {
     }
 
   case *VariableExpression:
-    name := e.(*VariableExpression).Name()
-    if NUMERIC_VAR_NAME_EXPR.MatchString(name) {
-      v.Accept(VALIDATE_ILLEGAL_NUMERIC_ASSIGNMENT, e, name)
-    }
-    if DOUBLE_COLON_EXPR.MatchString(name) {
-      v.Accept(VALIDATE_CROSS_SCOPE_ASSIGNMENT, e, name)
+    ve := e.(*VariableExpression)
+    if name, ok := ve.Name(); ok {
+      if DOUBLE_COLON_EXPR.MatchString(name) {
+        v.Accept(VALIDATE_CROSS_SCOPE_ASSIGNMENT, e, name)
+      }
+    } else {
+      idx, _ := ve.Index()
+      v.Accept(VALIDATE_ILLEGAL_NUMERIC_ASSIGNMENT, e, idx)
     }
   }
 }

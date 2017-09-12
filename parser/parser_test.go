@@ -506,7 +506,7 @@ func TestVariable(t *testing.T) {
 
   expectDump(t,
     `$2`,
-    `(var "2")`)
+    `(var 2)`)
 
   expectDump(t,
     `$`,
@@ -634,6 +634,11 @@ func TestFunctionDefintion(t *testing.T) {
       `:body [`+
         `(call-method {:functor (. (var "numbers") (qn "size")) :args []})] `+
       `:returns (qr "Integer")})`)
+
+  expectError(t,
+    Unindent(`
+      function foo($1) {}`),
+    `expected variable declaration at line 1:16`)
 
   expectError(t,
     Unindent(`
