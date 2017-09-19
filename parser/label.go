@@ -1,7 +1,7 @@
 package parser
 
 import (
-  . "fmt"
+	. "fmt"
 )
 
 // Abstract, should not get called but needed to cast abstract struct to Expression
@@ -75,20 +75,20 @@ func (e *VariableExpression) Label() string          { return "Variable" }
 func (e *VirtualQuery) Label() string                { return "Virtual Query" }
 
 func A_an(e Expression) string {
-  label := e.Label()
-  return Sprintf(`%s %s`, article(label[0]), label)
+	label := e.Label()
+	return Sprintf(`%s %s`, article(label[0]), label)
 }
 
 func A_anUc(e Expression) string {
-  label := e.Label()
-  return Sprintf(`%s %s`, article(label[0]), label)
+	label := e.Label()
+	return Sprintf(`%s %s`, article(label[0]), label)
 }
 
 func article(c byte) string {
-  switch c {
-  case 'a', 'e', 'i', 'o', 'u', 'y':
-    return `an`
-  default:
-    return `a`
-  }
+	switch c {
+	case 'a', 'e', 'i', 'o', 'u', 'y':
+		return `an`
+	default:
+		return `a`
+	}
 }

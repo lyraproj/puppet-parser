@@ -3,12 +3,12 @@
 package json
 
 import (
-  "encoding/json"
-  "io"
+	"encoding/json"
+	"io"
 )
 
 func ToJson(value interface{}, result io.Writer) {
-  enc := json.NewEncoder(result)
-  enc.SetEscapeHTML(false)
-  enc.Encode(value)
+	enc := json.NewEncoder(result)
+	enc.SetEscapeHTML(false)
+	enc.Encode(value)
 }
