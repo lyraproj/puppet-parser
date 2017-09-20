@@ -546,6 +546,22 @@ func TestArray(t *testing.T) {
 		`[1,2,3,]`,
 		`(array 1 2 3)`)
 
+	expectDump(t,
+		`[1,2,a=>3]`,
+		`(array 1 2 (hash (=> (qn "a") 3)))`)
+
+	expectDump(t,
+		`[1,2,a=>3,b=>4]`,
+		`(array 1 2 (hash (=> (qn "a") 3) (=> (qn "b") 4)))`)
+
+	expectDump(t,
+		`[1,2,a=>3,b=>4,5]`,
+		`(array 1 2 (hash (=> (qn "a") 3) (=> (qn "b") 4)) 5)`)
+
+	expectDump(t,
+		`[1,2,{a=>3},b=>4,5]`,
+		`(array 1 2 (hash (=> (qn "a") 3)) (hash (=> (qn "b") 4)) 5)`)
+
 	expectError(t,
 		`[1,2 3]`,
 		`expected one of ',' or ']', got 'integer literal' at line 1:6`)

@@ -323,6 +323,27 @@ func (ctx *context) collectionEntry() (expr Expression) {
 		expr = ctx.factory.QualifiedName(ctx.tokenString(), ctx.locator, ctx.tokenStartPos, ctx.Pos()-ctx.tokenStartPos)
 		ctx.nextToken()
 	default:
+		expr = ctx.argument()
+	}
+	return
+}
+
+func (ctx *context) argument() (expr Expression) {
+	expr = ctx.assignment()
+	if ctx.currentToken == TOKEN_FARROW {
+		ctx.nextToken()
+		value := ctx.assignment()
+		expr = ctx.factory.KeyedEntry(expr, value, ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+	}
+	return
+}
+
+func (ctx *context) hashEntry() (expr Expression) {
+	switch ctx.currentToken {
+	case TOKEN_TYPE, TOKEN_FUNCTION, TOKEN_APPLICATION, TOKEN_CONSUMES, TOKEN_PRODUCES, TOKEN_SITE:
+		expr = ctx.factory.QualifiedName(ctx.tokenString(), ctx.locator, ctx.tokenStartPos, ctx.Pos()-ctx.tokenStartPos)
+		ctx.nextToken()
+	default:
 		expr = ctx.assignment()
 	}
 	return
@@ -521,21 +542,21 @@ func (ctx *context) inExpression() (expr Expression) {
 }
 
 func (ctx *context) arrayExpression() (elements []Expression) {
-	return ctx.expressions(TOKEN_RB, collectionEntry)
+	return ctx.joinHashEntries(ctx.expressions(TOKEN_RB, collectionEntry))
 }
 
-func hashEntry(ctx *context) Expression {
-	key := ctx.collectionEntry()
+func keyedEntry(ctx *context) Expression {
+	key := ctx.hashEntry()
 	if ctx.currentToken != TOKEN_FARROW {
 		panic(ctx.parseIssue(PARSE_EXPECTED_FARROW_AFTER_KEY))
 	}
 	ctx.nextToken()
-	value := ctx.collectionEntry()
+	value := ctx.hashEntry()
 	return ctx.factory.KeyedEntry(key, value, ctx.locator, key.byteOffset(), ctx.Pos()-key.byteOffset())
 }
 
 func (ctx *context) hashExpression() (entries []Expression) {
-	return ctx.expressions(TOKEN_RC, hashEntry)
+	return ctx.expressions(TOKEN_RC, keyedEntry)
 }
 
 func (ctx *context) unaryExpression() Expression {
@@ -1080,7 +1101,7 @@ func (ctx *context) callFunctionExpression(functorExpr Expression) Expression {
 	var args []Expression
 	if ctx.currentToken != TOKEN_PIPE {
 		ctx.nextToken()
-		args = ctx.assignments()
+		args = ctx.arguments()
 	}
 	var block Expression
 	if ctx.currentToken == TOKEN_PIPE {
@@ -1113,12 +1134,56 @@ func collectionEntry(ctx *context) Expression {
 	return ctx.collectionEntry()
 }
 
-func assignment(ctx *context) Expression {
-	return ctx.assignment()
+func argument(ctx *context) Expression {
+	return ctx.argument()
 }
 
-func (ctx *context) assignments() (result []Expression) {
-	return ctx.expressions(TOKEN_RP, assignment)
+func (ctx *context) joinHashEntries(exprs []Expression) (result []Expression) {
+	// Assume that this is a no-op
+	result = exprs
+	for _, expr := range exprs {
+		if _, ok := expr.(*KeyedEntry); ok {
+			result = ctx.processHashEntries(exprs)
+			break
+		}
+	}
+	return
+}
+
+// Convert keyed entry occurances into hashes. Adjacent entries are merged into
+// one hash.
+func (ctx *context) processHashEntries(exprs[]Expression) (result []Expression) {
+	result = make([]Expression, 0, len(exprs))
+	var collector []Expression
+	for _, expr := range exprs {
+		if ke, ok := expr.(*KeyedEntry); ok {
+			if collector == nil {
+				collector = make([]Expression, 0, 8)
+			}
+			collector = append(collector, ke)
+		} else {
+			if collector != nil {
+				result = append(result, ctx.newHashWithoutBraces(collector))
+				collector = nil
+			}
+			result = append(result, expr)
+		}
+	}
+	if collector != nil {
+		result = append(result, ctx.newHashWithoutBraces(collector))
+	}
+	return
+}
+
+func (ctx *context) newHashWithoutBraces(entries []Expression) Expression {
+	start := entries[0].byteOffset()
+	last := entries[len(entries)-1]
+	end := last.byteOffset() + last.byteLength()
+	return ctx.factory.Hash(entries, ctx.locator, start, end - start)
+}
+
+func (ctx *context) arguments() (result []Expression) {
+	return ctx.joinHashEntries(ctx.expressions(TOKEN_RP, argument))
 }
 
 func (ctx *context) functionDefinition() Expression {
