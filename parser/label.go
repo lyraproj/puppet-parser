@@ -4,6 +4,17 @@ import (
 	. "fmt"
 )
 
+type (
+	Labeled interface {
+		// Returns a very brief description of this expression suitable to use in error messages
+		Label() string
+	}
+
+	Named interface {
+		Name() string
+	}
+)
+
 // Abstract, should not get called but needed to cast abstract struct to Expression
 func (e *positioned) Label() string { return "positioned" }
 
@@ -74,18 +85,34 @@ func (e *UnlessExpression) Label() string            { return "'unless' statemen
 func (e *VariableExpression) Label() string          { return "Variable" }
 func (e *VirtualQuery) Label() string                { return "Virtual Query" }
 
-func A_an(e Expression) string {
-	label := e.Label()
-	return Sprintf(`%s %s`, article(label[0]), label)
+func Label(e interface{}) string {
+	if l, ok := e.(Labeled); ok {
+		return l.Label()
+	}
+	if n, ok := e.(Named); ok {
+		return n.Name()
+	}
+	if s, ok := e.(string); ok {
+		return s
+	}
+	return Sprintf(`value of type %T`, e)
 }
 
-func A_anUc(e Expression) string {
-	label := e.Label()
-	return Sprintf(`%s %s`, article(label[0]), label)
+func A_an(e interface{}) string {
+	label := Label(e)
+	return Sprintf(`%s %s`, article(label), label)
 }
 
-func article(c byte) string {
-	switch c {
+func A_anUc(e interface{}) string {
+	label := Label(e)
+	return Sprintf(`%s %s`, article(label), label)
+}
+
+func article(s string) string {
+	if s == `` {
+		return `a`
+	}
+	switch s[0] {
 	case 'a', 'e', 'i', 'o', 'u', 'y':
 		return `an`
 	default:

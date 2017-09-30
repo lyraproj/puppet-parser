@@ -1103,6 +1103,16 @@ func TestCallTypeMethod(t *testing.T) {
 		`(= (var "x") (call-method {:functor (. (var "x") (qn "type")) :args [3]}))`)
 }
 
+func TestImplicitNewWithDot(t *testing.T) {
+	expectDump(t, `Foo(3).with |$f| { $f }`,
+		`(call-method {:functor (. (call {:functor (qr "Foo") :args [3]}) (qn "with")) :args [] :block (lambda {:params {:f {}} :body [(var "f")]})})`)
+}
+
+func TestImplicitNewWithDotDot(t *testing.T) {
+	expectDump(t, `Foo(3).type_of.with |$f| { $f }`,
+		`(call-method {:functor (. (. (call {:functor (qr "Foo") :args [3]}) (qn "type_of")) (qn "with")) :args [] :block (lambda {:params {:f {}} :body [(var "f")]})})`)
+}
+
 func TestLineComment(t *testing.T) {
 	expectBlock(t,
 		Unindent(`

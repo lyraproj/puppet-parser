@@ -1,10 +1,11 @@
 package parser
 
 import (
-	. "github.com/puppetlabs/go-parser/issue"
-	. "github.com/puppetlabs/go-parser/pn"
 	. "sort"
 	. "unicode/utf8"
+
+	. "github.com/puppetlabs/go-parser/issue"
+	. "github.com/puppetlabs/go-parser/pn"
 )
 
 // The AST Model. Designed to match the AST model used by the Puppet
@@ -23,6 +24,8 @@ type (
 	PathVisitor func(path []Expression, e Expression)
 
 	Expression interface {
+		Labeled
+
 		// Return the location in source for this expression.
 		Location
 
@@ -31,9 +34,6 @@ type (
 
 		// Let the given visitor iterate all contained expressions.
 		Contents(path []Expression, visitor PathVisitor)
-
-		// Returns a very brief description of this expression suitable to use in error messages
-		Label() string
 
 		// Returns the string that represents the parsed text that resulted in this expression
 		String() string

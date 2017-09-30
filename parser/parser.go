@@ -2,9 +2,10 @@ package parser
 
 import (
 	"fmt"
-	"github.com/puppetlabs/go-parser/issue"
 	. "strconv"
 	. "strings"
+
+	"github.com/puppetlabs/go-parser/issue"
 )
 
 // Recursive descent context for the Puppet language.
@@ -609,16 +610,7 @@ func (ctx *context) unaryExpression() Expression {
 		return ctx.resourceExpression(unaryStart, expr, kind)
 
 	default:
-		expr := ctx.primaryExpression()
-		switch ctx.currentToken {
-		case TOKEN_LP, TOKEN_PIPE:
-			expr = ctx.callFunctionExpression(expr)
-		case TOKEN_LCOLLECT, TOKEN_LLCOLLECT:
-			expr = ctx.collectExpression(expr)
-		case TOKEN_QMARK:
-			expr = ctx.selectExpression(expr)
-		}
-		return expr
+		return ctx.primaryExpression()
 	}
 }
 
@@ -626,11 +618,16 @@ func (ctx *context) primaryExpression() (expr Expression) {
 	expr = ctx.atomExpression()
 	for {
 		switch ctx.currentToken {
+		case TOKEN_LP, TOKEN_PIPE:
+			expr = ctx.callFunctionExpression(expr)
+		case TOKEN_LCOLLECT, TOKEN_LLCOLLECT:
+			expr = ctx.collectExpression(expr)
+		case TOKEN_QMARK:
+			expr = ctx.selectExpression(expr)
 		case TOKEN_LB:
 			ctx.nextToken()
 			params := ctx.arrayExpression()
 			expr = ctx.factory.Access(expr, params, ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
-
 		case TOKEN_DOT:
 			ctx.nextToken()
 			var rhs Expression
@@ -638,7 +635,7 @@ func (ctx *context) primaryExpression() (expr Expression) {
 				rhs = ctx.factory.QualifiedName(ctx.tokenString(), ctx.locator, ctx.tokenStartPos, ctx.Pos()-ctx.tokenStartPos)
 				ctx.nextToken()
 			} else {
-				rhs = ctx.primaryExpression()
+				rhs = ctx.atomExpression()
 			}
 			expr = ctx.factory.NamedAccess(expr, rhs, ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
 		default:
@@ -1152,7 +1149,7 @@ func (ctx *context) joinHashEntries(exprs []Expression) (result []Expression) {
 
 // Convert keyed entry occurances into hashes. Adjacent entries are merged into
 // one hash.
-func (ctx *context) processHashEntries(exprs[]Expression) (result []Expression) {
+func (ctx *context) processHashEntries(exprs []Expression) (result []Expression) {
 	result = make([]Expression, 0, len(exprs))
 	var collector []Expression
 	for _, expr := range exprs {
@@ -1179,7 +1176,7 @@ func (ctx *context) newHashWithoutBraces(entries []Expression) Expression {
 	start := entries[0].byteOffset()
 	last := entries[len(entries)-1]
 	end := last.byteOffset() + last.byteLength()
-	return ctx.factory.Hash(entries, ctx.locator, start, end - start)
+	return ctx.factory.Hash(entries, ctx.locator, start, end-start)
 }
 
 func (ctx *context) arguments() (result []Expression) {
