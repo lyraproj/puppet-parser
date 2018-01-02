@@ -70,10 +70,19 @@ $ parse some_manifest.pp
 This project is work in progress. There is no release yet and absolutely no
 guarantee that things will not change radically in the near future.
 
-### What's missing
-- The current code needs API documentation
-- The Validator is far from complete
-- A JSON schema is needed to describe the json format for the AST
+### Parser status:
+
+* [x] Puppet 4.x compliant lexer
+* [x] Puppet 4.x compliant parser
+* [x] Puppet 4.x compliant validator
+* [x] CLI and executable for validating .pp and .epp files
+* [x] AST construction
+* [x] Polish Notation of AST
+* [x] JSON serialization of AST
+* [x] Options to conditionally allow lexer/parser to understand PSpec constructs
+* [ ] Puppet 5.x (introduction of keyword 'plan')
+* [ ] API documentation
+* [ ] A JSON schema is needed to describe the json format for the AST
 
 ## Contributing
 Please contact the author [Thomas Hallgren](mailto:thomas.hallgren@puppet.com) if you
