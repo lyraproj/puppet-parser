@@ -389,7 +389,7 @@ func (ctx *context) resource() (expr Expression) {
 }
 
 func (ctx *context) expression() (expr Expression) {
-	expr = ctx.orExpression()
+	expr = ctx.selectExpression()
 	switch ctx.currentToken {
 	case TOKEN_PRODUCES, TOKEN_CONSUMES:
 		// Must be preceded by name of class
@@ -405,6 +405,18 @@ func (ctx *context) expression() (expr Expression) {
 		}
 	}
 	return
+}
+
+func (ctx *context) selectExpression() (expr Expression) {
+	expr = ctx.orExpression()
+	for {
+		switch ctx.currentToken {
+		case TOKEN_QMARK:
+			expr = ctx.selectorsExpression(expr)
+		default:
+			return
+		}
+	}
 }
 
 func (ctx *context) orExpression() (expr Expression) {
@@ -622,8 +634,6 @@ func (ctx *context) primaryExpression() (expr Expression) {
 			expr = ctx.callFunctionExpression(expr)
 		case TOKEN_LCOLLECT, TOKEN_LLCOLLECT:
 			expr = ctx.collectExpression(expr)
-		case TOKEN_QMARK:
-			expr = ctx.selectExpression(expr)
 		case TOKEN_LB:
 			ctx.nextToken()
 			params := ctx.arrayExpression()
@@ -807,7 +817,7 @@ func (ctx *context) ifExpression(unless bool) (expr Expression) {
 	return
 }
 
-func (ctx *context) selectExpression(test Expression) (expr Expression) {
+func (ctx *context) selectorsExpression(test Expression) (expr Expression) {
 	var selectors []Expression
 	ctx.nextToken()
 	if ctx.currentToken == TOKEN_SELC {
