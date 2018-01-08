@@ -100,15 +100,15 @@ func Label(e interface{}) string {
 
 func A_an(e interface{}) string {
 	label := Label(e)
-	return Sprintf(`%s %s`, article(label), label)
+	return Sprintf(`%s %s`, Article(label), label)
 }
 
 func A_anUc(e interface{}) string {
 	label := Label(e)
-	return Sprintf(`%s %s`, article(label), label)
+	return Sprintf(`%s %s`, ArticleUc(label), label)
 }
 
-func article(s string) string {
+func Article(s string) string {
 	if s == `` {
 		return `a`
 	}
@@ -117,5 +117,17 @@ func article(s string) string {
 		return `an`
 	default:
 		return `a`
+	}
+}
+
+func ArticleUc(s string) string {
+	if s == `` {
+		return `A`
+	}
+	switch s[0] {
+	case 'a', 'e', 'i', 'o', 'u', 'y':
+		return `An`
+	default:
+		return `A`
 	}
 }
