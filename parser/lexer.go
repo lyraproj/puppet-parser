@@ -770,8 +770,8 @@ func (ctx *context) skipWhite(breakOnNewLine bool) (c rune, start int) {
 				if tc == '/' {
 					ctx.Advance(sz)
 					commentStart = 0
-					continue
 				}
+				continue
 			}
 			return
 
