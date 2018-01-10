@@ -113,7 +113,7 @@ func Article(s string) string {
 		return `a`
 	}
 	switch s[0] {
-	case 'a', 'e', 'i', 'o', 'u', 'y':
+	case 'A', 'E', 'I', 'O', 'U', 'Y', 'a', 'e', 'i', 'o', 'u', 'y':
 		return `an`
 	default:
 		return `a`
@@ -125,7 +125,7 @@ func ArticleUc(s string) string {
 		return `A`
 	}
 	switch s[0] {
-	case 'a', 'e', 'i', 'o', 'u', 'y':
+	case 'A', 'E', 'I', 'O', 'U', 'Y', 'a', 'e', 'i', 'o', 'u', 'y':
 		return `An`
 	default:
 		return `A`
