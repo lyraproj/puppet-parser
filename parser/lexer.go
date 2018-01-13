@@ -1382,7 +1382,7 @@ findStartOfText:
 
 	// Find end of heredoc and heredoc content
 	tagStart, _ := DecodeRuneInString(tag)
-	c, sz = ctx.Peek()
+	c, n = ctx.Next()
 findEndOfText:
 	for {
 		switch c {
@@ -1391,7 +1391,6 @@ findEndOfText:
 			panic(ctx.parseIssue(LEX_HEREDOC_UNTERMINATED))
 
 		case '\n':
-			ctx.Advance(sz)
 			lineStart := ctx.Pos()
 			c, n = ctx.skipWhiteInLiteral()
 			switch c {
@@ -1435,8 +1434,7 @@ findEndOfText:
 				}
 			}
 		default:
-			ctx.Advance(sz)
-			c, sz = ctx.Peek()
+			c, n = ctx.Next()
 		}
 	}
 
