@@ -71,7 +71,7 @@ func (v *AbstractValidator) Demote(code IssueCode, severity Severity) {
 }
 
 // Accept an issue during validation
-func (v *AbstractValidator) Accept(code IssueCode, e Expression, args ...interface{}) {
+func (v *AbstractValidator) Accept(code IssueCode, e Expression, args H) {
 	severity, ok := v.severities[code]
 	if !ok {
 		severity = SEVERITY_ERROR

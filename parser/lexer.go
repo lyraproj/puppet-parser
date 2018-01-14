@@ -27,7 +27,11 @@ func (l *location) Pos() int {
 	return l.locator.PosOnLine(l.byteOffset)
 }
 
-func (ctx *context) parseIssue(issueCode IssueCode, args ...interface{}) *ReportedIssue {
+func (ctx *context) parseIssue(issueCode IssueCode) *ReportedIssue {
+	return NewReportedIssue(issueCode, SEVERITY_ERROR, NO_ARGS, &location{ctx.locator, ctx.Pos()})
+}
+
+func (ctx *context) parseIssue2(issueCode IssueCode, args H) *ReportedIssue {
 	return NewReportedIssue(issueCode, SEVERITY_ERROR, args, &location{ctx.locator, ctx.Pos()})
 }
 
@@ -328,7 +332,7 @@ func (ctx *context) unterminatedQuote(start int, delimiter rune) *ReportedIssue 
 	} else {
 		stringType = `backtick`
 	}
-	return ctx.parseIssue(LEX_UNTERMINATED_STRING, stringType)
+	return ctx.parseIssue2(LEX_UNTERMINATED_STRING, H{`string_type`: stringType})
 }
 
 func (ctx *context) nextToken() {
@@ -468,7 +472,7 @@ func (ctx *context) nextToken() {
 						}
 						ctx.consumeEPP()
 					} else {
-						panic(ctx.parseIssue(LEX_INVALID_OPERATOR, `-%`))
+						panic(ctx.parseIssue2(LEX_INVALID_OPERATOR, H{`op`: `-%`}))
 					}
 					break
 				}
@@ -535,7 +539,7 @@ func (ctx *context) nextToken() {
 			} else {
 				// Standalone tilde is not an operator in Puppet
 				ctx.SetPos(start)
-				panic(ctx.parseIssue(LEX_UNEXPECTED_TOKEN, `~`))
+				panic(ctx.parseIssue2(LEX_UNEXPECTED_TOKEN, H{`token`: `~`}))
 			}
 
 		case '@':
@@ -707,7 +711,7 @@ func (ctx *context) nextToken() {
 
 		default:
 			ctx.SetPos(start)
-			panic(ctx.parseIssue(LEX_UNEXPECTED_TOKEN, string(c)))
+			panic(ctx.parseIssue2(LEX_UNEXPECTED_TOKEN, H{`token`: string(c)}))
 		}
 	}
 }
@@ -1484,7 +1488,7 @@ func (ctx *context) extractFlags(start int) []byte {
 			flags[idx] = '\n'
 		default:
 			ctx.SetPos(start)
-			panic(ctx.parseIssue(LEX_HEREDOC_ILLEGAL_ESCAPE, string(flag)))
+			panic(ctx.parseIssue2(LEX_HEREDOC_ILLEGAL_ESCAPE, H{`flag`: string(flag)}))
 		}
 	}
 	return flags

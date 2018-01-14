@@ -167,7 +167,7 @@ func (v *Checker) check_AssignmentExpression(e *AssignmentExpression) {
 	case `=`:
 		v.checkAssign(e.Lhs())
 	default:
-		v.Accept(VALIDATE_APPENDS_DELETES_NO_LONGER_SUPPORTED, e, e.Operator())
+		v.Accept(VALIDATE_APPENDS_DELETES_NO_LONGER_SUPPORTED, e, H{`operator`: e.Operator()})
 	}
 }
 
@@ -178,7 +178,7 @@ func (v *Checker) check_AttributeOperation(e *AttributeOperation) {
 		case *CollectExpression, *ResourceOverrideExpression:
 			return
 		default:
-			v.Accept(VALIDATE_ILLEGAL_ATTRIBUTE_APPEND, e, e.Name(), A_an(p))
+			v.Accept(VALIDATE_ILLEGAL_ATTRIBUTE_APPEND, e, H{`attr`: e.Name(), `expression`: p})
 		}
 	}
 }
@@ -187,7 +187,7 @@ func (v *Checker) check_AttributesOperation(e *AttributesOperation) {
 	p := v.Container()
 	switch p.(type) {
 	case AbstractResource, *CollectExpression, *CapabilityMapping:
-		v.Accept(VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT, p, `* =>`, A_an(p))
+		v.Accept(VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT, p, H{`operator`: `* =>`, `value`: p})
 	}
 	v.checkRValue(e.Expr())
 }
@@ -201,7 +201,7 @@ func (v *Checker) check_BlockExpression(e *BlockExpression) {
 	last := len(e.Statements()) - 1
 	for idx, statement := range e.Statements() {
 		if idx != last && v.isIdem(statement) {
-			v.Accept(VALIDATE_IDEM_EXPRESSION_NOT_LAST, statement, statement.Label())
+			v.Accept(VALIDATE_IDEM_EXPRESSION_NOT_LAST, statement, H{`expression`: statement})
 			break
 		}
 	}
@@ -221,7 +221,8 @@ func (v *Checker) check_CallNamedFunctionExpression(e *CallNamedFunctionExpressi
 			return
 		}
 	}
-	v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Functor(), A_anUc(e.Functor()), `function name`, A_an(e))
+	v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Functor(),
+		H{ `expression`: e.Functor(), `feature`: `function name`, `container`: e })
 }
 
 func (v *Checker) check_CapabilityMapping(e *CapabilityMapping) {
@@ -231,7 +232,7 @@ func (v *Checker) check_CapabilityMapping(e *CapabilityMapping) {
 		exprOk = true
 
 	case *QualifiedName:
-		v.Accept(VALIDATE_ILLEGAL_CLASSREF, e.Component(), e.Component().(*QualifiedName).Name())
+		v.Accept(VALIDATE_ILLEGAL_CLASSREF, e.Component(), H{`name`: e.Component().(*QualifiedName).Name()})
 		exprOk = true // OK, besides from what was just reported
 
 	case *AccessExpression:
@@ -245,11 +246,12 @@ func (v *Checker) check_CapabilityMapping(e *CapabilityMapping) {
 	}
 
 	if !exprOk {
-		v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Component(), A_anUc(e.Component()), `capability mapping`, A_an(e))
+		v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Component(),
+			H{`expression`: e.Component(), `feature`: `capability mapping`, `container`: e})
 	}
 
 	if !CLASSREF_EXT.MatchString(e.Capability()) {
-		v.Accept(VALIDATE_ILLEGAL_CLASSREF, e, e.Capability())
+		v.Accept(VALIDATE_ILLEGAL_CLASSREF, e, H{`name`: e.Capability()})
 	}
 }
 
@@ -261,7 +263,7 @@ func (v *Checker) check_CaseExpression(e *CaseExpression) {
 		for _, value := range co.Values() {
 			if _, ok := value.(*LiteralDefault); ok {
 				if foundDefault {
-					v.Accept(VALIDATE_DUPLICATE_DEFAULT, value, e.Label())
+					v.Accept(VALIDATE_DUPLICATE_DEFAULT, value, H{`container`: e})
 				}
 				foundDefault = true
 			}
@@ -277,7 +279,8 @@ func (v *Checker) check_CaseOption(e *CaseOption) {
 
 func (v *Checker) check_CollectExpression(e *CollectExpression) {
 	if _, ok := e.ResourceType().(*QualifiedReference); !ok {
-		v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.ResourceType(), A_anUc(e.ResourceType()), `type name`, A_an(e))
+		v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.ResourceType(),
+			H{`expression`: e.ResourceType(), `feature`: `type name`, `container`: e})
 	}
 }
 
@@ -322,7 +325,7 @@ func (v *Checker) check_LiteralHash(e *LiteralHash) {
 		key := entry.(*KeyedEntry).Key()
 		if literalKey, ok := ToLiteral(key); ok {
 			if _, ok = unique[literalKey]; ok {
-				v.Accept(VALIDATE_DUPLICATE_KEY, entry, key.String())
+				v.Accept(VALIDATE_DUPLICATE_KEY, entry, H{`key`: key.String()})
 			} else {
 				unique[literalKey] = true
 			}
@@ -338,14 +341,15 @@ func (v *Checker) check_LiteralList(e *LiteralList) {
 
 func (v *Checker) check_NamedAccessExpression(e *NamedAccessExpression) {
 	if _, ok := e.Rhs().(*QualifiedName); !ok {
-		v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Rhs(), A_anUc(e.Rhs()), `method name`, A_an(v.Container()))
+		v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Rhs(),
+			H{`expression`: e.Rhs(), `feature`: `method name`, `container`: v.Container()})
 	}
 }
 
 func (v *Checker) check_NamedDefinition(e NamedDefinition) {
 	v.checkTop(e, v.Container())
 	if !CLASSREF_DECL.MatchString(e.Name()) {
-		v.Accept(VALIDATE_ILLEGAL_DEFINITION_NAME, e, e.Name(), A_an(e))
+		v.Accept(VALIDATE_ILLEGAL_DEFINITION_NAME, e, H{`name`: e.Name(), `value`: e})
 	}
 	v.checkReservedTypeName(e, e.Name())
 	v.checkFutureReservedWord(e, e.Name())
@@ -360,9 +364,9 @@ func (v *Checker) check_NodeDefinition(e *NodeDefinition) {
 
 func (v *Checker) check_Parameter(e *Parameter) {
 	if STARTS_WITH_NUMBER.MatchString(e.Name()) {
-		v.Accept(VALIDATE_ILLEGAL_NUMERIC_PARAMETER, e, e.Name())
+		v.Accept(VALIDATE_ILLEGAL_NUMERIC_PARAMETER, e, H{`name`: e.Name()})
 	} else if !PARAM_NAME.MatchString(e.Name()) {
-		v.Accept(VALIDATE_ILLEGAL_PARAMETER_NAME, e, e.Name())
+		v.Accept(VALIDATE_ILLEGAL_PARAMETER_NAME, e, H{`name`: e.Name()})
 	}
 	if e.Value() != nil {
 		v.checkIllegalAssignment(e.Value())
@@ -382,9 +386,9 @@ func (v *Checker) check_RelationshipExpression(e *RelationshipExpression) {
 
 func (v *Checker) check_ReservedWord(e *ReservedWord) {
 	if e.Future() {
-		v.Accept(VALIDATE_FUTURE_RESERVED_WORD, e, e.Name())
+		v.Accept(VALIDATE_FUTURE_RESERVED_WORD, e, H{`word`: e.Name()})
 	} else {
-		v.Accept(VALIDATE_RESERVED_WORD, e, e.Name())
+		v.Accept(VALIDATE_RESERVED_WORD, e, H{`word`: e.Name()})
 	}
 }
 
@@ -393,7 +397,7 @@ func (v *Checker) check_ResourceBody(e *ResourceBody) {
 	for _, ao := range e.Operations() {
 		if _, ok := ao.(*AttributesOperation); ok {
 			if seenUnfolding {
-				v.Accept(VALIDATE_MULTIPLE_ATTRIBUTES_UNFOLD, ao)
+				v.Accept(VALIDATE_MULTIPLE_ATTRIBUTES_UNFOLD, ao, NO_ARGS)
 			} else {
 				seenUnfolding = true
 			}
@@ -403,7 +407,7 @@ func (v *Checker) check_ResourceBody(e *ResourceBody) {
 
 func (v *Checker) check_ResourceDefaultsExpression(e *ResourceDefaultsExpression) {
 	if e.Form() != `regular` {
-		v.Accept(VALIDATE_NOT_VIRTUALIZABLE, e)
+		v.Accept(VALIDATE_NOT_VIRTUALIZABLE, e, NO_ARGS)
 	}
 }
 
@@ -414,14 +418,14 @@ func (v *Checker) check_ResourceExpression(e *ResourceExpression) {
 	// tests that expect the detailed reporting).
 	if e.Form() != `regular` {
 		if typeName, ok := e.TypeName().(*QualifiedName); ok && typeName.Name() == `class` {
-			v.Accept(VALIDATE_NOT_VIRTUALIZABLE, e)
+			v.Accept(VALIDATE_NOT_VIRTUALIZABLE, e, NO_ARGS)
 		}
 	}
 }
 
 func (v *Checker) check_ResourceOverrideExpression(e *ResourceOverrideExpression) {
 	if e.Form() != `regular` {
-		v.Accept(VALIDATE_NOT_VIRTUALIZABLE, e)
+		v.Accept(VALIDATE_NOT_VIRTUALIZABLE, e, NO_ARGS)
 	}
 }
 
@@ -443,7 +447,7 @@ func (v *Checker) check_SelectorExpression(e *SelectorExpression) {
 		se := entry.(*SelectorEntry)
 		if _, ok := se.Matching().(*LiteralDefault); ok {
 			if seenDefault {
-				v.Accept(VALIDATE_DUPLICATE_DEFAULT, se, e.Label())
+				v.Accept(VALIDATE_DUPLICATE_DEFAULT, se, H{`container`: e})
 			} else {
 				seenDefault = true
 			}
@@ -454,7 +458,7 @@ func (v *Checker) check_SelectorExpression(e *SelectorExpression) {
 func (v *Checker) check_TypeAlias(e *TypeAlias) {
 	v.checkTop(e, v.Container())
 	if !CLASSREF_EXT_DECL.MatchString(e.Name()) {
-		v.Accept(VALIDATE_ILLEGAL_DEFINITION_NAME, e, e.Name(), A_an(e))
+		v.Accept(VALIDATE_ILLEGAL_DEFINITION_NAME, e, H{`name`: e.Name(), `value`: e})
 	}
 	v.checkReservedTypeName(e, e.Name())
 	v.checkTypeRef(e, e.Type())
@@ -476,22 +480,22 @@ func (v *Checker) check_TypeMapping(e *TypeMapping) {
 		}
 	}
 	if lhsType == 0 {
-		v.Accept(VALIDATE_UNSUPPORTED_EXPRESSION, e, A_an(e))
+		v.Accept(VALIDATE_UNSUPPORTED_EXPRESSION, e, H{`expression`: e})
 	} else {
 		rhs := e.Mapping()
 		if isPatternWithReplacement(rhs) {
 			if lhsType == 1 {
-				v.Accept(VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING, e, A_an(e))
+				v.Accept(VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING, e, H{`expression`: e})
 			}
 		} else if isTypeRef(rhs) {
 			if lhsType == 2 {
-				v.Accept(VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING, e, A_an(e))
+				v.Accept(VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING, e, H{`expression`: e})
 			}
 		} else {
 			if lhsType == 1 {
-				v.Accept(VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING, e, A_an(e))
+				v.Accept(VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING, e, H{`expression`: e})
 			} else {
-				v.Accept(VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING, e, A_an(e))
+				v.Accept(VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING, e, H{`expression`: e})
 			}
 		}
 	}
@@ -511,7 +515,7 @@ func (v *Checker) check_UnlessExpression(e *UnlessExpression) {
 func (v *Checker) checkAssign(e Expression) {
 	switch e.(type) {
 	case *AccessExpression:
-		v.Accept(VALIDATE_ILLEGAL_ASSIGNMENT_VIA_INDEX, e)
+		v.Accept(VALIDATE_ILLEGAL_ASSIGNMENT_VIA_INDEX, e, NO_ARGS)
 
 	case *LiteralList:
 		for _, elem := range e.(*LiteralList).Elements() {
@@ -522,11 +526,11 @@ func (v *Checker) checkAssign(e Expression) {
 		ve := e.(*VariableExpression)
 		if name, ok := ve.Name(); ok {
 			if DOUBLE_COLON_EXPR.MatchString(name) {
-				v.Accept(VALIDATE_CROSS_SCOPE_ASSIGNMENT, e, name)
+				v.Accept(VALIDATE_CROSS_SCOPE_ASSIGNMENT, e, H{`name`: name})
 			}
 		} else {
 			idx, _ := ve.Index()
-			v.Accept(VALIDATE_ILLEGAL_NUMERIC_ASSIGNMENT, e, idx)
+			v.Accept(VALIDATE_ILLEGAL_NUMERIC_ASSIGNMENT, e, H{`var`: idx})
 		}
 	}
 }
@@ -535,14 +539,14 @@ func (v *Checker) checkCaptureLast(container Expression, parameters []Expression
 	last := len(parameters) - 1
 	for idx := 0; idx < last; idx++ {
 		if param, ok := parameters[idx].(*Parameter); ok && param.CapturesRest() {
-			v.Accept(VALIDATE_CAPTURES_REST_NOT_LAST, param, param.Name())
+			v.Accept(VALIDATE_CAPTURES_REST_NOT_LAST, param, H{`param`: param.Name()})
 		}
 	}
 }
 
 func (v *Checker) checkFutureReservedWord(e Expression, w string) {
 	if _, ok := FUTURE_RESERVED_WORDS[w]; ok {
-		v.Accept(VALIDATE_FUTURE_RESERVED_WORD, e, w)
+		v.Accept(VALIDATE_FUTURE_RESERVED_WORD, e, H{`word`: w})
 	}
 }
 
@@ -556,7 +560,7 @@ func (v *Checker) checkHostname(e Expression, hostMatches []Expression) {
 			if lit, ok := ToLiteral(hostMatch); ok {
 				v.checkHostnameString(hostMatch, lit.(string))
 			} else {
-				v.Accept(VALIDATE_ILLEGAL_HOSTNAME_INTERPOLATION, hostMatch)
+				v.Accept(VALIDATE_ILLEGAL_HOSTNAME_INTERPOLATION, hostMatch, NO_ARGS)
 			}
 		case *LiteralString:
 			v.checkHostnameString(hostMatch, hostMatch.(*LiteralString).StringValue())
@@ -566,13 +570,13 @@ func (v *Checker) checkHostname(e Expression, hostMatches []Expression) {
 
 func (v *Checker) checkHostnameString(e Expression, str string) {
 	if ILLEGAL_HOSTNAME_CHARS.MatchString(str) {
-		v.Accept(VALIDATE_ILLEGAL_HOSTNAME_CHARS, e, str)
+		v.Accept(VALIDATE_ILLEGAL_HOSTNAME_CHARS, e, H{`hostname`: str})
 	}
 }
 
 func (v *Checker) checkIllegalAssignment(e Expression) {
 	if _, ok := e.(*AssignmentExpression); ok {
-		v.Accept(VALIDATE_ILLEGAL_ASSIGNMENT_CONTEXT, e)
+		v.Accept(VALIDATE_ILLEGAL_ASSIGNMENT_CONTEXT, e, NO_ARGS)
 	} else {
 		if _, ok := e.(*LambdaExpression); !ok {
 			e.Contents(v.path, func(path []Expression, child Expression) {
@@ -585,14 +589,16 @@ func (v *Checker) checkIllegalAssignment(e Expression) {
 func (v *Checker) checkNoCapture(container Expression, parameters []Expression) {
 	for _, parameter := range parameters {
 		if param, ok := parameter.(*Parameter); ok && param.CapturesRest() {
-			v.Accept(VALIDATE_CAPTURES_REST_NOT_SUPPORTED, param, param.Name(), A_an(container))
+			v.Accept(VALIDATE_CAPTURES_REST_NOT_SUPPORTED, param,
+				H{`name`: param.Name(), `container`: container})
 		}
 	}
 }
 
 func (v *Checker) checkNoIdemLast(e Definition, body Expression) {
 	if violator := v.endsWithIdem(body.(*BlockExpression)); violator != nil {
-		v.Accept(VALIDATE_IDEM_NOT_ALLOWED_LAST, violator, violator.Label(), A_anUc(e))
+		v.Accept(VALIDATE_IDEM_NOT_ALLOWED_LAST, violator,
+			H{`expression`: violator, `container`: e})
 	}
 }
 
@@ -601,7 +607,7 @@ func (v *Checker) checkParameterNameUniqueness(container Expression, parameters 
 	for _, parameter := range parameters {
 		param := parameter.(*Parameter)
 		if _, found := unique[param.Name()]; found {
-			v.Accept(VALIDATE_DUPLICATE_PARAMETER, parameter, param.Name())
+			v.Accept(VALIDATE_DUPLICATE_PARAMETER, parameter, H{`param`: param.Name()})
 		} else {
 			unique[param.Name()] = true
 		}
@@ -615,7 +621,7 @@ func (v *Checker) checkQuery(e Expression) {
 		case `==`, `!=`:
 			// OK
 		default:
-			v.Accept(VALIDATE_ILLEGAL_QUERY_EXPRESSION, e, A_anUc(e))
+			v.Accept(VALIDATE_ILLEGAL_QUERY_EXPRESSION, e, H{`expression`: e})
 		}
 	case *ParenthesizedExpression:
 		v.checkQuery(e.(*ParenthesizedExpression).Expr())
@@ -626,7 +632,7 @@ func (v *Checker) checkQuery(e Expression) {
 		v.checkQuery(be.Lhs())
 		v.checkQuery(be.Rhs())
 	default:
-		v.Accept(VALIDATE_ILLEGAL_QUERY_EXPRESSION, e, A_anUc(e))
+		v.Accept(VALIDATE_ILLEGAL_QUERY_EXPRESSION, e, H{`expression`: e})
 	}
 }
 
@@ -643,14 +649,14 @@ func (v *Checker) checkReservedParams(container Expression, parameters []Express
 	for _, parameter := range parameters {
 		param := parameter.(*Parameter)
 		if _, ok := RESERVED_PARAMETERS[param.Name()]; ok {
-			v.Accept(VALIDATE_RESERVED_PARAMETER, container, param.Name(), A_an(container))
+			v.Accept(VALIDATE_RESERVED_PARAMETER, container, H{`param`: param.Name(), `container`: container})
 		}
 	}
 }
 
 func (v *Checker) checkReservedTypeName(e Expression, w string) {
 	if _, ok := RESERVED_TYPE_NAMES[strings.ToLower(w)]; ok {
-		v.Accept(VALIDATE_RESERVED_TYPE_NAME, e, w, A_an(e))
+		v.Accept(VALIDATE_RESERVED_TYPE_NAME, e, H{`name`: w, `expression`: e})
 	}
 }
 
@@ -665,7 +671,7 @@ func (v *Checker) checkRValue(e Expression) {
 	case UnaryExpression:
 		v.checkRValue(e.(UnaryExpression).Expr())
 	case Definition, *CollectExpression:
-		v.Accept(VALIDATE_NOT_RVALUE, e, A_anUc(e))
+		v.Accept(VALIDATE_NOT_RVALUE, e, H{`value`: e})
 	}
 }
 
@@ -680,14 +686,14 @@ func (v *Checker) checkTop(e Expression, c Expression) {
 			switch e.(type) {
 			case *FunctionDefinition, *TypeAlias, *TypeDefinition:
 				// not ok. These can never be nested in a block
-				v.Accept(VALIDATE_NOT_ABSOLUTE_TOP_LEVEL, e, A_anUc(e))
+				v.Accept(VALIDATE_NOT_ABSOLUTE_TOP_LEVEL, e, H{`value`: e})
 				return
 			}
 		}
 		v.checkTop(e, c)
 
 	default:
-		v.Accept(VALIDATE_NOT_TOP_LEVEL, e)
+		v.Accept(VALIDATE_NOT_TOP_LEVEL, e, NO_ARGS)
 	}
 }
 
@@ -699,7 +705,8 @@ func (v *Checker) checkTypeRef(function Expression, r Expression) {
 	if qr, ok := n.(*QualifiedReference); ok {
 		v.checkFutureReservedWord(r, qr.DowncasedName())
 	} else {
-		v.Accept(VALIDATE_ILLEGAL_EXPRESSION, r, A_anUc(r), `a type reference`, A_an(function))
+		v.Accept(VALIDATE_ILLEGAL_EXPRESSION, r,
+			H{`expression`: r, `feature`: `a type reference`, `container`: function})
 	}
 }
 

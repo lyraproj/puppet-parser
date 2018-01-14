@@ -80,6 +80,7 @@ guarantee that things will not change radically in the near future.
 * [x] Polish Notation of AST
 * [x] JSON serialization of AST
 * [x] Options to conditionally allow lexer/parser to understand PSpec constructs
+* [x] Errors and warnings using issue codes and named arguments
 * [ ] Puppet 5.x (introduction of keyword 'plan')
 * [ ] API documentation
 * [ ] A JSON schema is needed to describe the json format for the AST

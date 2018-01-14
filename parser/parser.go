@@ -5,7 +5,7 @@ import (
 	. "strconv"
 	. "strings"
 
-	"github.com/puppetlabs/go-parser/issue"
+	. "github.com/puppetlabs/go-parser/issue"
 )
 
 // Recursive descent context for the Puppet language.
@@ -85,7 +85,7 @@ func (l *lexer) NextToken() int {
 }
 
 func (l *lexer) SyntaxError() {
-	panic(l.context.parseIssue(LEX_UNEXPECTED_TOKEN, tokenMap[l.context.currentToken]))
+	panic(l.context.parseIssue2(LEX_UNEXPECTED_TOKEN, H{`token`: tokenMap[l.context.currentToken]}))
 }
 
 func (l *lexer) TokenString() string {
@@ -133,7 +133,7 @@ func (ctx *context) parseTopExpression(filename string, source string, eppMode b
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
-			if err, ok = r.(*issue.ReportedIssue); !ok {
+			if err, ok = r.(*ReportedIssue); !ok {
 				if err, ok = r.(*ParseError); !ok {
 					panic(r)
 				}
@@ -213,7 +213,7 @@ func (ctx *context) parse(expectedEnd int, singleExpression bool) (expr Expressi
 func (ctx *context) assertToken(token int) {
 	if ctx.currentToken != token {
 		ctx.SetPos(ctx.tokenStartPos)
-		panic(ctx.parseIssue(PARSE_EXPECTED_TOKEN, tokenMap[token], tokenMap[ctx.currentToken]))
+		panic(ctx.parseIssue2(PARSE_EXPECTED_TOKEN, H{`expected`: tokenMap[token], `actual`: tokenMap[ctx.currentToken]}))
 	}
 }
 
@@ -290,9 +290,9 @@ func (ctx *context) expressions(endToken int, producer producerFunc) (exprs []Ex
 		if ctx.currentToken != TOKEN_COMMA {
 			if ctx.currentToken != endToken {
 				ctx.SetPos(ctx.tokenStartPos)
-				panic(ctx.parseIssue(PARSE_EXPECTED_ONE_OF_TOKENS,
-					fmt.Sprintf(`'%s' or '%s'`, tokenMap[TOKEN_COMMA], tokenMap[endToken]),
-					tokenMap[ctx.currentToken]))
+				panic(ctx.parseIssue2(PARSE_EXPECTED_ONE_OF_TOKENS, H{
+					`expected`: fmt.Sprintf(`'%s' or '%s'`, tokenMap[TOKEN_COMMA], tokenMap[endToken]),
+					`actual`: tokenMap[ctx.currentToken]}))
 			}
 			ctx.nextToken()
 			return
@@ -599,7 +599,7 @@ func (ctx *context) unaryExpression() Expression {
 			expr.updateOffsetAndLength(unaryStart, ctx.Pos()-unaryStart)
 			return expr
 		}
-		panic(ctx.parseIssue(LEX_UNEXPECTED_TOKEN, `+`))
+		panic(ctx.parseIssue2(LEX_UNEXPECTED_TOKEN, H{`token`: `+`}))
 
 	case TOKEN_NOT:
 		ctx.nextToken()
@@ -778,7 +778,7 @@ func (ctx *context) atomExpression() (expr Expression) {
 
 	default:
 		ctx.SetPos(ctx.tokenStartPos)
-		panic(ctx.parseIssue(LEX_UNEXPECTED_TOKEN, tokenMap[ctx.currentToken]))
+		panic(ctx.parseIssue2(LEX_UNEXPECTED_TOKEN, H{`token`: tokenMap[ctx.currentToken]}))
 	}
 	return
 }
@@ -894,7 +894,7 @@ func (ctx *context) resourceExpression(start int, first Expression, form string)
 				}
 			}
 			ctx.SetPos(start)
-			panic(ctx.parseIssue(PARSE_RESOURCE_WITHOUT_TITLE, name))
+			panic(ctx.parseIssue2(PARSE_RESOURCE_WITHOUT_TITLE, H{`name`: name}))
 		case `defaults`:
 			ctx.SetPos(bodiesStart)
 			ctx.nextToken()
@@ -1100,7 +1100,7 @@ func (ctx *context) typeAliasOrDefinition() Expression {
 		panic(ctx.parseIssue(PARSE_EXPECTED_TYPE_NAME_AFTER_TYPE))
 
 	default:
-		panic(ctx.parseIssue(LEX_UNEXPECTED_TOKEN, tokenMap[ctx.currentToken]))
+		panic(ctx.parseIssue2(LEX_UNEXPECTED_TOKEN, H{`token`: tokenMap[ctx.currentToken]}))
 	}
 }
 
@@ -1157,7 +1157,7 @@ func (ctx *context) joinHashEntries(exprs []Expression) (result []Expression) {
 	return
 }
 
-// Convert keyed entry occurances into hashes. Adjacent entries are merged into
+// Convert keyed entry occurrences into hashes. Adjacent entries are merged into
 // one hash.
 func (ctx *context) processHashEntries(exprs []Expression) (result []Expression) {
 	result = make([]Expression, 0, len(exprs))
