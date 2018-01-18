@@ -319,14 +319,7 @@ func (ctx *context) syntacticStatement() (expr Expression) {
 }
 
 func (ctx *context) collectionEntry() (expr Expression) {
-	switch ctx.currentToken {
-	case TOKEN_TYPE, TOKEN_FUNCTION, TOKEN_APPLICATION, TOKEN_CONSUMES, TOKEN_PRODUCES, TOKEN_SITE:
-		expr = ctx.factory.QualifiedName(ctx.tokenString(), ctx.locator, ctx.tokenStartPos, ctx.Pos()-ctx.tokenStartPos)
-		ctx.nextToken()
-	default:
-		expr = ctx.argument()
-	}
-	return
+	return ctx.handleKeyword(ctx.argument)
 }
 
 func (ctx *context) argument() (expr Expression) {
@@ -340,12 +333,19 @@ func (ctx *context) argument() (expr Expression) {
 }
 
 func (ctx *context) hashEntry() (expr Expression) {
+	return ctx.handleKeyword(ctx.assignment)
+}
+
+func (ctx *context) handleKeyword(next func() Expression) (expr Expression) {
 	switch ctx.currentToken {
 	case TOKEN_TYPE, TOKEN_FUNCTION, TOKEN_APPLICATION, TOKEN_CONSUMES, TOKEN_PRODUCES, TOKEN_SITE:
 		expr = ctx.factory.QualifiedName(ctx.tokenString(), ctx.locator, ctx.tokenStartPos, ctx.Pos()-ctx.tokenStartPos)
 		ctx.nextToken()
+		if ctx.currentToken == TOKEN_LP {
+			expr = ctx.callFunctionExpression(expr)
+		}
 	default:
-		expr = ctx.assignment()
+		expr = next()
 	}
 	return
 }
@@ -1073,9 +1073,10 @@ func (ctx *context) typeAliasOrDefinition() Expression {
 	fqr, ok := typeExpr.(*QualifiedReference)
 	if !ok {
 		if _, ok = typeExpr.(*AccessExpression); ok {
-			ctx.assertToken(TOKEN_ASSIGN)
-			ctx.nextToken()
-			return ctx.addDefinition(ctx.factory.TypeMapping(typeExpr, ctx.expression(), ctx.locator, start, ctx.Pos()-start))
+			if ctx.currentToken == TOKEN_ASSIGN {
+				ctx.nextToken()
+				return ctx.addDefinition(ctx.factory.TypeMapping(typeExpr, ctx.expression(), ctx.locator, start, ctx.Pos()-start))
+			}
 		}
 		panic(ctx.parseIssue(PARSE_EXPECTED_TYPE_NAME_AFTER_TYPE))
 	}
@@ -1101,12 +1102,15 @@ func (ctx *context) typeAliasOrDefinition() Expression {
 		if nameExpr == nil {
 			panic(ctx.parseIssue(PARSE_INHERITS_MUST_BE_TYPE_NAME))
 		}
-		fqr, _ = nameExpr.(*QualifiedReference)
-		parent = fqr.name
+		parent = nameExpr.(*QualifiedReference).name
 		ctx.assertToken(TOKEN_LC)
 		fallthrough
+
 	case TOKEN_LC:
-		return ctx.addDefinition(ctx.factory.TypeDefinition(fqr.name, parent, ctx.expression(), ctx.locator, start, ctx.Pos()-start))
+		ctx.nextToken()
+		body := ctx.parse(TOKEN_RC, false)
+		ctx.nextToken() // consume TOKEN_RC
+		return ctx.addDefinition(ctx.factory.TypeDefinition(fqr.name, parent, body, ctx.locator, start, ctx.Pos()-start))
 
 	default:
 		panic(ctx.parseIssue2(LEX_UNEXPECTED_TOKEN, H{`token`: tokenMap[ctx.currentToken]}))

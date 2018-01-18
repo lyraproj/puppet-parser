@@ -131,6 +131,10 @@ func NewReportedIssue(code IssueCode, severity Severity, args H, location Locati
 	return &ReportedIssue{code, severity, args, location}
 }
 
+func (e *ReportedIssue) Argument(str string) interface{} {
+	return e.args[str]
+}
+
 func (e *ReportedIssue) Error() (str string) {
 	issue := IssueForCode(e.issueCode)
 	var args H

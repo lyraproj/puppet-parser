@@ -1059,6 +1059,12 @@ func TestCallNamedNoArgs(t *testing.T) {
 		Unindent(`
       $x = wrap(myFunc |Integer $r| >> Integer { $r + 2 })`),
 		`(= (var "x") (call {:functor (qn "wrap") :args [(call {:functor (qn "myFunc") :args [] :block (lambda {:params {:r {:type (qr "Integer")}} :returns (qr "Integer") :body [(+ (var "r") 2)]})})]}))`)
+
+	expectDump(t,
+		Unindent(`
+      $x = [myFunc()]`),
+		`(= (var "x") (array (call {:functor (qn "myFunc") :args []})))`)
+
 }
 
 func TestCallMethod(t *testing.T) {
@@ -1094,6 +1100,27 @@ func TestCallType(t *testing.T) {
 		Unindent(`
       $x = type(3)`),
 		`(= (var "x") (call {:functor (qn "type") :args [3]}))`)
+
+	expectDump(t,
+		Unindent(`
+      $x = [type(3)]`),
+		`(= (var "x") (array (call {:functor (qn "type") :args [3]})))`)
+
+
+	expectDump(t,
+		Unindent(`
+      $x = {type(3) => 'v'}`),
+		`(= (var "x") (hash (=> (call {:functor (qn "type") :args [3]}) "v")))`)
+
+	expectDump(t,
+		Unindent(`
+      $x = {'v' => type(3)}`),
+		`(= (var "x") (hash (=> "v" (call {:functor (qn "type") :args [3]}))))`)
+
+	expectDump(t,
+		Unindent(`
+      with |$x,$y=type| {}`),
+		`(invoke {:functor (qn "with") :args [] :block (lambda {:params {:x {} :y {:value (qn "type")}} :body []})})`)
 }
 
 func TestCallTypeMethod(t *testing.T) {
