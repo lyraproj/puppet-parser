@@ -358,7 +358,18 @@ func (ctx *context) assignment() (expr Expression) {
 			op := ctx.tokenString()
 			ctx.nextToken()
 			expr = ctx.factory.Assignment(op, expr, ctx.assignment(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
-
+		case TOKEN_PIPE:
+			switch expr.(type) {
+			case *QualifiedName:
+				expr = ctx.callFunctionExpression(expr)
+			case *CallMethodExpression:
+				cm := expr.(*CallMethodExpression)
+				if cm.lambda == nil {
+					cm.lambda = ctx.lambda()
+				}
+			default:
+				return expr
+			}
 		default:
 			return expr
 		}
@@ -373,7 +384,6 @@ func (ctx *context) relationship() (expr Expression) {
 			op := ctx.tokenString()
 			ctx.nextToken()
 			expr = ctx.factory.RelOp(op, expr, ctx.resource(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
-
 		default:
 			return expr
 		}
@@ -390,19 +400,22 @@ func (ctx *context) resource() (expr Expression) {
 
 func (ctx *context) expression() (expr Expression) {
 	expr = ctx.selectExpression()
-	switch ctx.currentToken {
-	case TOKEN_PRODUCES, TOKEN_CONSUMES:
-		// Must be preceded by name of class
-		capToken := ctx.tokenString()
-		switch expr.(type) {
-		case *QualifiedName, *QualifiedReference, *ReservedWord, *AccessExpression:
-			expr = ctx.capabilityMapping(expr, capToken)
+	for {
+		switch ctx.currentToken {
+		case TOKEN_PRODUCES, TOKEN_CONSUMES:
+			// Must be preceded by name of class
+			capToken := ctx.tokenString()
+			switch expr.(type) {
+			case *QualifiedName, *QualifiedReference, *ReservedWord, *AccessExpression:
+				expr = ctx.capabilityMapping(expr, capToken)
+			}
+		default:
+			if namedAccess, ok := expr.(*NamedAccessExpression); ok {
+				// Transform into method call
+				expr = ctx.factory.CallMethod(namedAccess, make([]Expression, 0), nil, ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+			}
 		}
-	default:
-		if namedAccess, ok := expr.(*NamedAccessExpression); ok {
-			// Transform into method call
-			expr = ctx.factory.CallMethod(namedAccess, make([]Expression, 0), nil, ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
-		}
+		break
 	}
 	return
 }
@@ -630,7 +643,7 @@ func (ctx *context) primaryExpression() (expr Expression) {
 	expr = ctx.atomExpression()
 	for {
 		switch ctx.currentToken {
-		case TOKEN_LP, TOKEN_PIPE:
+		case TOKEN_LP:
 			expr = ctx.callFunctionExpression(expr)
 		case TOKEN_LCOLLECT, TOKEN_LLCOLLECT:
 			expr = ctx.collectExpression(expr)
@@ -1055,29 +1068,33 @@ func (ctx *context) collectExpression(lhs Expression) Expression {
 }
 
 func (ctx *context) typeAliasOrDefinition() Expression {
-	var (
-		ok     bool
-		parent string
-		fqr    *QualifiedReference
-		body   Expression
-	)
-
 	start := ctx.tokenStartPos
 	typeExpr := ctx.parameterType()
-
-	switch ctx.currentToken {
-	case TOKEN_ASSIGN:
-		if fqr, ok = typeExpr.(*QualifiedReference); ok {
+	fqr, ok := typeExpr.(*QualifiedReference)
+	if !ok {
+		if _, ok = typeExpr.(*AccessExpression); ok {
+			ctx.assertToken(TOKEN_ASSIGN)
 			ctx.nextToken()
-			body = ctx.expression()
-			return ctx.addDefinition(ctx.factory.TypeAlias(fqr.name, body, ctx.locator, start, ctx.Pos()-start))
-		} else if _, ok = typeExpr.(*AccessExpression); ok {
-			ctx.nextToken()
-			body = ctx.expression()
-			return ctx.addDefinition(ctx.factory.TypeMapping(typeExpr, body, ctx.locator, start, ctx.Pos()-start))
+			return ctx.addDefinition(ctx.factory.TypeMapping(typeExpr, ctx.expression(), ctx.locator, start, ctx.Pos()-start))
 		}
 		panic(ctx.parseIssue(PARSE_EXPECTED_TYPE_NAME_AFTER_TYPE))
+	}
 
+	parent := ``
+	switch ctx.currentToken {
+	case TOKEN_ASSIGN:
+		ctx.nextToken()
+		bodyStart := ctx.tokenStartPos
+		body := ctx.expression()
+		switch body.(type) {
+		case *QualifiedReference:
+			if ctx.currentToken == TOKEN_LC {
+				body = ctx.factory.KeyedEntry(body, ctx.expression(),  ctx.locator, bodyStart, ctx.Pos()-bodyStart)
+			}
+			return ctx.addDefinition(ctx.factory.TypeAlias(fqr.name, body, ctx.locator, start, ctx.Pos()-start))
+		default:
+			return ctx.addDefinition(ctx.factory.TypeAlias(fqr.name, body, ctx.locator, start, ctx.Pos()-start))
+		}
 	case TOKEN_INHERITS:
 		ctx.nextToken()
 		nameExpr := ctx.typeName()
@@ -1088,16 +1105,8 @@ func (ctx *context) typeAliasOrDefinition() Expression {
 		parent = fqr.name
 		ctx.assertToken(TOKEN_LC)
 		fallthrough
-
 	case TOKEN_LC:
-		if fqr, ok = typeExpr.(*QualifiedReference); ok {
-			ctx.nextToken()
-			body = ctx.parse(TOKEN_RC, false)
-			ctx.nextToken() // consume TOKEN_RC
-			return ctx.addDefinition(ctx.factory.TypeDefinition(fqr.name, parent, body, ctx.locator, start, ctx.Pos()-start))
-
-		}
-		panic(ctx.parseIssue(PARSE_EXPECTED_TYPE_NAME_AFTER_TYPE))
+		return ctx.addDefinition(ctx.factory.TypeDefinition(fqr.name, parent, ctx.expression(), ctx.locator, start, ctx.Pos()-start))
 
 	default:
 		panic(ctx.parseIssue2(LEX_UNEXPECTED_TOKEN, H{`token`: tokenMap[ctx.currentToken]}))

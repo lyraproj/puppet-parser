@@ -684,7 +684,7 @@ func (v *Checker) checkTop(e Expression, c Expression) {
 		c = v.ContainerOf(c)
 		if _, ok := c.(*Program); !ok {
 			switch e.(type) {
-			case *FunctionDefinition, *TypeAlias, *TypeDefinition:
+			case *FunctionDefinition, *TypeAlias, *TypeDefinition, *TypeMapping:
 				// not ok. These can never be nested in a block
 				v.Accept(VALIDATE_NOT_ABSOLUTE_TOP_LEVEL, e, H{`value`: e})
 				return
