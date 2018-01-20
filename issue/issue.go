@@ -51,7 +51,29 @@ type (
 		args      H
 		location  Location
 	}
+
+	location struct {
+		file string
+		line int
+		pos int
+	}
 )
+
+func NewLocation(file string, line, pos int) Location {
+	return &location{file, line, pos}
+}
+
+func (l *location) File() string {
+	return l.file
+}
+
+func (l *location) Line() int {
+	return l.line
+}
+
+func (l *location) Pos() int {
+	return l.pos
+}
 
 var issues = map[IssueCode]*Issue{}
 
@@ -131,46 +153,56 @@ func NewReportedIssue(code IssueCode, severity Severity, args H, location Locati
 	return &ReportedIssue{code, severity, args, location}
 }
 
-func (e *ReportedIssue) Argument(str string) interface{} {
-	return e.args[str]
+func (ri *ReportedIssue) Argument(str string) interface{} {
+	return ri.args[str]
 }
 
-func (e *ReportedIssue) Error() (str string) {
-	issue := IssueForCode(e.issueCode)
+func (ri *ReportedIssue) OffsetByLocation(location Location) *ReportedIssue {
+	loc := ri.location
+	if loc == nil {
+		loc = location
+	} else {
+		loc = NewLocation(location.File(), location.Line() + loc.Line(), location.Pos())
+	}
+	return &ReportedIssue{ri.issueCode, ri.severity, ri.args, loc}
+}
+
+func (ri *ReportedIssue) Error() (str string) {
+	issue := IssueForCode(ri.issueCode)
 	var args H
 	af := issue.argFormats
 	if af != nil {
-		args = make(H, len(e.args))
-		for k, v := range e.args {
+		args = make(H, len(ri.args))
+		for k, v := range ri.args {
 			if a, ok := af[k]; ok {
 				v = a(v)
 			}
 			args[k] = v
 		}
 	} else {
-		args = e.args
+		args = ri.args
 	}
-	return appendLocation(MapSprintf(issue.messageFormat, args), e.location)
+	return appendLocation(MapSprintf(issue.messageFormat, args), ri.location)
 }
 
-func (e *ReportedIssue) String() (str string) {
-	return e.Error()
+func (ri *ReportedIssue) String() (str string) {
+	return ri.Error()
 }
 
-func (e *ReportedIssue) Code() IssueCode {
-	return e.issueCode
+func (ri *ReportedIssue) Code() IssueCode {
+	return ri.issueCode
 }
 
-func (e *ReportedIssue) Severity() Severity {
-	return e.severity
+func (ri *ReportedIssue) Severity() Severity {
+	return ri.severity
 }
 
 // Represent the reported using polish notation
-func (e *ReportedIssue) ToPN() PN {
+func (ri *ReportedIssue) ToPN() PN {
 	return MapPN([]Entry{
-		LiteralPN(e.issueCode).WithName(`code`),
-		LiteralPN(e.severity.String()).WithName(`severity`),
-		LiteralPN(e.Error()).WithName(`message`)})
+		LiteralPN(ri.issueCode).WithName(`code`),
+		LiteralPN(ri.severity.String()).WithName(`severity`),
+		LiteralPN(ri.Error()).WithName(`message`)})
 }
 
 func appendLocation(str string, location Location) string {
