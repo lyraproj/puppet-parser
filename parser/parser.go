@@ -272,21 +272,14 @@ func (ctx *context) transformCalls(exprs []Expression, start int) (result []Expr
 	return
 }
 
-type producerFunc func(ctx *context) Expression
-
-// producerFunc to call ctx.expression
-func expression(ctx *context) Expression {
-	return ctx.expression()
-}
-
-func (ctx *context) expressions(endToken int, producer producerFunc) (exprs []Expression) {
+func (ctx *context) expressions(endToken int, producerFunc func () Expression) (exprs []Expression) {
 	exprs = make([]Expression, 0, 4)
 	for {
 		if ctx.currentToken == endToken {
 			ctx.nextToken()
 			return
 		}
-		exprs = append(exprs, producer(ctx))
+		exprs = append(exprs, producerFunc())
 		if ctx.currentToken != TOKEN_COMMA {
 			if ctx.currentToken != endToken {
 				ctx.SetPos(ctx.tokenStartPos)
@@ -319,14 +312,14 @@ func (ctx *context) syntacticStatement() (expr Expression) {
 }
 
 func (ctx *context) collectionEntry() (expr Expression) {
-	return ctx.handleKeyword(ctx.argument)
+	return ctx.argument()
 }
 
 func (ctx *context) argument() (expr Expression) {
-	expr = ctx.assignment()
+	expr = ctx.handleKeyword(ctx.assignment)
 	if ctx.currentToken == TOKEN_FARROW {
 		ctx.nextToken()
-		value := ctx.assignment()
+		value := ctx.handleKeyword(ctx.assignment)
 		expr = ctx.factory.KeyedEntry(expr, value, ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
 	}
 	return
@@ -568,10 +561,10 @@ func (ctx *context) inExpression() (expr Expression) {
 }
 
 func (ctx *context) arrayExpression() (elements []Expression) {
-	return ctx.joinHashEntries(ctx.expressions(TOKEN_RB, collectionEntry))
+	return ctx.joinHashEntries(ctx.expressions(TOKEN_RB, ctx.collectionEntry))
 }
 
-func keyedEntry(ctx *context) Expression {
+func (ctx *context) keyedEntry() Expression {
 	key := ctx.hashEntry()
 	if ctx.currentToken != TOKEN_FARROW {
 		panic(ctx.parseIssue(PARSE_EXPECTED_FARROW_AFTER_KEY))
@@ -582,7 +575,7 @@ func keyedEntry(ctx *context) Expression {
 }
 
 func (ctx *context) hashExpression() (entries []Expression) {
-	return ctx.expressions(TOKEN_RC, keyedEntry)
+	return ctx.expressions(TOKEN_RC, ctx.keyedEntry)
 }
 
 func (ctx *context) unaryExpression() Expression {
@@ -835,14 +828,14 @@ func (ctx *context) selectorsExpression(test Expression) (expr Expression) {
 	ctx.nextToken()
 	if ctx.currentToken == TOKEN_SELC {
 		ctx.nextToken()
-		selectors = ctx.expressions(TOKEN_RC, selectorEntry)
+		selectors = ctx.expressions(TOKEN_RC, ctx.selectorEntry)
 	} else {
-		selectors = []Expression{selectorEntry(ctx)}
+		selectors = []Expression{ctx.selectorEntry()}
 	}
 	return ctx.factory.Select(test, selectors, ctx.locator, test.byteOffset(), ctx.Pos()-test.byteOffset())
 }
 
-func selectorEntry(ctx *context) (expr Expression) {
+func (ctx *context) selectorEntry() (expr Expression) {
 	start := ctx.tokenStartPos
 	lhs := ctx.expression()
 	ctx.assertToken(TOKEN_FARROW)
@@ -873,7 +866,7 @@ func (ctx *context) caseOptions() (exprs []Expression) {
 
 func (ctx *context) caseOption() Expression {
 	start := ctx.tokenStartPos
-	expressions := ctx.expressions(TOKEN_COLON, expression)
+	expressions := ctx.expressions(TOKEN_COLON, ctx.expression)
 	ctx.assertToken(TOKEN_LC)
 	ctx.nextToken()
 	block := ctx.parse(TOKEN_RC, false)
@@ -1150,14 +1143,6 @@ func (ctx *context) lambda() (result Expression) {
 	return ctx.factory.Lambda(parameterList, block, returnType, ctx.locator, start, ctx.Pos()-start)
 }
 
-func collectionEntry(ctx *context) Expression {
-	return ctx.collectionEntry()
-}
-
-func argument(ctx *context) Expression {
-	return ctx.argument()
-}
-
 func (ctx *context) joinHashEntries(exprs []Expression) (result []Expression) {
 	// Assume that this is a no-op
 	result = exprs
@@ -1203,7 +1188,7 @@ func (ctx *context) newHashWithoutBraces(entries []Expression) Expression {
 }
 
 func (ctx *context) arguments() (result []Expression) {
-	return ctx.joinHashEntries(ctx.expressions(TOKEN_RP, argument))
+	return ctx.joinHashEntries(ctx.expressions(TOKEN_RP, ctx.argument))
 }
 
 func (ctx *context) functionDefinition() Expression {
@@ -1314,7 +1299,7 @@ func (ctx *context) parameterList() (result []Expression) {
 	switch ctx.currentToken {
 	case TOKEN_LP, TOKEN_WSLP:
 		ctx.nextToken()
-		return ctx.expressions(TOKEN_RP, parameter)
+		return ctx.expressions(TOKEN_RP, ctx.parameter)
 	default:
 		return []Expression{}
 	}
@@ -1322,10 +1307,10 @@ func (ctx *context) parameterList() (result []Expression) {
 
 func (ctx *context) lambdaParameterList() (result []Expression) {
 	ctx.nextToken()
-	return ctx.expressions(TOKEN_PIPE, parameter)
+	return ctx.expressions(TOKEN_PIPE, ctx.parameter)
 }
 
-func parameter(ctx *context) Expression {
+func (ctx *context) parameter() Expression {
 	var typeExpr, defaultExpression Expression
 
 	start := ctx.tokenStartPos

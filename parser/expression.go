@@ -923,7 +923,7 @@ func (e *CaseExpression) Contents(path []Expression, visitor PathVisitor) {
 	shallowVisit(e, path, visitor, e.test, e.options)
 }
 
-func (e *CaseExpression) ToPN() PN { return pnList(e.Options()).AsCall(`case`) }
+func (e *CaseExpression) ToPN() PN { return CallPN(`case`, e.Test().ToPN(), pnList(e.Options())) }
 
 func (e *CaseOption) Values() []Expression {
 	return e.values

@@ -1399,11 +1399,37 @@ func TestCase(t *testing.T) {
       /^(Debian|Ubuntu)$/: { include role::debian  } # Apply the debian class
       default:             { include role::generic } # Apply the generic class
     }`),
-		`(case `+
+		`(case (access (access (var "facts") "os") "name") [`+
 			`{:when ["Solaris"] :then [(invoke {:functor (qn "include") :args [(qn "role::solaris")]})]} `+
 			`{:when ["RedHat" "CentOS"] :then [(invoke {:functor (qn "include") :args [(qn "role::redhat")]})]} `+
 			`{:when [(regexp "^(Debian|Ubuntu)$")] :then [(invoke {:functor (qn "include") :args [(qn "role::debian")]})]} `+
-			`{:when [(default)] :then [(invoke {:functor (qn "include") :args [(qn "role::generic")]})]})`)
+			`{:when [(default)] :then [(invoke {:functor (qn "include") :args [(qn "role::generic")]})]}])`)
+}
+
+func TestAccess(t *testing.T) {
+	expectDump(t,
+		Unindent(`
+      Struct[{
+        Optional[description] => String,
+        Optional[sensitive] => Boolean,
+        type => Type}]`),
+		`(access (qr "Struct") ` +
+			`(hash ` +
+				`(=> (access (qr "Optional") (qn "description")) (qr "String")) ` +
+				`(=> (access (qr "Optional") (qn "sensitive")) (qr "Boolean")) ` +
+				`(=> (qn "type") (qr "Type"))))`)
+
+	expectDump(t,
+		Unindent(`
+      Struct[
+        Optional[description] => String,
+        Optional[sensitive] => Boolean,
+        type => Type]`),
+		`(access (qr "Struct") ` +
+				`(hash ` +
+				`(=> (access (qr "Optional") (qn "description")) (qr "String")) ` +
+				`(=> (access (qr "Optional") (qn "sensitive")) (qr "Boolean")) ` +
+				`(=> (qn "type") (qr "Type"))))`)
 }
 
 func TestResource(t *testing.T) {
