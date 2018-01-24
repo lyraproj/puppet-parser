@@ -6,6 +6,7 @@ import (
 
 	. "github.com/puppetlabs/go-parser/issue"
 	. "github.com/puppetlabs/go-parser/pn"
+	"strings"
 )
 
 // The AST Model. Designed to match the AST model used by the Puppet
@@ -851,6 +852,13 @@ func (e *CallNamedFunctionExpression) AllContents(path []Expression, visitor Pat
 	deepVisit(e, path, visitor, e.functor, e.arguments, e.lambda)
 }
 
+func (e *CallNamedFunctionExpression) WithFunctor(functor Expression) *CallNamedFunctionExpression {
+	cr := &CallNamedFunctionExpression{}
+	*cr = *e
+	cr.functor = functor
+	return cr
+}
+
 func (e *CallNamedFunctionExpression) Contents(path []Expression, visitor PathVisitor) {
 	shallowVisit(e, path, visitor, e.functor, e.arguments, e.lambda)
 }
@@ -1565,6 +1573,14 @@ func (e *QualifiedReference) DowncasedName() string {
 
 func (e *QualifiedReference) Name() string {
 	return e.name
+}
+
+func (e *QualifiedReference) WithName(name string) *QualifiedReference {
+	rn := &QualifiedReference{}
+	*rn = *e
+	rn.name = name
+	rn.downcasedName = strings.ToLower(name)
+	return rn
 }
 
 func (e *QualifiedReference) ToPN() PN { return LiteralPN(e.Name()).AsCall(`qr`) }
