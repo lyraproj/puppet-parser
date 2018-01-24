@@ -1386,7 +1386,6 @@ findStartOfText:
 
 	// Find end of heredoc and heredoc content
 	tagStart, _ := DecodeRuneInString(tag)
-	c, n = ctx.Next()
 findEndOfText:
 	for {
 		switch c {

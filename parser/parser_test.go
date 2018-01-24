@@ -149,6 +149,11 @@ func TestReserved(t *testing.T) {
 func TestHeredoc(t *testing.T) {
 	expectHeredoc(t, Unindent(`
       @(END)
+      END`),
+		"")
+
+	expectHeredoc(t, Unindent(`
+      @(END)
       This is
       heredoc text
       END`),
@@ -288,6 +293,13 @@ func TestHeredocMargin(t *testing.T) {
       `),
 		"This\tis\nheredoc text\n")
 
+	expectHeredoc(t,
+		Unindent(`
+      @(END)
+        | END
+      `),
+		"")
+
 	// Lines that have less margin than what's stripped are not stripped
 	expectHeredoc(t,
 		Unindent(`
@@ -307,6 +319,13 @@ func TestHeredocMarginAndNewlineTrim(t *testing.T) {
         heredoc text
         |- END`),
 		"This\tis\nheredoc text")
+
+	expectHeredoc(t,
+		Unindent(`
+      @(END)
+        |-END
+      `),
+		"")
 }
 
 func TestHeredocInterpolate(t *testing.T) {
