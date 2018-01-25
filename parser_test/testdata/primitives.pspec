@@ -1,0 +1,618 @@
+Example('undef',
+  Given('undef'),
+  Parses_to('null')
+)
+Example('default',
+  Given('default'),
+  Parses_to('(default)')
+)
+
+# Booleans
+Examples('Boolean',
+  Example('false',
+    Given('false'),
+    Parses_to('false')
+  ),
+  Example('true',
+    Given('true'),
+    Parses_to('true')
+  )
+)
+
+Examples('Integer',
+  Example('zero',
+    Given('0'),
+    Parses_to('0')
+  ),
+  Example('negative zero',
+    Given('-0'),
+    Parses_to('0')
+  ),
+  Example('negative',
+    Given('-123'),
+    Parses_to('-123')
+  ),
+  Example('positive',
+    Given('123'),
+    Parses_to('123')
+  ),
+  Example('positive with sign',
+    Given('+123'),
+    Parses_to('123')
+  ),
+  Example('zero hex',
+    Given('0x0'),
+    Parses_to('0')
+  ),
+  Example('positive hex',
+    Given('0xa2'),
+    Parses_to('162')
+  ),
+  Example('negative hex',
+    Given('-0xa'),
+    Parses_to('-10')
+  ),
+  Example('hex uppercase',
+    Given('0XABC'),
+    Parses_to('2748')
+  ),
+  Example('negative octal',
+    Given('0123'),
+    Parses_to('83')
+  ),
+  Example('positive octal',
+    Given('-0123'),
+    Parses_to('-83')
+  ),
+  Example('followed by letter',
+    Given('3g'),
+    Validates_with(Error(LEX_DIGIT_EXPECTED))
+  ),
+  Example('followed by non-ascii letter',
+    Given('3ö'),
+    Validates_with(Error(LEX_DIGIT_EXPECTED))
+  ),
+  Example('hex followed by non-hex letter',
+    Given('0x3g21'),
+    Validates_with(Error(LEX_HEXDIGIT_EXPECTED))
+  ),
+  Example('octal followed by non-octal digit',
+    Given('078'),
+    Validates_with(Error(LEX_OCTALDIGIT_EXPECTED))
+  )
+)
+
+
+Examples('Float',
+  Example('with exponent',
+    Given('32e7'),
+    Parses_to('320000000.0')
+  ),
+  Example('zero with fragment and exponent',
+    Given('0.3e7'),
+    Parses_to('3000000.0')
+  ),
+  Example('with negative exponent below e-range',
+    Given('123456789012345.0'),
+    Parses_to('123456789012345.0')
+  ),
+  Example('with negative exponent above e-range',
+    Given('1234567890123456.0'),
+    Parses_to('1.234567890123456e+15')
+  ),
+  Example('with negative exponent rounded e-range',
+    Given('12345678901234567.0'),
+    Parses_to('1.234567890123457e+16')
+  ),
+  Example('with negative exponent below e-range',
+    Given('0.99999999999999999e-16'),
+    Parses_to('0.99999999999999999e-16')
+  ),
+  Example('negative number with fragment and exponent',
+    Given('-32.3e2'),
+    Parses_to('-3230.0')
+  ),
+  Example('with fragment and signed positive exponent',
+    Given('32.3e+2'),
+    Parses_to('3230.0')
+  ),
+  Example('with fragment and negative exponent',
+    Given('32.3e-2'),
+    Parses_to('0.323')
+  ),
+  Example('non digit after decimal point',
+    Given('123.a'),
+    Validates_with(Error(LEX_DIGIT_EXPECTED))
+  ),
+  Example('non digit after fraction',
+    Given('123.4a'),
+    Validates_with(Error(LEX_DIGIT_EXPECTED))
+  ),
+  Example('non digit after exponent',
+    Given('123.45ex'),
+    Validates_with(Error(LEX_DIGIT_EXPECTED))
+  ),
+  Example('non digit after exponent digit',
+    Given('123.45e3x'),
+    Validates_with(Error(LEX_DIGIT_EXPECTED))
+  ),
+  Example('non digit after exponent sign',
+    Given('123.45e-x'),
+    Validates_with(Error(LEX_DIGIT_EXPECTED))
+  )
+)
+
+Examples('Qualified Name',
+  Example('contains letters, numbers, and underscore',
+    Given('n32'), Parses_to('(qn "n32")')),
+  Example('can start with ::',
+    Given('::name'), Parses_to('(qn "::name")')),
+  Example('can contain multiple segements separated by ::',
+    Given('a::b::c'), Parses_to('(qn "a::b::c")')),
+  Example('all segments must start with a lower letter',
+    Given('av::bv::Cv'), Validates_with(Error(LEX_INVALID_NAME))),
+)
+
+Examples('Qualified Reference',
+  Example('contains letters, numbers, and underscore',
+    Given('N32'), Parses_to('(qr "N32")')),
+  Example('can start with ::',
+    Given('::Name'), Parses_to('(qr "::Name")')),
+  Example('can contain multiple segements separated by ::',
+    Given('A::B::C'), Parses_to('(qr "A::B::C")')),
+  Example('all segments must start with an uppercase letter',
+    Given('Av::Bv::cv'), Validates_with(Error(LEX_INVALID_TYPE_NAME))),
+)
+
+Examples('Variable Name',
+  Example('contains letters, numbers, and underscore',
+    Given('$n32'), Parses_to('(var "n32")')),
+  Example('can start with ::',
+    Given('$::name'), Parses_to('(var "::name")')),
+  Example('can contain multiple segements separated by ::',
+    Given('$a::b::c'), Parses_to('(var "a::b::c")')),
+  Example('last segment can start with underscore',
+    Given('$av::bv::_v'), Parses_to('(var "av::bv::_v")')),
+  Example('segments cannot start with an upper case letter',
+    Given('$av::bv::Cv'), Validates_with(Error(LEX_INVALID_VARIABLE_NAME))),
+  Example('only last segment cannot start with an underscore',
+    Given('$av::_v::cv'), Validates_with(Error(LEX_INVALID_VARIABLE_NAME))),
+)
+
+Examples('Operator precedence',
+  Example('1',
+    Given('$x = a or b and c < d == e << f + g * -h'),
+    Parses_to('(= (var "x") (or (qn "a") (and (qn "b") (< (qn "c") (== (qn "d") (<< (qn "e") (+ (qn "f") (* (qn "g") (- (qn "h"))))))))))')),
+  Example('2',
+    Given('$x = -h / g + f << e == d <= c and b or a'),
+    Parses_to('(= (var "x") (or (and (<= (== (<< (+ (/ (- (qn "h")) (qn "g")) (qn "f")) (qn "e")) (qn "d")) (qn "c")) (qn "b")) (qn "a")))')),
+  Example('3',
+    Given('$x = !a == b'),
+    Parses_to('(= (var "x") (== (! (qn "a")) (qn "b")))')),
+  Example('4',
+    Given('$x = a > b'),
+    Parses_to('(= (var "x") (> (qn "a") (qn "b")))')),
+  Example('5',
+    Given('$x = a >= b'),
+    Parses_to('(= (var "x") (>= (qn "a") (qn "b")))')),
+  Example('6',
+    Given('$x = a +b'),
+    Parses_to('(= (var "x") (+ (qn "a") (qn "b")))')),
+  Example('7',
+    Given('$x = +4'),
+    Parses_to('(= (var "x") 4)')),
+  Example('8',
+    Given('$x = a * (b + c)'),
+    Parses_to('(= (var "x") (* (qn "a") (paren (+ (qn "b") (qn "c")))))')),
+  Example('9',
+    Given('$x = $y -= $z'),
+    Parses_to('(= (var "x") (-= (var "y") (var "z")))')),
+  Example('10',
+    Given('$x = $y + $z % 5'),
+    Parses_to('(= (var "x") (+ (var "y") (% (var "z") 5)))')),
+  Example('11',
+    Given('$x = $y += $z'),
+    Parses_to('(= (var "x") (+= (var "y") (var "z")))')),
+  Example('12',
+    Given('$y = $x =~ $z'),
+    Parses_to('(= (var "y") (=~ (var "x") (var "z")))')),
+  Example('13',
+    Given('$y = $x !~ $z'),
+    Parses_to('(= (var "y") (!~ (var "x") (var "z")))')),
+  Example('14',
+    Given('$x = +b'),
+    Validates_with(Error(LEX_UNEXPECTED_TOKEN))),
+)
+
+Examples('Single Quoted String',
+  Example('is parsed into a string',
+    Given(`'the string'`),
+    Parses_to(`"the string"`)
+  ),
+  Example('can escape single quote',
+    Given(`'the \'string\''`),
+    Parses_to(`"the 'string'"`)
+  ),
+  Example('can escaped escape',
+    Given(`'the \\string\\'`),
+    Parses_to(`"the \\string\\"`)
+  ),
+  Example('retains unrecognized escape',
+    Given(`'the \tstring\t'`),
+    Parses_to(`"the \\tstring\\t"`)
+  ),
+  Example('can not contain line breaks',
+    Given(Source(`'the \tstring
+  \t'`)),
+    Validates_with(Error(LEX_UNTERMINATED_STRING))
+  )
+)
+
+Examples('Double Quoted String',
+  Example('is parsed into a concatenated string',
+    Given(`"the string"`),
+    Parses_to(`(concat "the string")`)
+  ),
+  Example('translates escapes for newline, tab, space, carriage return, and escape',
+    Given(`"string\\n\nwith\\t\t,\\s\s, and \\r\r\n"`),
+    Parses_to(`(concat "string\\n\nwith\\t\t,\\s , and \\r\r\n")`)
+  ),
+  Example('retains unknown escapes',
+    Given(`"unknown \k escape"`),
+    Parses_to(`(concat "unknown \\k escape")`)
+  ),
+  Example('handles interpolated variables without {} delimiters',
+    Given(`"hello $var"`),
+    Parses_to(`(concat "hello " (str (var "var")))`)
+  ),
+  Example('handles interpolated variables with {} delimiters',
+    Given(`"hello ${var}"`),
+    Parses_to(`(concat "hello " (str (var "var")))`)
+  ),
+  Example('handles complex interpolated expressions',
+    Given(`"Before ${{ a => true, b => "hello"}} and after"`),
+    Parses_to(`(concat "Before " (str (hash (=> (qn "a") true) (=> (qn "b") (concat "hello")))) " and after")`)
+  ),
+  Example('handles unicode escapes consisting of 4 hexadecimal digits',
+    Given(`"x\u2713y"`),
+    Parses_to(`(concat "x✓y")`)
+  ),
+  Example('handles brace limited unicode escapes',
+    Given(`"x\u{1f452}y"`),
+    Parses_to(`(concat "x👒y")`)
+  ),
+  Example('rejects malformed variable names',
+    Given(`"$Var"`),
+    Validates_with(Error(LEX_MALFORMED_INTERPOLATION))
+  ),
+  Example('reports unterminated strings',
+    Given(`"y`),
+    Validates_with(Error(LEX_UNTERMINATED_STRING))
+  ),
+  Example('reports unterminated interpolations',
+    Given(`"y${var"`),
+    Validates_with(Error(LEX_UNTERMINATED_STRING))
+  ),
+)
+
+Examples('Regexp',
+  Example('parses / delimited regexp',
+    Given(`/^[a-z]+$/`),
+    Parses_to(`(regexp "^[a-z]+$")`)
+  ),
+)
+
+Examples('Heredoc String',
+  Example('can be multiline',
+    Given(Unindent(`
+      @(END)
+      This is
+      heredoc text
+      END`)),
+    Parses_to(`(heredoc {:text "This is\nheredoc text\n"})`)
+  ),
+  Example('more than one can exist on the same line',
+    Given(Unindent(`
+      { a => @(ONE), b => @(TWO) }
+      The first
+      heredoc text
+      -ONE
+      The second
+      heredoc text
+      -TWO`)),
+    Parses_to(`(hash (=> (qn "a") (heredoc {:text "The first\nheredoc text"})) (=> (qn "b") (heredoc {:text "The second\nheredoc text"})))`)
+  ),
+  Example('several can exist on the same line',
+    Given(Unindent(`
+      ['first', @(SECOND), 'third', @(FOURTH), 'fifth',
+        This is the text of the
+        second entry
+        |-SECOND
+        And here is the text of the
+        fourth entry
+        |-FOURTH
+        'sixth']`)),
+    Parses_to(`
+        (array
+          "first"
+          (heredoc {:text "This is the text of the\nsecond entry"})
+          "third"
+          (heredoc {:text "And here is the text of the\nfourth entry"})
+          "fifth"
+          "sixth")`)
+  ),
+  Example('empty tag is an error',
+    Given(Unindent(`
+       @()
+         This is
+         heredoc $text
+         |- END`)),
+    Validates_with(Error(LEX_HEREDOC_EMPTY_TAG))
+  ),
+  Example('reports unterminated heredoc tag declaration',
+    Given(Unindent(`
+       @(END
+       /t)
+       This\nis\nheredoc\ntext
+       -END`)),
+    Validates_with(Error(LEX_HEREDOC_DECL_UNTERMINATED))
+  ),
+  Example('reports unterminated heredoc',
+    Given(
+      Unindent(`
+        @(END)
+        This is
+        heredoc text`),
+      Unindent(`
+        @(END)
+        This\nis\nheredoc\ntext
+
+        `),
+      `@(END)`
+    ),
+    Validates_with(Error(LEX_HEREDOC_UNTERMINATED))
+  ),
+  Examples('with syntax',
+    Example('parses the given syntax',
+      Given(Unindent(`
+        @(END:syntax)
+        This is
+        heredoc text
+        END`)),
+      Parses_to(`(heredoc {:syntax "syntax" :text "This is\nheredoc text\n"})`)
+    ),
+    Example('does not allow multiple syntax declarations',
+      Given(Unindent(`
+         @(END:json:yaml)
+         This is
+         heredoc text
+         END`)),
+      Validates_with(Error(LEX_HEREDOC_MULTIPLE_SYNTAX))
+    ),
+  ),
+  Examples('with flags',
+    Example('parses and escapes \t',
+      Given(Unindent(`
+        @(END/t)
+        This\tis\t
+        heredoc text
+        -END`)),
+      Parses_to(`(heredoc {:text "This\tis\t\nheredoc text"})`)
+    ),
+    Example('parses and escapes \s',
+      Given(Unindent(`
+        @(END/s)
+        This\sis\sheredoc\stext
+        -END`)),
+      Parses_to(`(heredoc {:text "This is heredoc text"})`)
+    ),
+    Example('parses and escapes \r',
+      Given(Unindent(`
+        @(END/r)
+        This\ris\rheredoc\rtext
+        -END`)),
+      Parses_to(`(heredoc {:text "This\ris\rheredoc\rtext"})`)
+    ),
+    Example('parses and escapes \n',
+      Given(Unindent(`
+        @(END/n)
+        This\nis\nheredoc\ntext
+        -END`)),
+      Parses_to(`(heredoc {:text "This\nis\nheredoc\ntext"})`)
+    ),
+    Example('parses and escapes \uXXXX',
+      Given(Unindent(`
+        @(END/u)
+        A checkmark \u2713 symbol
+        -END`)),
+      Parses_to(`(heredoc {:text "A checkmark ✓ symbol"})`)
+    ),
+    Example('parses and escapes \u{...}',
+      Given(Unindent(`
+        @(END/u)
+        A hat \u{1f452} symbol
+        -END`)),
+      Parses_to(`(heredoc {:text "A hat 👒 symbol"})`)
+    ),
+    Example('reports unterminated \u{...',
+      Given(Unindent(`
+        @(END/u)
+        A hat \u{1f452 symbol
+        -END`)),
+      Validates_with(Error(LEX_MALFORMED_UNICODE_ESCAPE))
+    ),
+    Example('reports \u{xxx} with more than 6 digits',
+      Given(Unindent(`
+        @(END/u)
+        A hat \u{1f45234} symbol
+        -END`)),
+      Validates_with(Error(LEX_MALFORMED_UNICODE_ESCAPE))
+    ),
+    Example('reports \u{xxx} with less than 2 digits',
+      Given(Unindent(`
+        @(END/u)
+        A hat \u{1} symbol
+        -END`)),
+      Validates_with(Error(LEX_MALFORMED_UNICODE_ESCAPE))
+    ),
+    Example('reports \uXXXX unless it has 4 digits',
+      Given(Unindent(`
+        @(END/u)
+        A hat \u271 symbol
+        -END`)),
+      Validates_with(Error(LEX_MALFORMED_UNICODE_ESCAPE))
+    ),
+    Example('reports \uXXXX unless all four X are hexadecimal numbers',
+      Given(Unindent(`
+        @(END/u)
+        A hat \ux271 symbol
+        -END`)),
+      Validates_with(Error(LEX_MALFORMED_UNICODE_ESCAPE))
+    ),
+    Example('parses and converts newlines using /L',
+      Given(Unindent(`
+        @(END/L)
+        This is \
+        heredoc text
+        -END`)),
+      Parses_to(`(heredoc {:text "This is heredoc text"})`)
+    ),
+    Example('escape on last line is retained when using /L',
+      Given(Unindent(`
+        @(END/L)
+        This is \
+        heredoc text\
+        -END`)),
+      Parses_to(`(heredoc {:text "This is heredoc text\\"})`)
+    ),
+    Example('does not converts newlines unless using /L',
+      Given(Unindent(`
+        @(END)
+        This is \
+        heredoc text
+        -END`)),
+      Parses_to(`(heredoc {:text "This is \\\nheredoc text"})`)
+    ),
+    Example('multiple flags and a syntax',
+      Given(Unindent(`
+        @(END:syntax/nt)
+        This\nis\theredoc\ntext
+        -END`)),
+      Parses_to(`(heredoc {:syntax "syntax" :text "This\nis\theredoc\ntext"})`)
+    ),
+    Example('does not allow multiple flag declarations',
+      Given(Unindent(`
+         @(END/t/s)
+         This is
+         heredoc text
+         END`)),
+      Validates_with(Error(LEX_HEREDOC_MULTIPLE_ESCAPE))
+    ),
+    Example('does not allow multiple invalid flag declarations',
+      Given(Unindent(`
+         @(END/k)
+         This is
+         heredoc text
+         END`)),
+      Validates_with(Error(LEX_HEREDOC_ILLEGAL_ESCAPE))
+    ),
+  ),
+  Examples('margin',
+    Example('is stripped according to | before end tag',
+      Given(Unindent(`
+        @(END)
+          This is
+          heredoc text
+          | END
+      `)),
+      Parses_to(`(heredoc {:text "This is\nheredoc text\n"})`)
+    ),
+    Example('lines are left as is unless margin is satisfied by whitespace',
+      Given(Unindent(`
+        @(END)
+          This is
+         heredoc text
+          | END
+      `)),
+      Parses_to(`(heredoc {:text "This is\n heredoc text\n"})`)
+    ),
+    Examples('and newline trim',
+      Example('margin and newline are both trimmed',
+        Given(Unindent(`
+          @(END)
+            This is
+            heredoc text
+            |- END
+        `)),
+        Parses_to(`(heredoc {:text "This is\nheredoc text"})`)
+      ),
+    ),
+  ),
+  Examples('interpolation',
+    Example('quoted tag activates interpolation',
+      Given(Unindent(`
+        @("END")
+          This is
+          heredoc $text
+          |- END`)),
+      Parses_to(`(heredoc {:text (concat "This is\nheredoc " (str (var "text")))})`)
+    ),
+    Example('unquoted tag deactivates interpolation',
+      Given(Unindent(`
+        @(END)
+          This is
+          heredoc $text
+          |- END`)),
+      Parses_to(`(heredoc {:text "This is\nheredoc $text"})`)
+    ),
+    Example('escape of $ is not done without flag',
+      Given(Unindent(`
+        @("END")
+          This is
+          heredoc $a \$b
+          |- END`)),
+      Parses_to(`(heredoc {:text (concat "This is\nheredoc " (str (var "a")) " \\" (str (var "b")))})`)
+    ),
+    Example('$ is escaped when $ escape flag is present',
+      Given(Unindent(`
+        @("END"/$)
+          This is
+          heredoc $a \$b
+          |- END`)),
+      Parses_to(`(heredoc {:text (concat "This is\nheredoc " (str (var "a")) " $b")})`)
+    ),
+    Example('multiple quoted tags are not allowed inside of declaration',
+      Given(Unindent(`
+         @("END""MORE")
+           This is
+           heredoc $text
+           |- END`)),
+      Validates_with(Error(LEX_HEREDOC_MULTIPLE_TAG))
+    ),
+    Example('missing end quote on tag is an error',
+      Given(Unindent(`
+         @("END)
+           This is
+           heredoc $text
+           |- END`)),
+      Validates_with(Error(LEX_HEREDOC_DECL_UNTERMINATED))
+    ),
+    Example('tags end quote on next line is an error',
+      Given(Unindent(`
+         @("END
+         ")
+           This is
+           heredoc $text
+           |- END`)),
+      Validates_with(Error(LEX_HEREDOC_DECL_UNTERMINATED))
+    ),
+    Example('empty quoted tag is an error',
+      Given(Unindent(`
+         @("")
+           This is
+           heredoc $text
+           |- END`)),
+      Validates_with(Error(LEX_HEREDOC_EMPTY_TAG))
+    ),
+  )
+)

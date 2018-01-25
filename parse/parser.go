@@ -1,4 +1,5 @@
 // +build go1.7
+
 package main
 
 import (
@@ -18,6 +19,7 @@ import (
 var validateOnly = flag.Bool("v", false, "validate only")
 var json = flag.Bool("j", false, "json output")
 var strict = flag.String("s", `off`, "strict (off, warning, or error)")
+var tasks = flag.Bool("t", false, "tasks")
 
 func main() {
 	flag.Parse()
@@ -42,7 +44,15 @@ func main() {
 
 	strictness := Strict(*strict)
 
-	expr, err := CreateParser().Parse(args[0], string(content), HasSuffix(fileName, `.epp`), false)
+	parseOpts := []ParserOption{}
+	if HasSuffix(fileName, `.epp`) {
+		parseOpts = append(parseOpts, PARSER_EPP_MODE)
+	}
+	if *tasks {
+		parseOpts = append(parseOpts, PARSER_TASKS_ENABLED)
+	}
+
+	expr, err := CreateParser(parseOpts...).Parse(args[0], string(content), false)
 	if *json {
 		if err != nil {
 			if issue, ok := err.(*ReportedIssue); ok {

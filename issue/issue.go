@@ -295,7 +295,7 @@ func extractNamesAndLocations(formatString string) (string, int, map[string][]in
 		c = rdr.next()
 		if c != '{' && c != '<' {
 			if c != '%' {
-				panic(Sprintf(`keyed formats cannot be combined with other % formats at position %d in string '%s'`,
+				panic(Sprintf(`keyed formats cannot be combined with other %% formats at position %d in string '%s'`,
 					rdr.i, formatString))
 			}
 			b.WriteRune(c)
