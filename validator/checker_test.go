@@ -7,6 +7,8 @@ import (
 	"testing"
 )
 
+var PuppetTasks = false
+
 func TestVariableAssignValidation(t *testing.T) {
 	expectNoIssues(t, `$x = 'y'`)
 }
@@ -106,7 +108,7 @@ func TestCallNamedFunctionValidation(t *testing.T) {
 }
 
 func TestBinaryOpValidation(t *testing.T) {
-	expectIssues(t, `notice(function foo() {} < 3)`, VALIDATE_NOT_TOP_LEVEL, VALIDATE_NOT_RVALUE)
+	expectIssues(t, `notice(define foo() {} < 3)`, VALIDATE_NOT_TOP_LEVEL, VALIDATE_NOT_RVALUE)
 	expectNoIssues(t, `notice(true == !false)`)
 }
 
@@ -714,23 +716,23 @@ func TestTypeMappingValidation(t *testing.T) {
 }
 
 func expectNoIssues(t *testing.T, str string) {
-	expectIssuesX(t, str, false)
+	expectIssuesX(t, str, []ParserOption{})
 }
 
 func expectNoIssuesEPP(t *testing.T, str string) {
-	expectIssuesX(t, str, true)
+	expectIssuesX(t, str, []ParserOption{PARSER_EPP_MODE})
 }
 
 func expectIssues(t *testing.T, str string, expectedIssueCodes ...IssueCode) {
-	expectIssuesX(t, str, false, expectedIssueCodes...)
+	expectIssuesX(t, str, []ParserOption{}, expectedIssueCodes...)
 }
 
 func expectIssuesEPP(t *testing.T, str string, expectedIssueCodes ...IssueCode) {
-	expectIssuesX(t, str, true, expectedIssueCodes...)
+	expectIssuesX(t, str, []ParserOption{PARSER_EPP_MODE}, expectedIssueCodes...)
 }
 
-func expectIssuesX(t *testing.T, str string, eppMode bool, expectedIssueCodes ...IssueCode) {
-	issues := parseAndValidate(t, str, eppMode)
+func expectIssuesX(t *testing.T, str string, parserOptions []ParserOption, expectedIssueCodes ...IssueCode) {
+	issues := parseAndValidate(t, str, parserOptions...)
 	if issues == nil {
 		return
 	}
@@ -761,16 +763,21 @@ nextIssue:
 	}
 }
 
-func parseAndValidate(t *testing.T, str string, eppMode bool) []*ReportedIssue {
-	if expr := parse(t, str, eppMode); expr != nil {
+func parseAndValidate(t *testing.T, str string, parserOptions ...ParserOption) []*ReportedIssue {
+	if PuppetTasks {
+		if expr := parse(t, str, append([]ParserOption{PARSER_TASKS_ENABLED}, parserOptions...)...); expr != nil {
+			v := ValidateTasks(expr)
+			return v.Issues()
+		}
+	} else if expr := parse(t, str, parserOptions...); expr != nil {
 		v := ValidatePuppet(expr, STRICT_ERROR)
 		return v.Issues()
 	}
 	return nil
 }
 
-func parse(t *testing.T, str string, eppMode bool) *Program {
-	expr, err := CreateParser().Parse(``, str, eppMode, false)
+func parse(t *testing.T, str string, parserOptions ...ParserOption) *Program {
+	expr, err := CreateParser(parserOptions...).Parse(``, str, false)
 	if err != nil {
 		t.Errorf(err.Error())
 		return nil

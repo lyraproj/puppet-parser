@@ -113,9 +113,16 @@ func (v *AbstractValidator) setPathAndSubject(path []Expression, subject Express
 	v.subject = subject
 }
 
-// Validate the expression using the Checker validator
+// Validate the expression using the Puppet validator
 func ValidatePuppet(e Expression, strict Strictness) Validator {
 	v := NewChecker(strict)
+	Validate(v, e)
+	return v
+}
+
+// Validate the expression using the Tasks validator
+func ValidateTasks(e Expression) Validator {
+	v := NewTasksChecker()
 	Validate(v, e)
 	return v
 }

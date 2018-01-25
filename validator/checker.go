@@ -73,20 +73,63 @@ var RESERVED_PARAMETERS = map[string]bool{
 	`title`: true,
 }
 
-type Checker struct {
+type basicChecker struct {
 	AbstractValidator
 }
 
-func NewChecker(strict Strictness) *Checker {
-	checker := &Checker{AbstractValidator{nil, nil, make([]*ReportedIssue, 0, 5), make(map[IssueCode]Severity, 5)}}
-	checker.Demote(VALIDATE_FUTURE_RESERVED_WORD, SEVERITY_DEPRECATION)
-	checker.Demote(VALIDATE_DUPLICATE_KEY, Severity(strict))
-	checker.Demote(VALIDATE_IDEM_EXPRESSION_NOT_LAST, Severity(strict))
-	return checker
+type Checker interface {
+	Validator
+
+	check_Application(e *Application)
+	check_AssignmentExpression(e *AssignmentExpression)
+	check_AttributeOperation(e *AttributeOperation)
+	check_AttributesOperation(e *AttributesOperation)
+	check_BinaryExpression(e BinaryExpression)
+	check_BlockExpression(e *BlockExpression)
+	check_CallNamedFunctionExpression(e *CallNamedFunctionExpression)
+	check_CapabilityMapping(e *CapabilityMapping)
+	check_CaseExpression(e *CaseExpression)
+	check_CaseOption(e *CaseOption)
+	check_CollectExpression(e *CollectExpression)
+	check_EppExpression(e *EppExpression)
+	check_FunctionDefinition(e *FunctionDefinition)
+	check_HostClassDefinition(e *HostClassDefinition)
+	check_IfExpression(e *IfExpression)
+	check_KeyedEntry(e *KeyedEntry)
+	check_LambdaExpression(e *LambdaExpression)
+	check_LiteralHash(e *LiteralHash)
+	check_LiteralList(e *LiteralList)
+	check_NamedAccessExpression(e *NamedAccessExpression)
+	check_NamedDefinition(e NamedDefinition)
+	check_NodeDefinition(e *NodeDefinition)
+	check_Parameter(e *Parameter)
+	check_QueryExpression(e QueryExpression)
+	check_RelationshipExpression(e *RelationshipExpression)
+	check_ReservedWord(e *ReservedWord)
+	check_ResourceBody(e *ResourceBody)
+	check_ResourceDefaultsExpression(e *ResourceDefaultsExpression)
+	check_ResourceExpression(e *ResourceExpression)
+	check_ResourceOverrideExpression(e *ResourceOverrideExpression)
+	check_ResourceTypeDefinition(e *ResourceTypeDefinition)
+	check_SelectorEntry(e *SelectorEntry)
+	check_SelectorExpression(e *SelectorExpression)
+	check_SiteDefinition(e *SiteDefinition)
+	check_TypeAlias(e *TypeAlias)
+	check_TypeMapping(e *TypeMapping)
+	check_UnaryExpression(e UnaryExpression)
+	check_UnlessExpression(e *UnlessExpression)
 }
 
-func (v *Checker) Validate(e Expression) {
+func NewChecker(strict Strictness) Checker {
+	basicChecker := &basicChecker{}
+	basicChecker.initialize(strict)
+	return basicChecker
+}
+
+func Check(v Checker, e Expression) {
 	switch e.(type) {
+	case *Application:
+		v.check_Application(e.(*Application))
 	case *AssignmentExpression:
 		v.check_AssignmentExpression(e.(*AssignmentExpression))
 	case *AttributeOperation:
@@ -145,6 +188,8 @@ func (v *Checker) Validate(e Expression) {
 		v.check_SelectorEntry(e.(*SelectorEntry))
 	case *SelectorExpression:
 		v.check_SelectorExpression(e.(*SelectorExpression))
+	case *SiteDefinition:
+		v.check_SiteDefinition(e.(*SiteDefinition))
 	case *TypeAlias:
 		v.check_TypeAlias(e.(*TypeAlias))
 	case *TypeMapping:
@@ -162,7 +207,19 @@ func (v *Checker) Validate(e Expression) {
 	}
 }
 
-func (v *Checker) check_AssignmentExpression(e *AssignmentExpression) {
+func (v *basicChecker) Validate(e Expression) {
+	Check(v, e)
+}
+
+func (v *basicChecker) initialize(strict Strictness) {
+	v.issues = make([]*ReportedIssue, 0, 5)
+	v.severities =  make(map[IssueCode]Severity, 5)
+	v.Demote(VALIDATE_FUTURE_RESERVED_WORD, SEVERITY_DEPRECATION)
+	v.Demote(VALIDATE_DUPLICATE_KEY, Severity(strict))
+	v.Demote(VALIDATE_IDEM_EXPRESSION_NOT_LAST, Severity(strict))
+}
+
+func (v *basicChecker) check_AssignmentExpression(e *AssignmentExpression) {
 	switch e.Operator() {
 	case `=`:
 		v.checkAssign(e.Lhs())
@@ -171,7 +228,10 @@ func (v *Checker) check_AssignmentExpression(e *AssignmentExpression) {
 	}
 }
 
-func (v *Checker) check_AttributeOperation(e *AttributeOperation) {
+func (v *basicChecker) check_Application(e *Application) {
+}
+
+func (v *basicChecker) check_AttributeOperation(e *AttributeOperation) {
 	if e.Operator() == `+>` {
 		p := v.Container()
 		switch p.(type) {
@@ -183,7 +243,7 @@ func (v *Checker) check_AttributeOperation(e *AttributeOperation) {
 	}
 }
 
-func (v *Checker) check_AttributesOperation(e *AttributesOperation) {
+func (v *basicChecker) check_AttributesOperation(e *AttributesOperation) {
 	p := v.Container()
 	switch p.(type) {
 	case AbstractResource, *CollectExpression, *CapabilityMapping:
@@ -192,12 +252,12 @@ func (v *Checker) check_AttributesOperation(e *AttributesOperation) {
 	v.checkRValue(e.Expr())
 }
 
-func (v *Checker) check_BinaryExpression(e BinaryExpression) {
+func (v *basicChecker) check_BinaryExpression(e BinaryExpression) {
 	v.checkRValue(e.Lhs())
 	v.checkRValue(e.Rhs())
 }
 
-func (v *Checker) check_BlockExpression(e *BlockExpression) {
+func (v *basicChecker) check_BlockExpression(e *BlockExpression) {
 	last := len(e.Statements()) - 1
 	for idx, statement := range e.Statements() {
 		if idx != last && v.isIdem(statement) {
@@ -207,7 +267,7 @@ func (v *Checker) check_BlockExpression(e *BlockExpression) {
 	}
 }
 
-func (v *Checker) check_CallNamedFunctionExpression(e *CallNamedFunctionExpression) {
+func (v *basicChecker) check_CallNamedFunctionExpression(e *CallNamedFunctionExpression) {
 	switch e.Functor().(type) {
 	case *QualifiedName:
 		return
@@ -225,7 +285,7 @@ func (v *Checker) check_CallNamedFunctionExpression(e *CallNamedFunctionExpressi
 		H{ `expression`: e.Functor(), `feature`: `function name`, `container`: e })
 }
 
-func (v *Checker) check_CapabilityMapping(e *CapabilityMapping) {
+func (v *basicChecker) check_CapabilityMapping(e *CapabilityMapping) {
 	exprOk := false
 	switch e.Component().(type) {
 	case *QualifiedReference:
@@ -255,7 +315,7 @@ func (v *Checker) check_CapabilityMapping(e *CapabilityMapping) {
 	}
 }
 
-func (v *Checker) check_CaseExpression(e *CaseExpression) {
+func (v *basicChecker) check_CaseExpression(e *CaseExpression) {
 	v.checkRValue(e.Test())
 	foundDefault := false
 	for _, option := range e.Options() {
@@ -271,20 +331,20 @@ func (v *Checker) check_CaseExpression(e *CaseExpression) {
 	}
 }
 
-func (v *Checker) check_CaseOption(e *CaseOption) {
+func (v *basicChecker) check_CaseOption(e *CaseOption) {
 	for _, value := range e.Values() {
 		v.checkRValue(value)
 	}
 }
 
-func (v *Checker) check_CollectExpression(e *CollectExpression) {
+func (v *basicChecker) check_CollectExpression(e *CollectExpression) {
 	if _, ok := e.ResourceType().(*QualifiedReference); !ok {
 		v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.ResourceType(),
 			H{`expression`: e.ResourceType(), `feature`: `type name`, `container`: e})
 	}
 }
 
-func (v *Checker) check_EppExpression(e *EppExpression) {
+func (v *basicChecker) check_EppExpression(e *EppExpression) {
 	p := v.Container()
 	if lambda, ok := p.(*LambdaExpression); ok {
 		v.checkNoCapture(lambda, lambda.Parameters())
@@ -292,34 +352,34 @@ func (v *Checker) check_EppExpression(e *EppExpression) {
 	}
 }
 
-func (v *Checker) check_FunctionDefinition(e *FunctionDefinition) {
+func (v *basicChecker) check_FunctionDefinition(e *FunctionDefinition) {
 	v.check_NamedDefinition(e)
 	v.checkCaptureLast(e, e.Parameters())
 	v.checkReturnType(e, e.ReturnType())
 }
 
-func (v *Checker) check_HostClassDefinition(e *HostClassDefinition) {
+func (v *basicChecker) check_HostClassDefinition(e *HostClassDefinition) {
 	v.check_NamedDefinition(e)
 	v.checkNoCapture(e, e.Parameters())
 	v.checkReservedParams(e, e.Parameters())
 	v.checkNoIdemLast(e, e.Body())
 }
 
-func (v *Checker) check_IfExpression(e *IfExpression) {
+func (v *basicChecker) check_IfExpression(e *IfExpression) {
 	v.checkRValue(e.Test())
 }
 
-func (v *Checker) check_KeyedEntry(e *KeyedEntry) {
+func (v *basicChecker) check_KeyedEntry(e *KeyedEntry) {
 	v.checkRValue(e.Key())
 	v.checkRValue(e.Value())
 }
 
-func (v *Checker) check_LambdaExpression(e *LambdaExpression) {
+func (v *basicChecker) check_LambdaExpression(e *LambdaExpression) {
 	v.checkCaptureLast(e, e.Parameters())
 	v.checkReturnType(e, e.ReturnType())
 }
 
-func (v *Checker) check_LiteralHash(e *LiteralHash) {
+func (v *basicChecker) check_LiteralHash(e *LiteralHash) {
 	unique := make(map[interface{}]bool, len(e.Entries()))
 	for _, entry := range e.Entries() {
 		key := entry.(*KeyedEntry).Key()
@@ -333,20 +393,20 @@ func (v *Checker) check_LiteralHash(e *LiteralHash) {
 	}
 }
 
-func (v *Checker) check_LiteralList(e *LiteralList) {
+func (v *basicChecker) check_LiteralList(e *LiteralList) {
 	for _, element := range e.Elements() {
 		v.checkRValue(element)
 	}
 }
 
-func (v *Checker) check_NamedAccessExpression(e *NamedAccessExpression) {
+func (v *basicChecker) check_NamedAccessExpression(e *NamedAccessExpression) {
 	if _, ok := e.Rhs().(*QualifiedName); !ok {
 		v.Accept(VALIDATE_ILLEGAL_EXPRESSION, e.Rhs(),
 			H{`expression`: e.Rhs(), `feature`: `method name`, `container`: v.Container()})
 	}
 }
 
-func (v *Checker) check_NamedDefinition(e NamedDefinition) {
+func (v *basicChecker) check_NamedDefinition(e NamedDefinition) {
 	v.checkTop(e, v.Container())
 	if !CLASSREF_DECL.MatchString(e.Name()) {
 		v.Accept(VALIDATE_ILLEGAL_DEFINITION_NAME, e, H{`name`: e.Name(), `value`: e})
@@ -356,13 +416,13 @@ func (v *Checker) check_NamedDefinition(e NamedDefinition) {
 	v.checkParameterNameUniqueness(e, e.Parameters())
 }
 
-func (v *Checker) check_NodeDefinition(e *NodeDefinition) {
+func (v *basicChecker) check_NodeDefinition(e *NodeDefinition) {
 	v.checkHostname(e, e.HostMatches())
 	v.checkTop(e, v.Container())
 	v.checkNoIdemLast(e, e.Body())
 }
 
-func (v *Checker) check_Parameter(e *Parameter) {
+func (v *basicChecker) check_Parameter(e *Parameter) {
 	if STARTS_WITH_NUMBER.MatchString(e.Name()) {
 		v.Accept(VALIDATE_ILLEGAL_NUMERIC_PARAMETER, e, H{`name`: e.Name()})
 	} else if !PARAM_NAME.MatchString(e.Name()) {
@@ -373,18 +433,18 @@ func (v *Checker) check_Parameter(e *Parameter) {
 	}
 }
 
-func (v *Checker) check_QueryExpression(e QueryExpression) {
+func (v *basicChecker) check_QueryExpression(e QueryExpression) {
 	if e.Expr() != nil {
 		v.checkQuery(e.Expr())
 	}
 }
 
-func (v *Checker) check_RelationshipExpression(e *RelationshipExpression) {
+func (v *basicChecker) check_RelationshipExpression(e *RelationshipExpression) {
 	v.checkRelation(e.Lhs())
 	v.checkRelation(e.Rhs())
 }
 
-func (v *Checker) check_ReservedWord(e *ReservedWord) {
+func (v *basicChecker) check_ReservedWord(e *ReservedWord) {
 	if e.Future() {
 		v.Accept(VALIDATE_FUTURE_RESERVED_WORD, e, H{`word`: e.Name()})
 	} else {
@@ -392,7 +452,7 @@ func (v *Checker) check_ReservedWord(e *ReservedWord) {
 	}
 }
 
-func (v *Checker) check_ResourceBody(e *ResourceBody) {
+func (v *basicChecker) check_ResourceBody(e *ResourceBody) {
 	seenUnfolding := false
 	for _, ao := range e.Operations() {
 		if _, ok := ao.(*AttributesOperation); ok {
@@ -405,13 +465,13 @@ func (v *Checker) check_ResourceBody(e *ResourceBody) {
 	}
 }
 
-func (v *Checker) check_ResourceDefaultsExpression(e *ResourceDefaultsExpression) {
+func (v *basicChecker) check_ResourceDefaultsExpression(e *ResourceDefaultsExpression) {
 	if e.Form() != `regular` {
 		v.Accept(VALIDATE_NOT_VIRTUALIZABLE, e, NO_ARGS)
 	}
 }
 
-func (v *Checker) check_ResourceExpression(e *ResourceExpression) {
+func (v *basicChecker) check_ResourceExpression(e *ResourceExpression) {
 	// # The expression for type name cannot be statically checked - this is instead done at runtime
 	// to enable better error message of the result of the expression rather than the static instruction.
 	// (This can be revised as there are static constructs that are illegal, but require updating many
@@ -423,24 +483,24 @@ func (v *Checker) check_ResourceExpression(e *ResourceExpression) {
 	}
 }
 
-func (v *Checker) check_ResourceOverrideExpression(e *ResourceOverrideExpression) {
+func (v *basicChecker) check_ResourceOverrideExpression(e *ResourceOverrideExpression) {
 	if e.Form() != `regular` {
 		v.Accept(VALIDATE_NOT_VIRTUALIZABLE, e, NO_ARGS)
 	}
 }
 
-func (v *Checker) check_ResourceTypeDefinition(e *ResourceTypeDefinition) {
+func (v *basicChecker) check_ResourceTypeDefinition(e *ResourceTypeDefinition) {
 	v.check_NamedDefinition(e)
 	v.checkNoCapture(e, e.Parameters())
 	v.checkReservedParams(e, e.Parameters())
 	v.checkNoIdemLast(e, e.Body())
 }
 
-func (v *Checker) check_SelectorEntry(e *SelectorEntry) {
+func (v *basicChecker) check_SelectorEntry(e *SelectorEntry) {
 	v.checkRValue(e.Matching())
 }
 
-func (v *Checker) check_SelectorExpression(e *SelectorExpression) {
+func (v *basicChecker) check_SelectorExpression(e *SelectorExpression) {
 	v.checkRValue(e.Lhs())
 	seenDefault := false
 	for _, entry := range e.Selectors() {
@@ -455,7 +515,10 @@ func (v *Checker) check_SelectorExpression(e *SelectorExpression) {
 	}
 }
 
-func (v *Checker) check_TypeAlias(e *TypeAlias) {
+func (v *basicChecker) check_SiteDefinition(e *SiteDefinition) {
+}
+
+func (v *basicChecker) check_TypeAlias(e *TypeAlias) {
 	v.checkTop(e, v.Container())
 	if !CLASSREF_EXT_DECL.MatchString(e.Name()) {
 		v.Accept(VALIDATE_ILLEGAL_DEFINITION_NAME, e, H{`name`: e.Name(), `value`: e})
@@ -464,7 +527,7 @@ func (v *Checker) check_TypeAlias(e *TypeAlias) {
 	v.checkTypeRef(e, e.Type())
 }
 
-func (v *Checker) check_TypeMapping(e *TypeMapping) {
+func (v *basicChecker) check_TypeMapping(e *TypeMapping) {
 	v.checkTop(e, v.Container())
 	lhs := e.Type()
 	lhsType := 0 // Not Runtime
@@ -501,18 +564,18 @@ func (v *Checker) check_TypeMapping(e *TypeMapping) {
 	}
 }
 
-func (v *Checker) check_UnaryExpression(e UnaryExpression) {
+func (v *basicChecker) check_UnaryExpression(e UnaryExpression) {
 	v.checkRValue(e.Expr())
 }
 
-func (v *Checker) check_UnlessExpression(e *UnlessExpression) {
+func (v *basicChecker) check_UnlessExpression(e *UnlessExpression) {
 	v.checkRValue(e.Test())
 }
 
 // TODO: Add more validations here
 
 // Helper functions
-func (v *Checker) checkAssign(e Expression) {
+func (v *basicChecker) checkAssign(e Expression) {
 	switch e.(type) {
 	case *AccessExpression:
 		v.Accept(VALIDATE_ILLEGAL_ASSIGNMENT_VIA_INDEX, e, NO_ARGS)
@@ -535,7 +598,7 @@ func (v *Checker) checkAssign(e Expression) {
 	}
 }
 
-func (v *Checker) checkCaptureLast(container Expression, parameters []Expression) {
+func (v *basicChecker) checkCaptureLast(container Expression, parameters []Expression) {
 	last := len(parameters) - 1
 	for idx := 0; idx < last; idx++ {
 		if param, ok := parameters[idx].(*Parameter); ok && param.CapturesRest() {
@@ -544,13 +607,13 @@ func (v *Checker) checkCaptureLast(container Expression, parameters []Expression
 	}
 }
 
-func (v *Checker) checkFutureReservedWord(e Expression, w string) {
+func (v *basicChecker) checkFutureReservedWord(e Expression, w string) {
 	if _, ok := FUTURE_RESERVED_WORDS[w]; ok {
 		v.Accept(VALIDATE_FUTURE_RESERVED_WORD, e, H{`word`: w})
 	}
 }
 
-func (v *Checker) checkHostname(e Expression, hostMatches []Expression) {
+func (v *basicChecker) checkHostname(e Expression, hostMatches []Expression) {
 	for _, hostMatch := range hostMatches {
 		// Parser syntax prevents a hostMatch from being something other
 		// than a ConcatenatedString or LiteralString. It converts numbers and identifiers
@@ -568,13 +631,13 @@ func (v *Checker) checkHostname(e Expression, hostMatches []Expression) {
 	}
 }
 
-func (v *Checker) checkHostnameString(e Expression, str string) {
+func (v *basicChecker) checkHostnameString(e Expression, str string) {
 	if ILLEGAL_HOSTNAME_CHARS.MatchString(str) {
 		v.Accept(VALIDATE_ILLEGAL_HOSTNAME_CHARS, e, H{`hostname`: str})
 	}
 }
 
-func (v *Checker) checkIllegalAssignment(e Expression) {
+func (v *basicChecker) checkIllegalAssignment(e Expression) {
 	if _, ok := e.(*AssignmentExpression); ok {
 		v.Accept(VALIDATE_ILLEGAL_ASSIGNMENT_CONTEXT, e, NO_ARGS)
 	} else {
@@ -586,7 +649,7 @@ func (v *Checker) checkIllegalAssignment(e Expression) {
 	}
 }
 
-func (v *Checker) checkNoCapture(container Expression, parameters []Expression) {
+func (v *basicChecker) checkNoCapture(container Expression, parameters []Expression) {
 	for _, parameter := range parameters {
 		if param, ok := parameter.(*Parameter); ok && param.CapturesRest() {
 			v.Accept(VALIDATE_CAPTURES_REST_NOT_SUPPORTED, param,
@@ -595,14 +658,14 @@ func (v *Checker) checkNoCapture(container Expression, parameters []Expression) 
 	}
 }
 
-func (v *Checker) checkNoIdemLast(e Definition, body Expression) {
+func (v *basicChecker) checkNoIdemLast(e Definition, body Expression) {
 	if violator := v.endsWithIdem(body.(*BlockExpression)); violator != nil {
 		v.Accept(VALIDATE_IDEM_NOT_ALLOWED_LAST, violator,
 			H{`expression`: violator, `container`: e})
 	}
 }
 
-func (v *Checker) checkParameterNameUniqueness(container Expression, parameters []Expression) {
+func (v *basicChecker) checkParameterNameUniqueness(container Expression, parameters []Expression) {
 	unique := make(map[string]bool, 10)
 	for _, parameter := range parameters {
 		param := parameter.(*Parameter)
@@ -614,7 +677,7 @@ func (v *Checker) checkParameterNameUniqueness(container Expression, parameters 
 	}
 }
 
-func (v *Checker) checkQuery(e Expression) {
+func (v *basicChecker) checkQuery(e Expression) {
 	switch e.(type) {
 	case *ComparisonExpression:
 		switch e.(*ComparisonExpression).Operator() {
@@ -636,7 +699,7 @@ func (v *Checker) checkQuery(e Expression) {
 	}
 }
 
-func (v *Checker) checkRelation(e Expression) {
+func (v *basicChecker) checkRelation(e Expression) {
 	switch e.(type) {
 	case *CollectExpression, *RelationshipExpression:
 		// OK
@@ -645,7 +708,7 @@ func (v *Checker) checkRelation(e Expression) {
 	}
 }
 
-func (v *Checker) checkReservedParams(container Expression, parameters []Expression) {
+func (v *basicChecker) checkReservedParams(container Expression, parameters []Expression) {
 	for _, parameter := range parameters {
 		param := parameter.(*Parameter)
 		if _, ok := RESERVED_PARAMETERS[param.Name()]; ok {
@@ -654,19 +717,19 @@ func (v *Checker) checkReservedParams(container Expression, parameters []Express
 	}
 }
 
-func (v *Checker) checkReservedTypeName(e Expression, w string) {
+func (v *basicChecker) checkReservedTypeName(e Expression, w string) {
 	if _, ok := RESERVED_TYPE_NAMES[strings.ToLower(w)]; ok {
 		v.Accept(VALIDATE_RESERVED_TYPE_NAME, e, H{`name`: w, `expression`: e})
 	}
 }
 
-func (v *Checker) checkReturnType(function Expression, returnType Expression) {
+func (v *basicChecker) checkReturnType(function Expression, returnType Expression) {
 	if returnType != nil {
 		v.checkTypeRef(function, returnType)
 	}
 }
 
-func (v *Checker) checkRValue(e Expression) {
+func (v *basicChecker) checkRValue(e Expression) {
 	switch e.(type) {
 	case UnaryExpression:
 		v.checkRValue(e.(UnaryExpression).Expr())
@@ -675,7 +738,7 @@ func (v *Checker) checkRValue(e Expression) {
 	}
 }
 
-func (v *Checker) checkTop(e Expression, c Expression) {
+func (v *basicChecker) checkTop(e Expression, c Expression) {
 	switch c.(type) {
 	case nil, *HostClassDefinition, *Program:
 		return
@@ -697,7 +760,7 @@ func (v *Checker) checkTop(e Expression, c Expression) {
 	}
 }
 
-func (v *Checker) checkTypeRef(function Expression, r Expression) {
+func (v *basicChecker) checkTypeRef(function Expression, r Expression) {
 	n := r
 	if ae, ok := r.(*AccessExpression); ok {
 		n = ae.Operand()
@@ -710,7 +773,7 @@ func (v *Checker) checkTypeRef(function Expression, r Expression) {
 	}
 }
 
-func (v *Checker) endsWithIdem(e *BlockExpression) Expression {
+func (v *basicChecker) endsWithIdem(e *BlockExpression) Expression {
 	top := len(e.Statements())
 	if top > 0 {
 		last := e.Statements()[top-1]
@@ -724,7 +787,7 @@ func (v *Checker) endsWithIdem(e *BlockExpression) Expression {
 // Checks if the expression has side effect ('idem' is latin for 'the same', here meaning that the evaluation state
 // is known to be unchanged after the expression has been evaluated). The result is not 100% authoritative for
 // negative answers since analysis of function behavior is not possible.
-func (v *Checker) isIdem(e Expression) bool {
+func (v *basicChecker) isIdem(e Expression) bool {
 	switch e.(type) {
 	case nil, *AccessExpression, *ConcatenatedString, *HeredocExpression, *LiteralList, *LiteralHash, *Nop, *SelectorExpression:
 		return true
@@ -769,7 +832,7 @@ func isTypeRef(e Expression) bool {
 	return ok
 }
 
-func (v *Checker) idem_BlockExpression(e *BlockExpression) bool {
+func (v *basicChecker) idem_BlockExpression(e *BlockExpression) bool {
 	for _, statement := range e.Statements() {
 		if !v.isIdem(statement) {
 			return false
@@ -778,7 +841,7 @@ func (v *Checker) idem_BlockExpression(e *BlockExpression) bool {
 	return true
 }
 
-func (v *Checker) idem_CaseExpression(e *CaseExpression) bool {
+func (v *basicChecker) idem_CaseExpression(e *CaseExpression) bool {
 	if v.isIdem(e.Test()) {
 		for _, option := range e.Options() {
 			if !v.isIdem(option) {
@@ -790,7 +853,7 @@ func (v *Checker) idem_CaseExpression(e *CaseExpression) bool {
 	return false
 }
 
-func (v *Checker) idem_CaseOption(e *CaseOption) bool {
+func (v *basicChecker) idem_CaseOption(e *CaseOption) bool {
 	for _, value := range e.Values() {
 		if !v.isIdem(value) {
 			return false
@@ -799,6 +862,6 @@ func (v *Checker) idem_CaseOption(e *CaseOption) bool {
 	return v.isIdem(e.Then())
 }
 
-func (v *Checker) idem_IfExpression(e *IfExpression) bool {
+func (v *basicChecker) idem_IfExpression(e *IfExpression) bool {
 	return v.isIdem(e.Test()) && v.isIdem(e.Then()) && v.isIdem(e.Else())
 }

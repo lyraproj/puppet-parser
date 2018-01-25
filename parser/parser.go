@@ -16,7 +16,7 @@ import (
 
 type (
 	ExpressionParser interface {
-		Parse(filename string, source string, eppMode bool, singleExpression bool) (expr Expression, err error)
+		Parse(filename string, source string, singleExpression bool) (expr Expression, err error)
 	}
 
 	// For argument lists that are not within parameters
@@ -65,6 +65,13 @@ type lexer struct {
 	context
 }
 
+type ParserOption int
+
+const PARSER_HANDLE_BACKTICK_STRINGS = ParserOption(1)
+const PARSER_HANDLE_HEX_ESCAPES = ParserOption(2)
+const PARSER_TASKS_ENABLED = ParserOption(3)
+const PARSER_EPP_MODE = ParserOption(4)
+
 func NewSimpleLexer(filename string, source string) Lexer {
 	// Essentially a lexer that has no knowledge of interpolations
 	return &lexer{context{
@@ -72,7 +79,8 @@ func NewSimpleLexer(filename string, source string) Lexer {
 		factory:               nil,
 		locator:               &Locator{string: source, file: filename},
 		handleBacktickStrings: false,
-		handleHexEscapes:      false}}
+		handleHexEscapes:      false,
+		tasks:                 false}}
 }
 
 func (l *lexer) CurrentToken() int {
@@ -103,11 +111,24 @@ func (l *lexer) AssertToken(token int) {
 // CreatePspecParser returns a parser that is capable of lexing backticked strings and that
 // will recognize \xNN escapes in double qouted strings
 func CreatePspecParser() ExpressionParser {
-	return &context{factory: DefaultFactory(), handleBacktickStrings: true, handleHexEscapes: true}
+	return CreateParser(PARSER_HANDLE_BACKTICK_STRINGS, PARSER_HANDLE_HEX_ESCAPES)
 }
 
-func CreateParser() ExpressionParser {
-	return &context{factory: DefaultFactory(), handleBacktickStrings: false, handleHexEscapes: false}
+func CreateParser(parserOptions ...ParserOption) ExpressionParser {
+	ctx := &context{factory: DefaultFactory(), handleBacktickStrings: false, handleHexEscapes: false, tasks: false}
+	for _, option := range parserOptions {
+		switch(option) {
+		case PARSER_EPP_MODE:
+			ctx.eppMode = true
+		case PARSER_HANDLE_BACKTICK_STRINGS:
+			ctx.handleBacktickStrings = true
+		case PARSER_HANDLE_HEX_ESCAPES:
+			ctx.handleHexEscapes = true
+		case PARSER_TASKS_ENABLED:
+			ctx.tasks = true
+		}
+	}
+	return ctx
 }
 
 // Parse the contents of the given source. The filename is optional and will be used
@@ -115,21 +136,20 @@ func CreateParser() ExpressionParser {
 //
 // If eppMode is true, the context will treat the given source as text with embedded puppet
 // expressions.
-func (ctx *context) Parse(filename string, source string, eppMode bool, singleExpression bool) (expr Expression, err error) {
+func (ctx *context) Parse(filename string, source string, singleExpression bool) (expr Expression, err error) {
 	ctx.stringReader = stringReader{text: source}
 	ctx.locator = &Locator{string: source, file: filename}
 	ctx.definitions = make([]Definition, 0, 8)
-	ctx.eppMode = eppMode
 	ctx.nextLineStart = -1
 
-	expr, err = ctx.parseTopExpression(filename, source, eppMode, singleExpression)
+	expr, err = ctx.parseTopExpression(filename, source, singleExpression)
 	if err == nil && !singleExpression {
 		expr = ctx.factory.Program(expr, ctx.definitions, ctx.locator, 0, ctx.Pos())
 	}
 	return
 }
 
-func (ctx *context) parseTopExpression(filename string, source string, eppMode bool, singleExpression bool) (expr Expression, err error) {
+func (ctx *context) parseTopExpression(filename string, source string, singleExpression bool) (expr Expression, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
@@ -141,7 +161,7 @@ func (ctx *context) parseTopExpression(filename string, source string, eppMode b
 		}
 	}()
 
-	if eppMode {
+	if ctx.eppMode {
 		ctx.consumeEPP()
 
 		var text string

@@ -709,7 +709,7 @@ func TestFunctionDefintion(t *testing.T) {
 
 func TestPlanDefintion(t *testing.T) {
 	expectDump(t, `plan foo { }`,
-		`(plan {:name "foo" :body []})`)
+		`(plan {:name "foo" :body []})`, PARSER_TASKS_ENABLED)
 
 	expectDump(t,
 		Unindent(`
@@ -717,10 +717,17 @@ func TestPlanDefintion(t *testing.T) {
         $a = 10
         $b = 20
      }`),
-		`(plan {:name "foo" :body [(= (var "a") 10) (= (var "b") 20)]})`)
+		`(plan {:name "foo" :body [(= (var "a") 10) (= (var "b") 20)]})`,
+		PARSER_TASKS_ENABLED)
 
 	expectDump(t, `plan foo($p1 = 'yo', $p2) { }`,
-		`(plan {:name "foo" :params {:p1 {:value "yo"} :p2 {}} :body []})`)
+		`(plan {:name "foo" :params {:p1 {:value "yo"} :p2 {}} :body []})`, PARSER_TASKS_ENABLED)
+
+	expectError(t, `$a = plan`,
+		`expected a name to follow keyword 'plan' at line 1:10`, PARSER_TASKS_ENABLED)
+
+	expectDump(t, `$a = plan`,
+		`(= (var "a") (qn "plan"))`)
 }
 
 func TestNodeDefinition(t *testing.T) {
@@ -1926,20 +1933,16 @@ func TestEPP(t *testing.T) {
 		`Ambiguous EPP parameter expression. Probably missing '<%-' before parameters to remove leading whitespace at line 2:5`)
 }
 
-func expectDump(t *testing.T, source string, expected string) {
-	expectDumpX(t, source, expected, false)
-}
-
 func expectDumpEPP(t *testing.T, source string, expected string) {
-	expectDumpX(t, source, expected, true)
+	expectDump(t, source, expected, PARSER_EPP_MODE)
 }
 
 func expectBlockEPP(t *testing.T, source string, expected string) {
-	expectBlockX(t, source, expected, true)
+	expectBlock(t, source, expected, PARSER_EPP_MODE)
 }
 
-func expectDumpX(t *testing.T, source string, expected string, eppMode bool) {
-	if expr := parseExpression(t, source, eppMode); expr != nil {
+func expectDump(t *testing.T, source string, expected string, parserOptions ...ParserOption) {
+	if expr := parseExpression(t, source, parserOptions...); expr != nil {
 		actual := dump(expr)
 		if expected != actual {
 			t.Errorf("expected '%s', got '%s'", expected, actual)
@@ -1947,12 +1950,8 @@ func expectDumpX(t *testing.T, source string, expected string, eppMode bool) {
 	}
 }
 
-func expectBlock(t *testing.T, source string, expected string) {
-	expectBlockX(t, source, expected, false)
-}
-
-func expectBlockX(t *testing.T, source string, expected string, eppMode bool) {
-	expr, err := CreateParser().Parse(``, source, eppMode, false)
+func expectBlock(t *testing.T, source string, expected string, parserOptions ...ParserOption) {
+	expr, err := CreateParser(parserOptions...).Parse(``, source, false)
 	if err != nil {
 		t.Errorf(err.Error())
 	} else {
@@ -1963,16 +1962,12 @@ func expectBlockX(t *testing.T, source string, expected string, eppMode bool) {
 	}
 }
 
-func expectError(t *testing.T, source string, expected string) {
-	expectErrorX(t, source, expected, false)
-}
-
 func expectErrorEPP(t *testing.T, source string, expected string) {
-	expectErrorX(t, source, expected, true)
+	expectError(t, source, expected, PARSER_EPP_MODE)
 }
 
-func expectErrorX(t *testing.T, source string, expected string, eppMode bool) {
-	_, err := CreateParser().Parse(``, source, eppMode, false)
+func expectError(t *testing.T, source string, expected string, parserOptions ...ParserOption) {
+	_, err := CreateParser(parserOptions...).Parse(``, source, false)
 	if err == nil {
 		t.Errorf("Expected error '%s' but nothing was raised", expected)
 	} else {
@@ -1985,7 +1980,7 @@ func expectErrorX(t *testing.T, source string, expected string, eppMode bool) {
 
 func expectHeredoc(t *testing.T, str string, args ...interface{}) {
 	expected := args[0].(string)
-	expr := parseExpression(t, str, false)
+	expr := parseExpression(t, str)
 	if expr == nil {
 		return
 	}
@@ -2008,8 +2003,8 @@ func expectHeredoc(t *testing.T, str string, args ...interface{}) {
 	t.Errorf("'%s' did not result in a heredoc expression", str)
 }
 
-func parse(t *testing.T, str string, eppMode bool) Expression {
-	expr, err := CreateParser().Parse(``, str, eppMode, false)
+func parse(t *testing.T, str string, parserOptions ...ParserOption) Expression {
+	expr, err := CreateParser(parserOptions...).Parse(``, str, false)
 	if err != nil {
 		t.Errorf(err.Error())
 		return nil
@@ -2022,8 +2017,8 @@ func parse(t *testing.T, str string, eppMode bool) Expression {
 	return program.body
 }
 
-func parseExpression(t *testing.T, str string, eppMode bool) Expression {
-	expr := parse(t, str, eppMode)
+func parseExpression(t *testing.T, str string, parserOptions ...ParserOption) Expression {
+	expr := parse(t, str, parserOptions...)
 	if block, ok := expr.(*BlockExpression); ok {
 		if len(block.statements) == 1 {
 			return block.statements[0]

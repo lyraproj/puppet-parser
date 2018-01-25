@@ -304,6 +304,7 @@ type context struct {
 	eppMode               bool
 	handleBacktickStrings bool
 	handleHexEscapes      bool
+	tasks                 bool
 	nextLineStart         int
 	currentToken          int
 	beginningOfLine       int
@@ -893,13 +894,15 @@ func (ctx *context) consumeQualifiedName(start int, token int) {
 
 	if token == TOKEN_IDENTIFIER {
 		if kwToken, ok := keywords[word]; ok {
-			switch word {
-			case `true`:
-				ctx.setTokenValue(kwToken, true)
-			case `false`:
-				ctx.setTokenValue(kwToken, false)
-			case `default`:
+			switch kwToken {
+			case TOKEN_BOOLEAN:
+				ctx.setTokenValue(kwToken, word == `true`)
+			case TOKEN_DEFAULT:
 				ctx.setTokenValue(kwToken, DEFAULT_INSTANCE)
+			case TOKEN_PLAN:
+				if ctx.tasks {
+					ctx.setTokenValue(kwToken, word)
+				}
 			default:
 				ctx.setTokenValue(kwToken, word)
 			}
