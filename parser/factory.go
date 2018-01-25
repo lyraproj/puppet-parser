@@ -43,6 +43,7 @@ type ExpressionFactory interface {
 	Or(lhs Expression, rhs Expression, locator *Locator, offset int, length int) Expression
 	Parameter(name string, expr Expression, typeExpr Expression, capturesRest bool, locator *Locator, offset int, length int) Expression
 	Parenthesized(expr Expression, locator *Locator, offset int, length int) Expression
+	Plan(name string, parameters []Expression, body Expression, returnType Expression, locator *Locator, offset int, length int) Expression
 	Program(body Expression, definitions []Definition, locator *Locator, offset int, length int) Expression
 	QualifiedName(name string, locator *Locator, offset int, length int) Expression
 	QualifiedReference(name string, locator *Locator, offset int, length int) Expression
@@ -202,10 +203,6 @@ func (f *defaultExpressionFactory) Lambda(parameters []Expression, body Expressi
 	return &LambdaExpression{positioned{locator, offset, length}, parameters, body, returnType}
 }
 
-func (f *defaultExpressionFactory) Selector(key Expression, value Expression, locator *Locator, offset int, length int) Expression {
-	return &SelectorEntry{positioned{locator, offset, length}, key, value}
-}
-
 func (f *defaultExpressionFactory) Match(op string, lhs Expression, rhs Expression, locator *Locator, offset int, length int) Expression {
 	return &MatchExpression{binaryExpression{positioned{locator, offset, length}, lhs, rhs}, op}
 }
@@ -240,6 +237,10 @@ func (f *defaultExpressionFactory) Parameter(name string, expr Expression, typeE
 
 func (f *defaultExpressionFactory) Parenthesized(expr Expression, locator *Locator, offset int, length int) Expression {
 	return &ParenthesizedExpression{unaryExpression{positioned{locator, offset, length}, expr}}
+}
+
+func (f *defaultExpressionFactory) Plan(name string, parameters []Expression, body Expression, returnType Expression, locator *Locator, offset int, length int) Expression {
+	return &PlanDefinition{FunctionDefinition{namedDefinition{positioned{locator, offset, length}, name, parameters, body}, returnType}}
 }
 
 func (f *defaultExpressionFactory) Program(body Expression, definitions []Definition, locator *Locator, offset int, length int) Expression {
@@ -292,6 +293,10 @@ func (f *defaultExpressionFactory) ResourceOverride(form string, resources Expre
 
 func (f *defaultExpressionFactory) Select(lhs Expression, entries []Expression, locator *Locator, offset int, length int) Expression {
 	return &SelectorExpression{positioned{locator, offset, length}, lhs, entries}
+}
+
+func (f *defaultExpressionFactory) Selector(key Expression, value Expression, locator *Locator, offset int, length int) Expression {
+	return &SelectorEntry{positioned{locator, offset, length}, key, value}
 }
 
 func (f *defaultExpressionFactory) Site(statements Expression, locator *Locator, offset int, length int) Expression {

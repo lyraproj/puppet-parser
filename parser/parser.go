@@ -331,7 +331,7 @@ func (ctx *context) hashEntry() (expr Expression) {
 
 func (ctx *context) handleKeyword(next func() Expression) (expr Expression) {
 	switch ctx.currentToken {
-	case TOKEN_TYPE, TOKEN_FUNCTION, TOKEN_APPLICATION, TOKEN_CONSUMES, TOKEN_PRODUCES, TOKEN_SITE:
+	case TOKEN_TYPE, TOKEN_FUNCTION, TOKEN_PLAN, TOKEN_APPLICATION, TOKEN_CONSUMES, TOKEN_PRODUCES, TOKEN_SITE:
 		expr = ctx.factory.QualifiedName(ctx.tokenString(), ctx.locator, ctx.tokenStartPos, ctx.Pos()-ctx.tokenStartPos)
 		ctx.nextToken()
 		if ctx.currentToken == TOKEN_LP {
@@ -761,6 +761,9 @@ func (ctx *context) atomExpression() (expr Expression) {
 			// Not a type definition. Just treat the 'type' keyword as a qualfied name
 			expr = ctx.factory.QualifiedName(name, ctx.locator, atomStart, ctx.Pos()-atomStart)
 		}
+
+	case TOKEN_PLAN:
+		expr = ctx.planDefinition()
 
 	case TOKEN_FUNCTION:
 		expr = ctx.functionDefinition()
@@ -1216,6 +1219,40 @@ func (ctx *context) functionDefinition() Expression {
 	block := ctx.parse(TOKEN_RC, false)
 	ctx.nextToken() // consume TOKEN_RC
 	return ctx.addDefinition(ctx.factory.Function(name, parameterList, block, returnType, ctx.locator, start, ctx.Pos()-start))
+}
+
+func (ctx *context) planDefinition() Expression {
+	start := ctx.tokenStartPos
+	ctx.nextToken()
+	var name string
+	switch ctx.currentToken {
+	case TOKEN_IDENTIFIER, TOKEN_TYPE_NAME:
+		name = ctx.tokenString()
+	default:
+		ctx.SetPos(ctx.tokenStartPos)
+		panic(ctx.parseIssue(PARSE_EXPECTED_NAME_AFTER_PLAN))
+	}
+	ctx.nextToken()
+
+	// Push to namestack
+	ctx.nameStack = append(ctx.nameStack, name)
+
+	parameterList := ctx.parameterList()
+
+	var returnType Expression
+	if ctx.currentToken == TOKEN_RSHIFT {
+		ctx.nextToken()
+		returnType = ctx.parameterType()
+	}
+
+	ctx.assertToken(TOKEN_LC)
+	ctx.nextToken()
+	block := ctx.parse(TOKEN_RC, false)
+	ctx.nextToken() // consume TOKEN_RC
+
+	// Pop namestack
+	ctx.nameStack = ctx.nameStack[:len(ctx.nameStack)-1]
+	return ctx.addDefinition(ctx.factory.Plan(name, parameterList, block, returnType, ctx.locator, start, ctx.Pos()-start))
 }
 
 func (ctx *context) nodeDefinition() Expression {

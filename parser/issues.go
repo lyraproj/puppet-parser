@@ -34,6 +34,7 @@ const (
 	PARSE_EXPECTED_FARROW_AFTER_KEY         = `PARSE_EXPECTED_FARROW_AFTER_KEY`
 	PARSE_EXPECTED_NAME_OR_NUMBER_AFTER_DOT = `PARSE_EXPECTED_NAME_OR_NUMBER_AFTER_DOT`
 	PARSE_EXPECTED_NAME_AFTER_FUNCTION      = `PARSE_EXPECTED_NAME_AFTER_FUNCTION`
+	PARSE_EXPECTED_NAME_AFTER_PLAN          = `PARSE_EXPECTED_NAME_AFTER_PLAN`
 	PARSE_EXPECTED_HOSTNAME                 = `PARSE_EXPECTED_HOSTNAME`
 	PARSE_EXPECTED_TITLE                    = `PARSE_EXPECTED_TITLE`
 	PARSE_EXPECTED_TOKEN                    = `PARSE_EXPECTED_TOKEN`
@@ -81,6 +82,7 @@ func init() {
 	HardIssue(PARSE_EXPECTED_HOSTNAME, `hostname expected`)
 	HardIssue(PARSE_EXPECTED_NAME_OR_NUMBER_AFTER_DOT, `expected name or number to follow '.'`)
 	HardIssue(PARSE_EXPECTED_NAME_AFTER_FUNCTION, `expected a name to follow keyword 'function'`)
+	HardIssue(PARSE_EXPECTED_NAME_AFTER_PLAN, `expected a name to follow keyword 'plan'`)
 	HardIssue(PARSE_EXPECTED_ONE_OF_TOKENS, `expected one of %{expected}, got '%{actual}'`)
 	HardIssue(PARSE_EXPECTED_TITLE, `resource title expected`)
 	HardIssue(PARSE_EXPECTED_TOKEN, `expected token '%{expected}', got '%{actual}'`)

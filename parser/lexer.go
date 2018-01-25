@@ -141,12 +141,13 @@ const (
 	TOKEN_ELSIF       = 213
 	TOKEN_NODE        = 214
 	TOKEN_OR          = 215
-	TOKEN_PRIVATE     = 216
-	TOKEN_PRODUCES    = 217
-	TOKEN_SITE        = 218
-	TOKEN_TYPE        = 219
-	TOKEN_UNDEF       = 220
-	TOKEN_UNLESS      = 221
+	TOKEN_PLAN        = 216
+	TOKEN_PRIVATE     = 217
+	TOKEN_PRODUCES    = 218
+	TOKEN_SITE        = 219
+	TOKEN_TYPE        = 220
+	TOKEN_UNDEF       = 221
+	TOKEN_UNLESS      = 222
 )
 
 var tokenMap = map[int]string{
@@ -256,6 +257,7 @@ var tokenMap = map[int]string{
 	TOKEN_ELSIF:       `elsif`,
 	TOKEN_NODE:        `node`,
 	TOKEN_OR:          `or`,
+	TOKEN_PLAN:        `plan`,
 	TOKEN_PRIVATE:     `private`,
 	TOKEN_PRODUCES:    `produces`,
 	TOKEN_SITE:        `site`,
@@ -282,6 +284,7 @@ var keywords = map[string]int{
 	tokenMap[TOKEN_INHERITS]:    TOKEN_INHERITS,
 	tokenMap[TOKEN_NODE]:        TOKEN_NODE,
 	tokenMap[TOKEN_OR]:          TOKEN_OR,
+	tokenMap[TOKEN_PLAN]:        TOKEN_PLAN,
 	tokenMap[TOKEN_PRIVATE]:     TOKEN_PRIVATE,
 	tokenMap[TOKEN_PRODUCES]:    TOKEN_PRODUCES,
 	tokenMap[TOKEN_SITE]:        TOKEN_SITE,

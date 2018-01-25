@@ -707,6 +707,22 @@ func TestFunctionDefintion(t *testing.T) {
 		`expected token '{', got 'boolean literal' at line 1:30`)
 }
 
+func TestPlanDefintion(t *testing.T) {
+	expectDump(t, `plan foo { }`,
+		`(plan {:name "foo" :body []})`)
+
+	expectDump(t,
+		Unindent(`
+      plan foo {
+        $a = 10
+        $b = 20
+     }`),
+		`(plan {:name "foo" :body [(= (var "a") 10) (= (var "b") 20)]})`)
+
+	expectDump(t, `plan foo($p1 = 'yo', $p2) { }`,
+		`(plan {:name "foo" :params {:p1 {:value "yo"} :p2 {}} :body []})`)
+}
+
 func TestNodeDefinition(t *testing.T) {
 	expectDump(t,
 		Unindent(`

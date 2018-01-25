@@ -250,6 +250,10 @@ type (
 		returnType Expression
 	}
 
+	PlanDefinition struct {
+		FunctionDefinition
+	}
+
 	HeredocExpression struct {
 		positioned
 		syntax string
@@ -1063,6 +1067,10 @@ func (e *FunctionDefinition) ToDefinition() Definition {
 
 func (e *FunctionDefinition) ToPN() PN {
 	return e.definitionPN(`function`, ``, e.returnType)
+}
+
+func (e *PlanDefinition) ToPN() PN {
+	return e.definitionPN(`plan`, ``, e.returnType)
 }
 
 func (e *HeredocExpression) Syntax() string {
