@@ -151,6 +151,10 @@ const (
 	TOKEN_UNLESS      = 222
 )
 
+func IsKeywordToken(token int) bool {
+	return token >= TOKEN_AND && token <= TOKEN_UNLESS
+}
+
 var tokenMap = map[int]string{
 	TOKEN_END: `EOF`,
 
