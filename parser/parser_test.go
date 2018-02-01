@@ -1148,7 +1148,6 @@ func TestCallType(t *testing.T) {
       $x = [type(3)]`),
 		`(= (var "x") (array (call {:functor (qn "type") :args [3]})))`)
 
-
 	expectDump(t,
 		Unindent(`
       $x = {type(3) => 'v'}`),
@@ -1436,11 +1435,11 @@ func TestAccess(t *testing.T) {
         Optional[description] => String,
         Optional[sensitive] => Boolean,
         type => Type}]`),
-		`(access (qr "Struct") ` +
-			`(hash ` +
-				`(=> (access (qr "Optional") (qn "description")) (qr "String")) ` +
-				`(=> (access (qr "Optional") (qn "sensitive")) (qr "Boolean")) ` +
-				`(=> (qn "type") (qr "Type"))))`)
+		`(access (qr "Struct") `+
+			`(hash `+
+			`(=> (access (qr "Optional") (qn "description")) (qr "String")) `+
+			`(=> (access (qr "Optional") (qn "sensitive")) (qr "Boolean")) `+
+			`(=> (qn "type") (qr "Type"))))`)
 
 	expectDump(t,
 		Unindent(`
@@ -1448,11 +1447,11 @@ func TestAccess(t *testing.T) {
         Optional[description] => String,
         Optional[sensitive] => Boolean,
         type => Type]`),
-		`(access (qr "Struct") ` +
-				`(hash ` +
-				`(=> (access (qr "Optional") (qn "description")) (qr "String")) ` +
-				`(=> (access (qr "Optional") (qn "sensitive")) (qr "Boolean")) ` +
-				`(=> (qn "type") (qr "Type"))))`)
+		`(access (qr "Struct") `+
+			`(hash `+
+			`(=> (access (qr "Optional") (qn "description")) (qr "String")) `+
+			`(=> (access (qr "Optional") (qn "sensitive")) (qr "Boolean")) `+
+			`(=> (qn "type") (qr "Type"))))`)
 }
 
 func TestResource(t *testing.T) {
@@ -1941,7 +1940,7 @@ func expectBlockEPP(t *testing.T, source string, expected string) {
 	expectBlock(t, source, expected, PARSER_EPP_MODE)
 }
 
-func expectDump(t *testing.T, source string, expected string, parserOptions ...ParserOption) {
+func expectDump(t *testing.T, source string, expected string, parserOptions ...Option) {
 	if expr := parseExpression(t, source, parserOptions...); expr != nil {
 		actual := dump(expr)
 		if expected != actual {
@@ -1950,7 +1949,7 @@ func expectDump(t *testing.T, source string, expected string, parserOptions ...P
 	}
 }
 
-func expectBlock(t *testing.T, source string, expected string, parserOptions ...ParserOption) {
+func expectBlock(t *testing.T, source string, expected string, parserOptions ...Option) {
 	expr, err := CreateParser(parserOptions...).Parse(``, source, false)
 	if err != nil {
 		t.Errorf(err.Error())
@@ -1966,7 +1965,7 @@ func expectErrorEPP(t *testing.T, source string, expected string) {
 	expectError(t, source, expected, PARSER_EPP_MODE)
 }
 
-func expectError(t *testing.T, source string, expected string, parserOptions ...ParserOption) {
+func expectError(t *testing.T, source string, expected string, parserOptions ...Option) {
 	_, err := CreateParser(parserOptions...).Parse(``, source, false)
 	if err == nil {
 		t.Errorf("Expected error '%s' but nothing was raised", expected)
@@ -2003,7 +2002,7 @@ func expectHeredoc(t *testing.T, str string, args ...interface{}) {
 	t.Errorf("'%s' did not result in a heredoc expression", str)
 }
 
-func parse(t *testing.T, str string, parserOptions ...ParserOption) Expression {
+func parse(t *testing.T, str string, parserOptions ...Option) Expression {
 	expr, err := CreateParser(parserOptions...).Parse(``, str, false)
 	if err != nil {
 		t.Errorf(err.Error())
@@ -2017,7 +2016,7 @@ func parse(t *testing.T, str string, parserOptions ...ParserOption) Expression {
 	return program.body
 }
 
-func parseExpression(t *testing.T, str string, parserOptions ...ParserOption) Expression {
+func parseExpression(t *testing.T, str string, parserOptions ...Option) Expression {
 	expr := parse(t, str, parserOptions...)
 	if block, ok := expr.(*BlockExpression); ok {
 		if len(block.statements) == 1 {

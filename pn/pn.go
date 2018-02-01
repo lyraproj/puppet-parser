@@ -1,8 +1,8 @@
 package pn
 
 import (
-	. "bytes"
-	. "fmt"
+	"bytes"
+	"fmt"
 	"regexp"
 	"strings"
 )
@@ -15,7 +15,7 @@ type (
 	//
 	PN interface {
 		// Produces a compact, LISP like syntax. Suitable for tests.
-		Format(b *Buffer)
+		Format(b *bytes.Buffer)
 
 		// Produces an object that where all values are of primitive type or
 		// slices or maps. This format is suitable for output as JSON or YAML
@@ -64,37 +64,37 @@ type (
 	}
 )
 
-func ListPN(elements []PN) PN {
+func List(elements []PN) PN {
 	return &listPN{elements}
 }
 
-func MapPN(entries []Entry) PN {
+func Map(entries []Entry) PN {
 	return &mapPN{entries}
 }
 
-func LiteralPN(val interface{}) PN {
+func Literal(val interface{}) PN {
 	return &literalPN{val}
 }
 
-func CallPN(name string, elements ...PN) PN {
+func Call(name string, elements ...PN) PN {
 	return &callPN{listPN{elements}, name}
 }
 
 func ToString(pn PN) string {
-	b := NewBufferString(``)
+	b := bytes.NewBufferString(``)
 	pn.Format(b)
 	return b.String()
 }
 
 func (pn *listPN) AsCall(name string) PN {
-	return CallPN(name, pn.elements...)
+	return Call(name, pn.elements...)
 }
 
 func (pn *listPN) AsParameters() []PN {
 	return pn.elements
 }
 
-func (pn *listPN) Format(b *Buffer) {
+func (pn *listPN) Format(b *bytes.Buffer) {
 	b.WriteByte('[')
 	formatElements(pn.elements, b)
 	b.WriteByte(']')
@@ -124,7 +124,7 @@ func (pn *callPN) AsParameters() []PN {
 	return pn.elements
 }
 
-func (pn *callPN) Format(b *Buffer) {
+func (pn *callPN) Format(b *bytes.Buffer) {
 	b.WriteByte('(')
 	b.WriteString(pn.name)
 	if len(pn.elements) > 0 {
@@ -164,14 +164,14 @@ func (e *mapEntry) Value() PN {
 }
 
 func (pn *mapPN) AsCall(name string) PN {
-	return CallPN(name, pn)
+	return Call(name, pn)
 }
 
 func (pn *mapPN) AsParameters() []PN {
 	return []PN{pn}
 }
 
-func (pn *mapPN) Format(b *Buffer) {
+func (pn *mapPN) Format(b *bytes.Buffer) {
 	b.WriteByte('{')
 	if top := len(pn.entries); top > 0 {
 		formatEntry(pn.entries[0], b)
@@ -183,7 +183,7 @@ func (pn *mapPN) Format(b *Buffer) {
 	b.WriteByte('}')
 }
 
-func formatEntry(entry Entry, b *Buffer) {
+func formatEntry(entry Entry, b *bytes.Buffer) {
 	b.WriteByte(':')
 	b.WriteString(entry.Key())
 	b.WriteByte(' ')
@@ -207,7 +207,7 @@ func (pn *mapPN) WithName(name string) Entry {
 }
 
 func (pn *literalPN) AsCall(name string) PN {
-	return CallPN(name, pn)
+	return Call(name, pn)
 }
 
 func (pn *literalPN) AsParameters() []PN {
@@ -218,21 +218,21 @@ func (pn *literalPN) AsParameters() []PN {
 // zero following the decimal point is considered significant.
 var STRIP_TRAILING_ZEROES = regexp.MustCompile("\\A(.*(?:\\.0|[1-9]))0+(e[+-]?\\d+)?\\z")
 
-func (pn *literalPN) Format(b *Buffer) {
+func (pn *literalPN) Format(b *bytes.Buffer) {
 	switch pn.val.(type) {
 	case nil:
 		b.WriteString(`null`)
 	case string:
 		DoubleQuote(pn.val.(string), b)
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-		Fprintf(b, `%d`, pn.val)
+		fmt.Fprintf(b, `%d`, pn.val)
 	case float32, float64:
-		str := Sprintf(`%.16g`, pn.val)
+		str := fmt.Sprintf(`%.16g`, pn.val)
 		// We want 16 digit precision that overflows into scientific notation and no trailing zeroes
 		if strings.IndexByte(str, '.') < 0 && strings.IndexByte(str, 'e') < 0 {
 			// %g sometimes yields an integer number without decimals or scientific
 			// notation. Scientific notation must then be used to retain type information
-			str = Sprintf(`%.16e`, pn.val)
+			str = fmt.Sprintf(`%.16e`, pn.val)
 		}
 
 		if groups := STRIP_TRAILING_ZEROES.FindStringSubmatch(str); groups != nil {
@@ -242,9 +242,9 @@ func (pn *literalPN) Format(b *Buffer) {
 			b.WriteString(str)
 		}
 	case bool:
-		Fprintf(b, `%t`, pn.val)
+		fmt.Fprintf(b, `%t`, pn.val)
 	default:
-		Fprintf(b, `%v`, pn.val)
+		fmt.Fprintf(b, `%v`, pn.val)
 	}
 }
 
@@ -260,7 +260,7 @@ func (pn *literalPN) WithName(name string) Entry {
 	return &mapEntry{name, pn}
 }
 
-func formatElements(elements []PN, b *Buffer) {
+func formatElements(elements []PN, b *bytes.Buffer) {
 	top := len(elements)
 	if top > 0 {
 		elements[0].Format(b)

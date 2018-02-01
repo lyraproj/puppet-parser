@@ -1,8 +1,8 @@
 package parser
 
 import (
-	. "fmt"
-	. "unicode/utf8"
+	"fmt"
+	"unicode/utf8"
 )
 
 type StringReader interface {
@@ -38,7 +38,7 @@ type stringReader struct {
 }
 
 func (e *ParseError) Error() string {
-	return Sprintf(`%s at offset %d`, e.message, e.offset)
+	return fmt.Sprintf(`%s at offset %d`, e.message, e.offset)
 }
 
 func NewStringReader(s string) StringReader {
@@ -59,12 +59,12 @@ func (r *stringReader) Next() (c rune, start int) {
 		return
 	}
 	c = rune(r.text[r.i])
-	if c < RuneSelf {
+	if c < utf8.RuneSelf {
 		r.i++
 		return
 	}
-	c, size := DecodeRuneInString(r.text[r.i:])
-	if c == RuneError {
+	c, size := utf8.DecodeRuneInString(r.text[r.i:])
+	if c == utf8.RuneError {
 		panic(r.invalidUnicode())
 	}
 	r.i += size
@@ -76,12 +76,12 @@ func (r *stringReader) Peek() (c rune, size int) {
 		return
 	}
 	c = rune(r.text[r.i])
-	if c < RuneSelf {
+	if c < utf8.RuneSelf {
 		size = 1
 		return
 	}
-	c, size = DecodeRuneInString(r.text[r.i:])
-	if c == RuneError {
+	c, size = utf8.DecodeRuneInString(r.text[r.i:])
+	if c == utf8.RuneError {
 		panic(r.invalidUnicode())
 	}
 	return c, size

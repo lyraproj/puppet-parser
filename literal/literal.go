@@ -1,12 +1,12 @@
 package literal
 
 import (
-	. "github.com/puppetlabs/go-parser/parser"
+	"github.com/puppetlabs/go-parser/parser"
 )
 
 const notLiteral = `not literal`
 
-func ToLiteral(e Expression) (value interface{}, ok bool) {
+func ToLiteral(e parser.Expression) (value interface{}, ok bool) {
 	defer func() {
 		if err := recover(); err != nil {
 			if err == notLiteral {
@@ -22,37 +22,37 @@ func ToLiteral(e Expression) (value interface{}, ok bool) {
 	return
 }
 
-func toLiteral(e Expression) interface{} {
+func toLiteral(e parser.Expression) interface{} {
 	switch e.(type) {
-	case *Program:
-		return toLiteral(e.(*Program).Body())
-	case *LiteralList:
-		elements := e.(*LiteralList).Elements()
+	case *parser.Program:
+		return toLiteral(e.(*parser.Program).Body())
+	case *parser.LiteralList:
+		elements := e.(*parser.LiteralList).Elements()
 		result := make([]interface{}, len(elements))
 		for idx, elem := range elements {
 			result[idx] = toLiteral(elem)
 		}
 		return result
-	case *LiteralHash:
-		entries := e.(*LiteralHash).Entries()
+	case *parser.LiteralHash:
+		entries := e.(*parser.LiteralHash).Entries()
 		result := make(map[interface{}]interface{}, len(entries))
 		for _, entry := range entries {
-			kh := entry.(*KeyedEntry)
+			kh := entry.(*parser.KeyedEntry)
 			result[toLiteral(kh.Key())] = toLiteral(kh.Value())
 		}
 		return result
-	case *ConcatenatedString:
-		segments := e.(*ConcatenatedString).Segments()
+	case *parser.ConcatenatedString:
+		segments := e.(*parser.ConcatenatedString).Segments()
 		if len(segments) == 1 {
-			if ls, ok := segments[0].(*LiteralString); ok {
+			if ls, ok := segments[0].(*parser.LiteralString); ok {
 				return ls.Value()
 			}
 		}
 		panic(notLiteral)
-	case *HeredocExpression:
-		return toLiteral(e.(*HeredocExpression).Text())
-	case LiteralValue:
-		return e.(LiteralValue).Value()
+	case *parser.HeredocExpression:
+		return toLiteral(e.(*parser.HeredocExpression).Text())
+	case parser.LiteralValue:
+		return e.(parser.LiteralValue).Value()
 	default:
 		panic(notLiteral)
 	}
