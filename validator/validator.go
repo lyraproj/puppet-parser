@@ -1,42 +1,43 @@
 package validator
 
 import (
-	. "fmt"
-	. "github.com/puppetlabs/go-parser/issue"
-	. "github.com/puppetlabs/go-parser/parser"
-	. "strings"
+	"fmt"
+	"strings"
+
+	"github.com/puppetlabs/go-parser/issue"
+	"github.com/puppetlabs/go-parser/parser"
 )
 
 const (
-	STRICT_OFF     = Strictness(SEVERITY_IGNORE)
-	STRICT_WARNING = Strictness(SEVERITY_WARNING)
-	STRICT_ERROR   = Strictness(SEVERITY_ERROR)
+	STRICT_OFF     = Strictness(issue.SEVERITY_IGNORE)
+	STRICT_WARNING = Strictness(issue.SEVERITY_WARNING)
+	STRICT_ERROR   = Strictness(issue.SEVERITY_ERROR)
 )
 
 type (
 	Validator interface {
 		// Validate the semantics of the given expression
-		Validate(e Expression)
+		Validate(e parser.Expression)
 
 		// Return all reported issues (should be called after validation)
-		Issues() []*ReportedIssue
+		Issues() []*issue.ReportedIssue
 
-		setPathAndSubject(path []Expression, expr Expression)
+		setPathAndSubject(path []parser.Expression, expr parser.Expression)
 	}
 
 	// All validators should "inherit" from this struct
 	AbstractValidator struct {
-		path       []Expression
-		subject    Expression
-		issues     []*ReportedIssue
-		severities map[IssueCode]Severity
+		path       []parser.Expression
+		subject    parser.Expression
+		issues     []*issue.ReportedIssue
+		severities map[issue.IssueCode]issue.Severity
 	}
 
 	Strictness int
 )
 
 func Strict(str string) Strictness {
-	switch ToLower(str) {
+	switch strings.ToLower(str) {
 	case ``, `off`:
 		return STRICT_OFF
 	case `warning`:
@@ -44,7 +45,7 @@ func Strict(str string) Strictness {
 	case `error`:
 		return STRICT_ERROR
 	default:
-		panic(Sprintf(`Invalid Strictness value '%s'`, str))
+		panic(fmt.Sprintf(`Invalid Strictness value '%s'`, str))
 	}
 }
 
@@ -57,32 +58,32 @@ func (s Strictness) String() string {
 	case STRICT_ERROR:
 		return `error`
 	default:
-		panic(Sprintf(`Invalid Strictness value %d`, s))
+		panic(fmt.Sprintf(`Invalid Strictness value %d`, s))
 	}
 }
 
-func (v *AbstractValidator) Demote(code IssueCode, severity Severity) {
-	issue := IssueForCode(code)
+func (v *AbstractValidator) Demote(code issue.IssueCode, severity issue.Severity) {
+	issue := issue.IssueForCode(code)
 	severity.AssertValid()
 	if !issue.IsDemotable() {
-		panic(Sprintf(`Attempt to demote the hard issue '%s' to %s`, code, severity.String()))
+		panic(fmt.Sprintf(`Attempt to demote the hard issue '%s' to %s`, code, severity.String()))
 	}
 	v.severities[code] = severity
 }
 
 // Accept an issue during validation
-func (v *AbstractValidator) Accept(code IssueCode, e Expression, args H) {
+func (v *AbstractValidator) Accept(code issue.IssueCode, e parser.Expression, args issue.H) {
 	severity, ok := v.severities[code]
 	if !ok {
-		severity = SEVERITY_ERROR
+		severity = issue.SEVERITY_ERROR
 	}
-	if severity != SEVERITY_IGNORE {
-		v.issues = append(v.issues, NewReportedIssue(code, severity, args, e))
+	if severity != issue.SEVERITY_IGNORE {
+		v.issues = append(v.issues, issue.NewReportedIssue(code, severity, args, e))
 	}
 }
 
 // Returns the container of the currently validated expression
-func (v *AbstractValidator) Container() Expression {
+func (v *AbstractValidator) Container() parser.Expression {
 	if v.path != nil && len(v.path) > 0 {
 		return v.path[len(v.path)-1]
 	}
@@ -92,7 +93,7 @@ func (v *AbstractValidator) Container() Expression {
 // Returns the container of some parent of the currently validated expression
 //
 // Note: This will return nil for the expression that is currently validated
-func (v *AbstractValidator) ContainerOf(e Expression) Expression {
+func (v *AbstractValidator) ContainerOf(e parser.Expression) parser.Expression {
 	if e == v.subject {
 		return v.Container()
 	}
@@ -104,24 +105,24 @@ func (v *AbstractValidator) ContainerOf(e Expression) Expression {
 	return nil
 }
 
-func (v *AbstractValidator) Issues() []*ReportedIssue {
+func (v *AbstractValidator) Issues() []*issue.ReportedIssue {
 	return v.issues
 }
 
-func (v *AbstractValidator) setPathAndSubject(path []Expression, subject Expression) {
+func (v *AbstractValidator) setPathAndSubject(path []parser.Expression, subject parser.Expression) {
 	v.path = path
 	v.subject = subject
 }
 
 // Validate the expression using the Puppet validator
-func ValidatePuppet(e Expression, strict Strictness) Validator {
+func ValidatePuppet(e parser.Expression, strict Strictness) Validator {
 	v := NewChecker(strict)
 	Validate(v, e)
 	return v
 }
 
 // Validate the expression using the Tasks validator
-func ValidateTasks(e Expression) Validator {
+func ValidateTasks(e parser.Expression) Validator {
 	v := NewTasksChecker()
 	Validate(v, e)
 	return v
@@ -129,12 +130,12 @@ func ValidateTasks(e Expression) Validator {
 
 // Iterate over all expressions contained in the given expression (including the expression itself)
 // and validate each one.
-func Validate(v Validator, e Expression) {
-	path := make([]Expression, 0, 16)
+func Validate(v Validator, e parser.Expression) {
+	path := make([]parser.Expression, 0, 16)
 
 	v.setPathAndSubject(path, e)
 	v.Validate(e)
-	e.AllContents(path, func(path []Expression, expr Expression) {
+	e.AllContents(path, func(path []parser.Expression, expr parser.Expression) {
 		v.setPathAndSubject(path, expr)
 		v.Validate(expr)
 	})

@@ -1,11 +1,11 @@
 package pn
 
 import (
-	. "bytes"
-	. "fmt"
+	"bytes"
+	"fmt"
 )
 
-func DoubleQuote(str string, b *Buffer) {
+func DoubleQuote(str string, b *bytes.Buffer) {
 	b.WriteByte('"')
 	for _, c := range str {
 		switch c {
@@ -21,7 +21,7 @@ func DoubleQuote(str string, b *Buffer) {
 			b.WriteString(`\\`)
 		default:
 			if c < 0x20 {
-				Fprintf(b, `\u{%X}`, c)
+				fmt.Fprintf(b, `\u{%X}`, c)
 			} else {
 				b.WriteRune(c)
 			}

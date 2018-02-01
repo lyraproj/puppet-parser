@@ -1,11 +1,12 @@
 package issue
 
 import (
-	. "bytes"
-	. "fmt"
-	. "github.com/puppetlabs/go-parser/pn"
-	"unicode/utf8"
+	"bytes"
+	"fmt"
 	"io"
+	"unicode/utf8"
+
+	"github.com/puppetlabs/go-parser/pn"
 )
 
 // this would be an enum in most other languages
@@ -55,7 +56,7 @@ type (
 	location struct {
 		file string
 		line int
-		pos int
+		pos  int
 	}
 )
 
@@ -116,7 +117,7 @@ func (severity Severity) String() string {
 	case SEVERITY_ERROR:
 		return `error`
 	default:
-		panic(Sprintf(`Illegal severity level: %d`, severity))
+		panic(fmt.Sprintf(`Illegal severity level: %d`, severity))
 	}
 }
 
@@ -125,12 +126,12 @@ func (severity Severity) AssertValid() {
 	case SEVERITY_IGNORE, SEVERITY_DEPRECATION, SEVERITY_WARNING, SEVERITY_ERROR:
 		return
 	default:
-		panic(Sprintf(`Illegal severity level: %d`, severity))
+		panic(fmt.Sprintf(`Illegal severity level: %d`, severity))
 	}
 }
 
 func addIssue(code IssueCode, messageFormat string, demotable bool, argFormats HF) *Issue {
-	dsc := &Issue{code, messageFormat, argFormats,demotable}
+	dsc := &Issue{code, messageFormat, argFormats, demotable}
 	issues[code] = dsc
 	return dsc
 }
@@ -141,7 +142,7 @@ func IssueForCode(code IssueCode) *Issue {
 	if dsc, ok := issues[code]; ok {
 		return dsc
 	}
-	panic(Sprintf("internal error: no issue found for issue code '%s'", code))
+	panic(fmt.Sprintf("internal error: no issue found for issue code '%s'", code))
 }
 
 func IssueForCode2(code IssueCode) (dsc *Issue, ok bool) {
@@ -162,7 +163,7 @@ func (ri *ReportedIssue) OffsetByLocation(location Location) *ReportedIssue {
 	if loc == nil {
 		loc = location
 	} else {
-		loc = NewLocation(location.File(), location.Line() + loc.Line(), location.Pos())
+		loc = NewLocation(location.File(), location.Line()+loc.Line(), location.Pos())
 	}
 	return &ReportedIssue{ri.issueCode, ri.severity, ri.args, loc}
 }
@@ -198,18 +199,18 @@ func (ri *ReportedIssue) Severity() Severity {
 }
 
 // Represent the reported using polish notation
-func (ri *ReportedIssue) ToPN() PN {
-	return MapPN([]Entry{
-		LiteralPN(ri.issueCode).WithName(`code`),
-		LiteralPN(ri.severity.String()).WithName(`severity`),
-		LiteralPN(ri.Error()).WithName(`message`)})
+func (ri *ReportedIssue) ToPN() pn.PN {
+	return pn.MapPN([]pn.Entry{
+		pn.LiteralPN(ri.issueCode).WithName(`code`),
+		pn.LiteralPN(ri.severity.String()).WithName(`severity`),
+		pn.LiteralPN(ri.Error()).WithName(`message`)})
 }
 
 func appendLocation(str string, location Location) string {
 	if location == nil {
 		return str
 	}
-	b := NewBufferString(str)
+	b := bytes.NewBufferString(str)
 	line := location.Line()
 	pos := location.Pos()
 	if file := location.File(); file != `` {
@@ -217,10 +218,10 @@ func appendLocation(str string, location Location) string {
 			b.WriteString(` at `)
 			b.WriteString(file)
 			b.WriteByte(':')
-			Fprintf(b, `%d`, line)
+			fmt.Fprintf(b, `%d`, line)
 			if pos > 0 {
 				b.WriteByte(':')
-				Fprintf(b, `%d`, pos)
+				fmt.Fprintf(b, `%d`, pos)
 			}
 		} else {
 			b.WriteString(` in `)
@@ -228,10 +229,10 @@ func appendLocation(str string, location Location) string {
 		}
 	} else if line > 0 {
 		b.WriteString(` at line `)
-		Fprintf(b, `%d`, line)
+		fmt.Fprintf(b, `%d`, line)
 		if pos > 0 {
 			b.WriteByte(':')
-			Fprintf(b, `%d`, pos)
+			fmt.Fprintf(b, `%d`, pos)
 		}
 	}
 	return b.String()
@@ -260,7 +261,7 @@ func (r *stringReader) next() rune {
 }
 
 func MapSprintf(formatString string, args H) string {
-	b := NewBufferString(``)
+	b := bytes.NewBufferString(``)
 	MapFprintf(b, formatString, args)
 	return b.String()
 }
@@ -274,14 +275,14 @@ func MapFprintf(writer io.Writer, formatString string, args H) {
 				posArgs[pos] = arg
 			}
 		} else {
-			panic(Sprintf(`missing argument matching key {%s} in format string %s`, k, formatString))
+			panic(fmt.Sprintf(`missing argument matching key {%s} in format string %s`, k, formatString))
 		}
 	}
-	Fprintf(writer, posFormatString, posArgs...)
+	fmt.Fprintf(writer, posFormatString, posArgs...)
 }
 
 func extractNamesAndLocations(formatString string) (string, int, map[string][]int) {
-	b := NewBufferString(``)
+	b := bytes.NewBufferString(``)
 	rdr := stringReader{0, formatString}
 	locations := make(map[string][]int, 8)
 	c := rdr.next()
@@ -295,7 +296,7 @@ func extractNamesAndLocations(formatString string) (string, int, map[string][]in
 		c = rdr.next()
 		if c != '{' && c != '<' {
 			if c != '%' {
-				panic(Sprintf(`keyed formats cannot be combined with other %% formats at position %d in string '%s'`,
+				panic(fmt.Sprintf(`keyed formats cannot be combined with other %% formats at position %d in string '%s'`,
 					rdr.i, formatString))
 			}
 			b.WriteRune(c)
@@ -313,11 +314,11 @@ func extractNamesAndLocations(formatString string) (string, int, map[string][]in
 			c = rdr.next()
 		}
 		if c == 0 {
-			panic(Sprintf(`unterminated %%%c at position %d in string '%s'`, bc, s - 2, formatString))
+			panic(fmt.Sprintf(`unterminated %%%c at position %d in string '%s'`, bc, s-2, formatString))
 		}
 		e := rdr.i - 1
 		if s == e {
-			panic(Sprintf(`empty %%%c%c at position %d in string '%s'`, bc, ec, s - 2, formatString))
+			panic(fmt.Sprintf(`empty %%%c%c at position %d in string '%s'`, bc, ec, s-2, formatString))
 		}
 		key := formatString[s:e]
 		if ps, ok := locations[key]; ok {

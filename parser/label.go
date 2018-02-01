@@ -1,7 +1,7 @@
 package parser
 
 import (
-	. "fmt"
+	"fmt"
 )
 
 type (
@@ -21,10 +21,10 @@ func (e *positioned) Label() string { return "positioned" }
 // Concrete
 func (e *AccessExpression) Label() string            { return "'[]' expression" }
 func (e *AndExpression) Label() string               { return "'and' expression" }
-func (e *ArithmeticExpression) Label() string        { return Sprintf("'%s' expression", e.operator) }
+func (e *ArithmeticExpression) Label() string        { return fmt.Sprintf("'%s' expression", e.operator) }
 func (e *Application) Label() string                 { return "Application" }
-func (e *AssignmentExpression) Label() string        { return Sprintf("'%s' expression", e.operator) }
-func (e *AttributeOperation) Label() string          { return Sprintf("'%s' expression", e.operator) }
+func (e *AssignmentExpression) Label() string        { return fmt.Sprintf("'%s' expression", e.operator) }
+func (e *AttributeOperation) Label() string          { return fmt.Sprintf("'%s' expression", e.operator) }
 func (e *AttributesOperation) Label() string         { return "AttributesOperation" }
 func (e *BlockExpression) Label() string             { return "Block Expression" }
 func (e *CallMethodExpression) Label() string        { return "Method Call" }
@@ -33,7 +33,7 @@ func (e *CapabilityMapping) Label() string           { return "Capability Mappin
 func (e *CaseExpression) Label() string              { return "'case' statement" }
 func (e *CaseOption) Label() string                  { return "CaseOption" }
 func (e *CollectExpression) Label() string           { return "CollectExpression" }
-func (e *ComparisonExpression) Label() string        { return Sprintf("'%s' expression", e.operator) }
+func (e *ComparisonExpression) Label() string        { return fmt.Sprintf("'%s' expression", e.operator) }
 func (e *ConcatenatedString) Label() string          { return "Concatenated String" }
 func (e *EppExpression) Label() string               { return "Epp Template" }
 func (e *ExportedQuery) Label() string               { return "Exported Query" }
@@ -52,7 +52,7 @@ func (e *LiteralList) Label() string                 { return "Array expression"
 func (e *LiteralString) Label() string               { return "Literal String" }
 func (e *LiteralUndef) Label() string                { return "'undef' expression" }
 func (e *Locator) Label() string                     { return "Locator" }
-func (e *MatchExpression) Label() string             { return Sprintf("'%s' expression", e.operator) }
+func (e *MatchExpression) Label() string             { return fmt.Sprintf("'%s' expression", e.operator) }
 func (e *NamedAccessExpression) Label() string       { return "'.' expression" }
 func (e *NodeDefinition) Label() string              { return "Node Definition" }
 func (e *Nop) Label() string                         { return "Nop" }
@@ -62,11 +62,11 @@ func (e *Parameter) Label() string                   { return "Parameter Definit
 func (e *Program) Label() string                     { return "Program" }
 func (e *QualifiedName) Label() string               { return "Name" }
 func (e *QualifiedReference) Label() string          { return "Type-Name" }
-func (e *RelationshipExpression) Label() string      { return Sprintf("'%s' expression", e.operator) }
+func (e *RelationshipExpression) Label() string      { return fmt.Sprintf("'%s' expression", e.operator) }
 func (e *RenderExpression) Label() string            { return "Epp Interpolated Expression" }
 func (e *RenderStringExpression) Label() string      { return "Epp Text" }
 func (e *RegexpExpression) Label() string            { return "Regular Expression" }
-func (e *ReservedWord) Label() string                { return Sprintf("Reserved Word '%s'", e.word) }
+func (e *ReservedWord) Label() string                { return fmt.Sprintf("Reserved Word '%s'", e.word) }
 func (e *ResourceBody) Label() string                { return "Resource Instance Definition" }
 func (e *ResourceDefaultsExpression) Label() string  { return "Resource Defaults Expression" }
 func (e *ResourceExpression) Label() string          { return "Resource Statement" }
@@ -95,17 +95,17 @@ func Label(e interface{}) string {
 	if s, ok := e.(string); ok {
 		return s
 	}
-	return Sprintf(`value of type %T`, e)
+	return fmt.Sprintf(`value of type %T`, e)
 }
 
 func A_an(e interface{}) string {
 	label := Label(e)
-	return Sprintf(`%s %s`, Article(label), label)
+	return fmt.Sprintf(`%s %s`, Article(label), label)
 }
 
 func A_anUc(e interface{}) string {
 	label := Label(e)
-	return Sprintf(`%s %s`, ArticleUc(label), label)
+	return fmt.Sprintf(`%s %s`, ArticleUc(label), label)
 }
 
 func Article(s string) string {

@@ -1,11 +1,12 @@
 package parser
 
 import (
-	. "bytes"
-	. "github.com/puppetlabs/go-parser/issue"
-	. "strconv"
+	"bytes"
+	"strconv"
 	"unicode"
-	. "unicode/utf8"
+	"unicode/utf8"
+
+	"github.com/puppetlabs/go-parser/issue"
 )
 
 // Recursive descent lexer for the Puppet language.
@@ -27,12 +28,12 @@ func (l *location) Pos() int {
 	return l.locator.PosOnLine(l.byteOffset)
 }
 
-func (ctx *context) parseIssue(issueCode IssueCode) *ReportedIssue {
-	return NewReportedIssue(issueCode, SEVERITY_ERROR, NO_ARGS, &location{ctx.locator, ctx.Pos()})
+func (ctx *context) parseIssue(issueCode issue.IssueCode) *issue.ReportedIssue {
+	return issue.NewReportedIssue(issueCode, issue.SEVERITY_ERROR, issue.NO_ARGS, &location{ctx.locator, ctx.Pos()})
 }
 
-func (ctx *context) parseIssue2(issueCode IssueCode, args H) *ReportedIssue {
-	return NewReportedIssue(issueCode, SEVERITY_ERROR, args, &location{ctx.locator, ctx.Pos()})
+func (ctx *context) parseIssue2(issueCode issue.IssueCode, args issue.H) *issue.ReportedIssue {
+	return issue.NewReportedIssue(issueCode, issue.SEVERITY_ERROR, args, &location{ctx.locator, ctx.Pos()})
 }
 
 const (
@@ -326,7 +327,7 @@ func (ctx *context) setTokenValue(token int, value interface{}) {
 	ctx.tokenValue = value
 }
 
-func (ctx *context) unterminatedQuote(start int, delimiter rune) *ReportedIssue {
+func (ctx *context) unterminatedQuote(start int, delimiter rune) *issue.ReportedIssue {
 	ctx.SetPos(start)
 	var stringType string
 	if delimiter == '"' {
@@ -336,7 +337,7 @@ func (ctx *context) unterminatedQuote(start int, delimiter rune) *ReportedIssue 
 	} else {
 		stringType = `backtick`
 	}
-	return ctx.parseIssue2(LEX_UNTERMINATED_STRING, H{`string_type`: stringType})
+	return ctx.parseIssue2(LEX_UNTERMINATED_STRING, issue.H{`string_type`: stringType})
 }
 
 func (ctx *context) nextToken() {
@@ -358,7 +359,7 @@ func (ctx *context) nextToken() {
 		if unicode.IsLetter(c) {
 			panic(ctx.parseIssue(LEX_DIGIT_EXPECTED))
 		}
-		v, _ := ParseInt(ctx.From(start), 10, 64)
+		v, _ := strconv.ParseInt(ctx.From(start), 10, 64)
 		ctx.setTokenValue(TOKEN_INTEGER, v)
 		ctx.radix = 10
 
@@ -476,7 +477,7 @@ func (ctx *context) nextToken() {
 						}
 						ctx.consumeEPP()
 					} else {
-						panic(ctx.parseIssue2(LEX_INVALID_OPERATOR, H{`op`: `-%`}))
+						panic(ctx.parseIssue2(LEX_INVALID_OPERATOR, issue.H{`op`: `-%`}))
 					}
 					break
 				}
@@ -543,7 +544,7 @@ func (ctx *context) nextToken() {
 			} else {
 				// Standalone tilde is not an operator in Puppet
 				ctx.SetPos(start)
-				panic(ctx.parseIssue2(LEX_UNEXPECTED_TOKEN, H{`token`: `~`}))
+				panic(ctx.parseIssue2(LEX_UNEXPECTED_TOKEN, issue.H{`token`: `~`}))
 			}
 
 		case '@':
@@ -651,7 +652,7 @@ func (ctx *context) nextToken() {
 			} else if isDecimalDigit(c) {
 				ctx.Advance(sz)
 				ctx.skipDecimalDigits()
-				ctx.tokenValue, _ = ParseInt(ctx.From(start+1), 10, 64)
+				ctx.tokenValue, _ = strconv.ParseInt(ctx.From(start+1), 10, 64)
 			} else if unicode.IsLetter(c) {
 				panic(ctx.parseIssue(LEX_INVALID_VARIABLE_NAME))
 			} else {
@@ -679,7 +680,7 @@ func (ctx *context) nextToken() {
 				if ctx.Pos() == hexStart || isLetter(c) {
 					panic(ctx.parseIssue(LEX_HEXDIGIT_EXPECTED))
 				}
-				v, _ := ParseInt(ctx.From(hexStart), 16, 64)
+				v, _ := strconv.ParseInt(ctx.From(hexStart), 16, 64)
 				ctx.radix = 16
 				ctx.setTokenValue(TOKEN_INTEGER, v)
 
@@ -698,7 +699,7 @@ func (ctx *context) nextToken() {
 					panic(ctx.parseIssue(LEX_OCTALDIGIT_EXPECTED))
 				}
 				if ctx.Pos() > octalStart {
-					v, _ := ParseInt(ctx.From(octalStart), 8, 64)
+					v, _ := strconv.ParseInt(ctx.From(octalStart), 8, 64)
 					ctx.radix = 8
 					ctx.setTokenValue(TOKEN_INTEGER, v)
 				} else {
@@ -715,7 +716,7 @@ func (ctx *context) nextToken() {
 
 		default:
 			ctx.SetPos(start)
-			panic(ctx.parseIssue2(LEX_UNEXPECTED_TOKEN, H{`token`: string(c)}))
+			panic(ctx.parseIssue2(LEX_UNEXPECTED_TOKEN, issue.H{`token`: string(c)}))
 		}
 	}
 }
@@ -876,7 +877,7 @@ func (ctx *context) consumeQualifiedName(start int, token int) {
 		}
 
 		ctx.SetPos(start)
-		issueCode := IssueCode(LEX_INVALID_NAME)
+		issueCode := issue.IssueCode(LEX_INVALID_NAME)
 		if token == TOKEN_TYPE_NAME {
 			issueCode = LEX_INVALID_TYPE_NAME
 		} else if token == TOKEN_VARIABLE {
@@ -928,7 +929,7 @@ func (ctx *context) consumeFloat(start int, d rune) {
 	if unicode.IsLetter(c) {
 		panic(ctx.parseIssue(LEX_DIGIT_EXPECTED))
 	}
-	v, _ := ParseFloat(ctx.From(start), 64)
+	v, _ := strconv.ParseFloat(ctx.From(start), 64)
 	ctx.setTokenValue(TOKEN_FLOAT, v)
 }
 
@@ -947,10 +948,10 @@ func (ctx *context) skipDecimalDigits() (digitCount int) {
 	return
 }
 
-type escapeHandler func(buffer *Buffer, ctx *context, c rune)
+type escapeHandler func(buffer *bytes.Buffer, ctx *context, c rune)
 
 func (ctx *context) consumeDelimitedString(delimiter rune, interpolateSegments []Expression, handler escapeHandler) (segments []Expression) {
-	buf := NewBufferString(``)
+	buf := bytes.NewBufferString(``)
 	ec, start := ctx.Next()
 	segments = interpolateSegments
 	for {
@@ -1007,7 +1008,7 @@ func (ctx *context) consumeDelimitedString(delimiter rune, interpolateSegments [
 }
 
 func (ctx *context) consumeEPP() {
-	buf := NewBufferString(``)
+	buf := bytes.NewBufferString(``)
 	lastNonWS := 0
 	var sz int
 	for ec, start := ctx.Next(); ec != 0; ec, start = ctx.Next() {
@@ -1103,7 +1104,7 @@ func (ctx *context) consumeEPP() {
 //   - Asks the context to perform interpolation and adds the resulting expression to the segments slice
 //   - Sets the tokenStartPos to the position just after the end of the interpolation expression
 //
-func (ctx *context) handleInterpolation(start int, segments []Expression, buf *Buffer) []Expression {
+func (ctx *context) handleInterpolation(start int, segments []Expression, buf *bytes.Buffer) []Expression {
 	precedingString := buf.String()
 	buf.Reset()
 
@@ -1173,7 +1174,7 @@ func (ctx *context) consumeDoubleQuotedString() {
 		segments = make([]Expression, 0, 4)
 	}
 	segments = ctx.consumeDelimitedString('"', segments,
-		func(buf *Buffer, ctx *context, ec rune) {
+		func(buf *bytes.Buffer, ctx *context, ec rune) {
 			switch ec {
 			case '\\', '\'':
 				buf.WriteRune(ec)
@@ -1225,7 +1226,7 @@ func (ctx *context) consumeDoubleQuotedString() {
 }
 
 func (ctx *context) consumeSingleQuotedString() {
-	ctx.consumeDelimitedString('\'', nil, func(buf *Buffer, ctx *context, ec rune) {
+	ctx.consumeDelimitedString('\'', nil, func(buf *bytes.Buffer, ctx *context, ec rune) {
 		buf.WriteRune('\\')
 		if ec != '\\' {
 			buf.WriteRune(ec)
@@ -1239,7 +1240,7 @@ func (ctx *context) consumeSingleQuotedString() {
 // The method returns true if a regexp was found, false otherwise
 func (ctx *context) consumeRegexp() bool {
 	start := ctx.Pos()
-	ctx.consumeDelimitedString('/', nil, func(buf *Buffer, ctx *context, ec rune) {
+	ctx.consumeDelimitedString('/', nil, func(buf *bytes.Buffer, ctx *context, ec rune) {
 		buf.WriteRune('\\')
 		buf.WriteRune(ec)
 	})
@@ -1391,7 +1392,7 @@ findStartOfText:
 	tagLen := len(tag)
 
 	// Find end of heredoc and heredoc content
-	tagStart, _ := DecodeRuneInString(tag)
+	tagStart, _ := utf8.DecodeRuneInString(tag)
 findEndOfText:
 	for {
 		switch c {
@@ -1493,14 +1494,14 @@ func (ctx *context) extractFlags(start int) []byte {
 			flags[idx] = '\n'
 		default:
 			ctx.SetPos(start)
-			panic(ctx.parseIssue2(LEX_HEREDOC_ILLEGAL_ESCAPE, H{`flag`: string(flag)}))
+			panic(ctx.parseIssue2(LEX_HEREDOC_ILLEGAL_ESCAPE, issue.H{`flag`: string(flag)}))
 		}
 	}
 	return flags
 }
 
 func (ctx *context) applyEscapes(end int, indentStrip int, flags []byte, interpolateSegments []Expression) (heredoc string, segments []Expression) {
-	bld := NewBufferString(``)
+	bld := bytes.NewBufferString(``)
 	segments = interpolateSegments
 	ctx.stripIndent(indentStrip)
 	for c, start := ctx.Next(); c != 0 && start < end; c, start = ctx.Next() {
@@ -1523,7 +1524,7 @@ func (ctx *context) applyEscapes(end int, indentStrip int, flags []byte, interpo
 		}
 
 		escaped := false
-		if c < RuneSelf {
+		if c < utf8.RuneSelf {
 			bc := byte(c)
 			fi := len(flags) - 1
 			for fi >= 0 {
@@ -1584,7 +1585,7 @@ func (ctx *context) stripIndent(indentStrip int) {
 	}
 }
 
-func (ctx *context) appendHexadec(buf *Buffer) {
+func (ctx *context) appendHexadec(buf *bytes.Buffer) {
 	// Must be XX (a two-digit hex number)
 	d, start := ctx.Next()
 	if isHexDigit(d) {
@@ -1594,12 +1595,12 @@ func (ctx *context) appendHexadec(buf *Buffer) {
 			panic(ctx.parseIssue(LEX_MALFORMED_HEX_ESCAPE))
 		}
 	}
-	r, _ := ParseInt(ctx.From(start), 16, 64)
+	r, _ := strconv.ParseInt(ctx.From(start), 16, 64)
 	buf.WriteByte(byte(r))
 	return
 }
 
-func (ctx *context) appendUnicode(buf *Buffer) {
+func (ctx *context) appendUnicode(buf *bytes.Buffer) {
 	ec, start := ctx.Next()
 	if isHexDigit(ec) {
 		// Must be XXXX (a four-digit hex number)
@@ -1610,7 +1611,7 @@ func (ctx *context) appendUnicode(buf *Buffer) {
 				panic(ctx.parseIssue(LEX_MALFORMED_UNICODE_ESCAPE))
 			}
 		}
-		r, _ := ParseInt(ctx.From(start), 16, 32)
+		r, _ := strconv.ParseInt(ctx.From(start), 16, 32)
 		buf.WriteRune(rune(r))
 		return
 	}
@@ -1633,7 +1634,7 @@ func (ctx *context) appendUnicode(buf *Buffer) {
 		panic(ctx.parseIssue(LEX_MALFORMED_UNICODE_ESCAPE))
 	}
 
-	r, _ := ParseInt(ctx.From(hexStart), 16, 32)
+	r, _ := strconv.ParseInt(ctx.From(hexStart), 16, 32)
 	ctx.Advance(n) // Skip terminating '}'
 	buf.WriteRune(rune(r))
 }

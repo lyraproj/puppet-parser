@@ -5,19 +5,20 @@ package main
 import (
 	"bytes"
 	"flag"
-	. "fmt"
-	. "github.com/puppetlabs/go-parser/issue"
-	. "github.com/puppetlabs/go-parser/json"
-	. "github.com/puppetlabs/go-parser/parser"
-	. "github.com/puppetlabs/go-parser/validator"
+	"fmt"
 	"io/ioutil"
-	. "os"
-	. "strings"
+	"os"
+	"strings"
+
+	"github.com/puppetlabs/go-parser/issue"
+	"github.com/puppetlabs/go-parser/json"
+	"github.com/puppetlabs/go-parser/parser"
+	"github.com/puppetlabs/go-parser/validator"
 )
 
 // Program to parse and validate a .pp or .epp file
 var validateOnly = flag.Bool("v", false, "validate only")
-var json = flag.Bool("j", false, "json output")
+var jsonFlag = flag.Bool("j", false, "json output")
 var strict = flag.String("s", `off`, "strict (off, warning, or error)")
 var tasks = flag.Bool("t", false, "tasks")
 
@@ -26,9 +27,9 @@ func main() {
 
 	args := flag.Args()
 	if len(args) != 1 {
-		Fprintln(Stderr, "Usage: parse [options] <pp or epp file to parse>\nValid options are:")
+		fmt.Fprintln(os.Stderr, "Usage: parse [options] <pp or epp file to parse>\nValid options are:")
 		flag.PrintDefaults()
-		Exit(1)
+		os.Exit(1)
 	}
 
 	fileName := args[0]
@@ -38,36 +39,36 @@ func main() {
 	}
 
 	var result map[string]interface{}
-	if *json {
+	if *jsonFlag {
 		result = make(map[string]interface{}, 2)
 	}
 
-	strictness := Strict(*strict)
+	strictness := validator.Strict(*strict)
 
-	parseOpts := []ParserOption{}
-	if HasSuffix(fileName, `.epp`) {
-		parseOpts = append(parseOpts, PARSER_EPP_MODE)
+	parseOpts := []parser.ParserOption{}
+	if strings.HasSuffix(fileName, `.epp`) {
+		parseOpts = append(parseOpts, parser.PARSER_EPP_MODE)
 	}
 	if *tasks {
-		parseOpts = append(parseOpts, PARSER_TASKS_ENABLED)
+		parseOpts = append(parseOpts, parser.PARSER_TASKS_ENABLED)
 	}
 
-	expr, err := CreateParser(parseOpts...).Parse(args[0], string(content), false)
-	if *json {
+	expr, err := parser.CreateParser(parseOpts...).Parse(args[0], string(content), false)
+	if *jsonFlag {
 		if err != nil {
-			if issue, ok := err.(*ReportedIssue); ok {
+			if issue, ok := err.(*issue.ReportedIssue); ok {
 				result[`issues`] = []interface{}{issue.ToPN().ToData()}
 			} else {
 				result[`error`] = err.Error()
 			}
 			emitJson(result)
 			// Parse error is always SEVERITY_ERROR
-			Exit(1)
+			os.Exit(1)
 		}
 
-		v := ValidatePuppet(expr, strictness)
+		v := validator.ValidatePuppet(expr, strictness)
 		if len(v.Issues()) > 0 {
-			severity := Severity(SEVERITY_IGNORE)
+			severity := issue.Severity(issue.SEVERITY_IGNORE)
 			issues := make([]interface{}, len(v.Issues()))
 			for idx, issue := range v.Issues() {
 				if issue.Severity() > severity {
@@ -76,9 +77,9 @@ func main() {
 				issues[idx] = issue.ToPN().ToData()
 			}
 			result[`issues`] = issues
-			if severity == SEVERITY_ERROR {
+			if severity == issue.SEVERITY_ERROR {
 				emitJson(result)
-				Exit(1)
+				os.Exit(1)
 			}
 		}
 
@@ -90,34 +91,34 @@ func main() {
 	}
 
 	if err != nil {
-		Fprintln(Stderr, err.Error())
+		fmt.Fprintln(os.Stderr, err.Error())
 		// Parse error is always SEVERITY_ERROR
-		Exit(1)
+		os.Exit(1)
 	}
 
-	v := ValidatePuppet(expr, strictness)
+	v := validator.ValidatePuppet(expr, strictness)
 	if len(v.Issues()) > 0 {
-		severity := Severity(SEVERITY_IGNORE)
+		severity := issue.Severity(issue.SEVERITY_IGNORE)
 		for _, issue := range v.Issues() {
-			Fprintln(Stderr, issue.String())
+			fmt.Fprintln(os.Stderr, issue.String())
 			if issue.Severity() > severity {
 				severity = issue.Severity()
 			}
 		}
-		if severity == SEVERITY_ERROR {
-			Exit(1)
+		if severity == issue.SEVERITY_ERROR {
+			os.Exit(1)
 		}
 	}
 
 	if !*validateOnly {
 		b := bytes.NewBufferString(``)
 		expr.ToPN().Format(b)
-		Println(b)
+		fmt.Println(b)
 	}
 }
 
 func emitJson(value interface{}) {
 	b := bytes.NewBufferString(``)
-	ToJson(value, b)
-	Println(b.String())
+	json.ToJson(value, b)
+	fmt.Println(b.String())
 }
