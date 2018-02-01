@@ -677,7 +677,7 @@ func (e *AccessExpression) Keys() []Expression {
 }
 
 func (e *AccessExpression) ToPN() pn.PN {
-	return pn.ListPN(append(pnMapArgs(e.Operand()), pnMap(e.Keys())...)).AsCall(`access`)
+	return pn.List(append(pnMapArgs(e.Operand()), pnMap(e.Keys())...)).AsCall(`access`)
 }
 
 func (e *AndExpression) AllContents(path []Expression, visitor PathVisitor) {
@@ -757,7 +757,7 @@ func (e *AttributeOperation) Contents(path []Expression, visitor PathVisitor) {
 }
 
 func (e *AttributeOperation) ToPN() pn.PN {
-	return pn.CallPN(e.Operator(), pn.LiteralPN(e.Name()), e.Value().ToPN())
+	return pn.Call(e.Operator(), pn.Literal(e.Name()), e.Value().ToPN())
 }
 
 func (e *AttributesOperation) Expr() Expression {
@@ -772,7 +772,7 @@ func (e *AttributesOperation) Contents(path []Expression, visitor PathVisitor) {
 	shallowVisit(e, path, visitor, e.expr)
 }
 
-func (e *AttributesOperation) ToPN() pn.PN { return pn.CallPN(`splat-hash`, e.Expr().ToPN()) }
+func (e *AttributesOperation) ToPN() pn.PN { return pn.Call(`splat-hash`, e.Expr().ToPN()) }
 
 func (e *binaryExpression) Lhs() Expression {
 	return e.lhs
@@ -829,7 +829,7 @@ func (e *CallFunctionExpression) ToPN() pn.PN {
 	if e.Lambda() != nil {
 		entries = append(entries, e.Lambda().ToPN().WithName(`block`))
 	}
-	return pn.MapPN(entries).AsCall(s)
+	return pn.Map(entries).AsCall(s)
 }
 
 func (e *CallMethodExpression) AllContents(path []Expression, visitor PathVisitor) {
@@ -849,7 +849,7 @@ func (e *CallMethodExpression) ToPN() pn.PN {
 	if e.Lambda() != nil {
 		entries = append(entries, e.Lambda().ToPN().WithName(`block`))
 	}
-	return pn.MapPN(entries).AsCall(s)
+	return pn.Map(entries).AsCall(s)
 }
 
 func (e *CallNamedFunctionExpression) AllContents(path []Expression, visitor PathVisitor) {
@@ -876,7 +876,7 @@ func (e *CallNamedFunctionExpression) ToPN() pn.PN {
 	if e.Lambda() != nil {
 		entries = append(entries, e.Lambda().ToPN().WithName(`block`))
 	}
-	return pn.MapPN(entries).AsCall(s)
+	return pn.Map(entries).AsCall(s)
 }
 
 func (e *CapabilityMapping) Kind() string {
@@ -908,7 +908,7 @@ func (e *CapabilityMapping) ToDefinition() Definition {
 }
 
 func (e *CapabilityMapping) ToPN() pn.PN {
-	return pn.CallPN(e.Kind(), e.Component().ToPN(), pn.ListPN(append([]pn.PN{pn.LiteralPN(e.Capability())}, pnMap(e.Mappings())...)))
+	return pn.Call(e.Kind(), e.Component().ToPN(), pn.List(append([]pn.PN{pn.Literal(e.Capability())}, pnMap(e.Mappings())...)))
 }
 
 func (e *CaseExpression) Test() Expression {
@@ -927,7 +927,7 @@ func (e *CaseExpression) Contents(path []Expression, visitor PathVisitor) {
 	shallowVisit(e, path, visitor, e.test, e.options)
 }
 
-func (e *CaseExpression) ToPN() pn.PN { return pn.CallPN(`case`, e.Test().ToPN(), pnList(e.Options())) }
+func (e *CaseExpression) ToPN() pn.PN { return pn.Call(`case`, e.Test().ToPN(), pnList(e.Options())) }
 
 func (e *CaseOption) Values() []Expression {
 	return e.values
@@ -946,7 +946,7 @@ func (e *CaseOption) Contents(path []Expression, visitor PathVisitor) {
 }
 
 func (e *CaseOption) ToPN() pn.PN {
-	return pn.MapPN([]pn.Entry{pnList(e.Values()).WithName(`when`), pnBlockAsEntry(`then`, e.Then())})
+	return pn.Map([]pn.Entry{pnList(e.Values()).WithName(`when`), pnBlockAsEntry(`then`, e.Then())})
 }
 
 func (e *CollectExpression) ResourceType() Expression {
@@ -975,7 +975,7 @@ func (e *CollectExpression) ToPN() pn.PN {
 	if len(e.Operations()) > 0 {
 		entries = append(entries, pnList(e.Operations()).WithName(`ops`))
 	}
-	return pn.MapPN(entries).AsCall(`collect`)
+	return pn.Map(entries).AsCall(`collect`)
 }
 
 func (e *ComparisonExpression) Operator() string {
@@ -1044,9 +1044,9 @@ func (e *ExportedQuery) ToQueryExpression() QueryExpression {
 
 func (e *ExportedQuery) ToPN() pn.PN {
 	if e.Expr().IsNop() {
-		return pn.CallPN(`exported-query`)
+		return pn.Call(`exported-query`)
 	}
-	return pn.CallPN(`exported-query`, e.Expr().ToPN())
+	return pn.Call(`exported-query`, e.Expr().ToPN())
 }
 
 func (e *FunctionDefinition) ReturnType() Expression {
@@ -1092,10 +1092,10 @@ func (e *HeredocExpression) Contents(path []Expression, visitor PathVisitor) {
 func (e *HeredocExpression) ToPN() pn.PN {
 	entries := make([]pn.Entry, 0, 2)
 	if e.Syntax() != `` {
-		entries = append(entries, pn.LiteralPN(e.Syntax()).WithName(`syntax`))
+		entries = append(entries, pn.Literal(e.Syntax()).WithName(`syntax`))
 	}
 	entries = append(entries, e.Text().ToPN().WithName(`text`))
-	return pn.MapPN(entries).AsCall(`heredoc`)
+	return pn.Map(entries).AsCall(`heredoc`)
 }
 
 func (e *HostClassDefinition) ParentClass() string {
@@ -1166,7 +1166,7 @@ func (e *KeyedEntry) Contents(path []Expression, visitor PathVisitor) {
 	shallowVisit(e, path, visitor, e.key, e.value)
 }
 
-func (e *KeyedEntry) ToPN() pn.PN { return pn.CallPN(`=>`, e.Key().ToPN(), e.Value().ToPN()) }
+func (e *KeyedEntry) ToPN() pn.PN { return pn.Call(`=>`, e.Key().ToPN(), e.Value().ToPN()) }
 
 func (e *LambdaExpression) Body() Expression {
 	return e.body
@@ -1199,14 +1199,14 @@ func (e *LambdaExpression) ToPN() pn.PN {
 	if e.Body() != nil {
 		entries = append(entries, pnBlockAsEntry(`body`, e.Body()))
 	}
-	return pn.MapPN(entries).AsCall(`lambda`)
+	return pn.Map(entries).AsCall(`lambda`)
 }
 
 func (e *LiteralBoolean) Bool() bool {
 	return e.value
 }
 
-func (e *LiteralBoolean) ToPN() pn.PN { return pn.LiteralPN(e.Value()) }
+func (e *LiteralBoolean) ToPN() pn.PN { return pn.Literal(e.Value()) }
 
 func (e *LiteralBoolean) Value() interface{} {
 	return e.value
@@ -1236,7 +1236,7 @@ func (e *LiteralDefault) ToLiteralValue() LiteralValue {
 	return e
 }
 
-func (e *LiteralDefault) ToPN() pn.PN { return pn.CallPN(`default`) }
+func (e *LiteralDefault) ToPN() pn.PN { return pn.Call(`default`) }
 
 func (e *LiteralFloat) Float() float64 {
 	return e.value
@@ -1260,7 +1260,7 @@ func (e *LiteralFloat) ToLiteralValue() LiteralValue {
 	return e
 }
 
-func (e *LiteralFloat) ToPN() pn.PN { return pn.LiteralPN(e.Value()) }
+func (e *LiteralFloat) ToPN() pn.PN { return pn.Literal(e.Value()) }
 
 func (e *LiteralHash) Entries() []Expression {
 	return e.entries
@@ -1312,7 +1312,7 @@ func (e *LiteralInteger) ToLiteralValue() LiteralValue {
 	return e
 }
 
-func (e *LiteralInteger) ToPN() pn.PN { return pn.LiteralPN(e.Value()) }
+func (e *LiteralInteger) ToPN() pn.PN { return pn.Literal(e.Value()) }
 
 func (e *LiteralList) Elements() []Expression {
 	return e.elements
@@ -1346,7 +1346,7 @@ func (e *LiteralString) ToLiteralValue() LiteralValue {
 	return e
 }
 
-func (e *LiteralString) ToPN() pn.PN { return pn.LiteralPN(e.Value()) }
+func (e *LiteralString) ToPN() pn.PN { return pn.Literal(e.Value()) }
 
 func (e *LiteralUndef) Value() interface{} {
 	return nil
@@ -1362,7 +1362,7 @@ func (e *LiteralUndef) ToLiteralValue() LiteralValue {
 	return e
 }
 
-func (e *LiteralUndef) ToPN() pn.PN { return pn.LiteralPN(nil) }
+func (e *LiteralUndef) ToPN() pn.PN { return pn.Literal(nil) }
 
 func (e *MatchExpression) Operator() string {
 	return e.operator
@@ -1433,7 +1433,7 @@ func (e *NodeDefinition) ToPN() pn.PN {
 	if e.Body() != nil {
 		entries = append(entries, pnBlockAsEntry(`body`, e.Body()))
 	}
-	return pn.MapPN(entries).AsCall(`node`)
+	return pn.Map(entries).AsCall(`node`)
 }
 
 func (e *Nop) IsNop() bool { return true }
@@ -1444,7 +1444,7 @@ func (e *Nop) AllContents(path []Expression, visitor PathVisitor) {
 func (e *Nop) Contents(path []Expression, visitor PathVisitor) {
 }
 
-func (e *Nop) ToPN() pn.PN { return pn.CallPN(`nop`) }
+func (e *Nop) ToPN() pn.PN { return pn.Call(`nop`) }
 
 func (e *NotExpression) AllContents(path []Expression, visitor PathVisitor) {
 	deepVisit(e, path, visitor, e.expr)
@@ -1458,7 +1458,7 @@ func (e *NotExpression) ToUnaryExpression() UnaryExpression {
 	return e
 }
 
-func (e *NotExpression) ToPN() pn.PN { return pn.CallPN(`!`, e.Expr().ToPN()) }
+func (e *NotExpression) ToPN() pn.PN { return pn.Call(`!`, e.Expr().ToPN()) }
 
 func (e *OrExpression) AllContents(path []Expression, visitor PathVisitor) {
 	deepVisit(e, path, visitor, e.lhs, e.rhs)
@@ -1492,17 +1492,17 @@ func (e *Parameter) Name() string {
 
 func (e *Parameter) ToPN() pn.PN {
 	entries := make([]pn.Entry, 0, 3)
-	entries = append(entries, pn.LiteralPN(e.Name()).WithName(`name`))
+	entries = append(entries, pn.Literal(e.Name()).WithName(`name`))
 	if e.Type() != nil {
 		entries = append(entries, e.Type().ToPN().WithName(`type`))
 	}
 	if e.CapturesRest() {
-		entries = append(entries, pn.LiteralPN(true).WithName(`splat`))
+		entries = append(entries, pn.Literal(true).WithName(`splat`))
 	}
 	if e.Value() != nil {
 		entries = append(entries, e.Value().ToPN().WithName(`value`))
 	}
-	return pn.MapPN(entries).AsCall(`param`)
+	return pn.Map(entries).AsCall(`param`)
 }
 
 func (e *Parameter) Type() Expression {
@@ -1525,7 +1525,7 @@ func (e *ParenthesizedExpression) ToUnaryExpression() UnaryExpression {
 	return e
 }
 
-func (e *ParenthesizedExpression) ToPN() pn.PN { return pn.CallPN(`paren`, e.Expr().ToPN()) }
+func (e *ParenthesizedExpression) ToPN() pn.PN { return pn.Call(`paren`, e.Expr().ToPN()) }
 
 func (e *Program) Definitions() []Definition {
 	return e.definitions
@@ -1559,7 +1559,7 @@ func (e *QualifiedName) Name() string {
 	return e.name
 }
 
-func (e *QualifiedName) ToPN() pn.PN { return pn.LiteralPN(e.Name()).AsCall(`qn`) }
+func (e *QualifiedName) ToPN() pn.PN { return pn.Literal(e.Name()).AsCall(`qn`) }
 
 func (e *QualifiedName) Value() interface{} {
 	return e.name
@@ -1591,7 +1591,7 @@ func (e *QualifiedReference) WithName(name string) *QualifiedReference {
 	return rn
 }
 
-func (e *QualifiedReference) ToPN() pn.PN { return pn.LiteralPN(e.Name()).AsCall(`qr`) }
+func (e *QualifiedReference) ToPN() pn.PN { return pn.Literal(e.Name()).AsCall(`qr`) }
 
 func (e *RegexpExpression) AllContents(path []Expression, visitor PathVisitor) {
 }
@@ -1611,7 +1611,7 @@ func (e *RegexpExpression) ToLiteralValue() LiteralValue {
 	return e
 }
 
-func (e *RegexpExpression) ToPN() pn.PN { return pn.LiteralPN(e.Value()).AsCall(`regexp`) }
+func (e *RegexpExpression) ToPN() pn.PN { return pn.Literal(e.Value()).AsCall(`regexp`) }
 
 func (e *RelationshipExpression) AllContents(path []Expression, visitor PathVisitor) {
 	deepVisit(e, path, visitor, e.lhs, e.rhs)
@@ -1635,7 +1635,7 @@ func (e *RenderExpression) Contents(path []Expression, visitor PathVisitor) {
 	shallowVisit(e, path, visitor, e.expr)
 }
 
-func (e *RenderExpression) ToPN() pn.PN { return pn.CallPN(`render`, e.Expr().ToPN()) }
+func (e *RenderExpression) ToPN() pn.PN { return pn.Call(`render`, e.Expr().ToPN()) }
 
 func (e *RenderExpression) ToUnaryExpression() UnaryExpression {
 	return e
@@ -1649,7 +1649,7 @@ func (e *RenderStringExpression) Contents(path []Expression, visitor PathVisitor
 	shallowVisit(e, path, visitor)
 }
 
-func (e *RenderStringExpression) ToPN() pn.PN { return pn.LiteralPN(e.Value()).AsCall(`render-s`) }
+func (e *RenderStringExpression) ToPN() pn.PN { return pn.Literal(e.Value()).AsCall(`render-s`) }
 
 func (e *ReservedWord) AllContents(path []Expression, visitor PathVisitor) {
 }
@@ -1657,7 +1657,7 @@ func (e *ReservedWord) AllContents(path []Expression, visitor PathVisitor) {
 func (e *ReservedWord) Contents(path []Expression, visitor PathVisitor) {
 }
 
-func (e *ReservedWord) ToPN() pn.PN { return pn.LiteralPN(e.Name()).AsCall(`reserved`) }
+func (e *ReservedWord) ToPN() pn.PN { return pn.Literal(e.Name()).AsCall(`reserved`) }
 
 func (e *ReservedWord) Name() string {
 	return e.word
@@ -1692,7 +1692,7 @@ func (e *ResourceBody) Contents(path []Expression, visitor PathVisitor) {
 }
 
 func (e *ResourceBody) ToPN() pn.PN {
-	return pn.MapPN([]pn.Entry{
+	return pn.Map([]pn.Entry{
 		e.Title().ToPN().WithName(`title`),
 		pnList(e.Operations()).WithName(`ops`)}).AsCall(`resource-body`)
 }
@@ -1717,9 +1717,9 @@ func (e *ResourceDefaultsExpression) ToPN() pn.PN {
 	entries := make([]pn.Entry, 0, 3)
 	entries = append(entries, e.TypeRef().ToPN().WithName(`type`), pnList(e.Operations()).WithName(`ops`))
 	if e.Form() != `regular` {
-		entries = append(entries, pn.LiteralPN(e.Form()).WithName(`form`))
+		entries = append(entries, pn.Literal(e.Form()).WithName(`form`))
 	}
-	return pn.MapPN(entries).AsCall(`resource-defaults`)
+	return pn.Map(entries).AsCall(`resource-defaults`)
 }
 
 func (e *ResourceExpression) TypeName() Expression {
@@ -1745,11 +1745,11 @@ func (e *ResourceExpression) ToPN() pn.PN {
 	for _, body := range e.bodies {
 		bodies = append(bodies, body.ToPN().AsParameters()...)
 	}
-	entries = append(entries, pn.ListPN(bodies).WithName(`bodies`))
+	entries = append(entries, pn.List(bodies).WithName(`bodies`))
 	if e.Form() != `regular` {
-		entries = append(entries, pn.LiteralPN(e.Form()).WithName(`form`))
+		entries = append(entries, pn.Literal(e.Form()).WithName(`form`))
 	}
-	return pn.MapPN(entries).AsCall(`resource`)
+	return pn.Map(entries).AsCall(`resource`)
 }
 
 func (e *ResourceOverrideExpression) Resources() Expression {
@@ -1772,9 +1772,9 @@ func (e *ResourceOverrideExpression) ToPN() pn.PN {
 	entries := make([]pn.Entry, 0, 3)
 	entries = append(entries, e.Resources().ToPN().WithName(`resources`), pnList(e.Operations()).WithName(`ops`))
 	if e.Form() != `regular` {
-		entries = append(entries, pn.LiteralPN(e.Form()).WithName(`form`))
+		entries = append(entries, pn.Literal(e.Form()).WithName(`form`))
 	}
-	return pn.MapPN(entries).AsCall(`resource-override`)
+	return pn.Map(entries).AsCall(`resource-override`)
 }
 
 func (e *ResourceTypeDefinition) AllContents(path []Expression, visitor PathVisitor) {
@@ -1807,7 +1807,7 @@ func (e *SelectorEntry) Contents(path []Expression, visitor PathVisitor) {
 	shallowVisit(e, path, visitor, e.matching, e.value)
 }
 
-func (e *SelectorEntry) ToPN() pn.PN { return pn.CallPN(`=>`, e.Matching().ToPN(), e.Value().ToPN()) }
+func (e *SelectorEntry) ToPN() pn.PN { return pn.Call(`=>`, e.Matching().ToPN(), e.Value().ToPN()) }
 
 func (e *SelectorExpression) AllContents(path []Expression, visitor PathVisitor) {
 	deepVisit(e, path, visitor, e.lhs, e.selectors)
@@ -1826,7 +1826,7 @@ func (e *SelectorExpression) Selectors() []Expression {
 }
 
 func (e *SelectorExpression) ToPN() pn.PN {
-	return pn.CallPN(`?`, e.Lhs().ToPN(), pnList(e.Selectors()))
+	return pn.Call(`?`, e.Lhs().ToPN(), pnList(e.Selectors()))
 }
 
 func (e *SiteDefinition) AllContents(path []Expression, visitor PathVisitor) {
@@ -1857,7 +1857,7 @@ func (e *TextExpression) Contents(path []Expression, visitor PathVisitor) {
 	shallowVisit(e, path, visitor, e.expr)
 }
 
-func (e *TextExpression) ToPN() pn.PN { return pn.CallPN(`str`, e.Expr().ToPN()) }
+func (e *TextExpression) ToPN() pn.PN { return pn.Call(`str`, e.Expr().ToPN()) }
 
 func (e *TextExpression) ToUnaryExpression() UnaryExpression {
 	return e
@@ -1876,7 +1876,7 @@ func (e *TypeAlias) ToDefinition() Definition {
 }
 
 func (e *TypeAlias) ToPN() pn.PN {
-	return pn.CallPN(`type-alias`, pn.LiteralPN(e.Name()), e.Type().ToPN())
+	return pn.Call(`type-alias`, pn.Literal(e.Name()), e.Type().ToPN())
 }
 
 func (e *TypeAlias) Type() Expression {
@@ -1904,7 +1904,7 @@ func (e *TypeDefinition) ToDefinition() Definition {
 }
 
 func (e *TypeDefinition) ToPN() pn.PN {
-	return pn.CallPN(`type-definition`, pn.LiteralPN(e.Name()), pn.LiteralPN(e.Parent()), e.Body().ToPN())
+	return pn.Call(`type-definition`, pn.Literal(e.Name()), pn.Literal(e.Parent()), e.Body().ToPN())
 }
 
 func (e *TypeMapping) Type() Expression {
@@ -1928,7 +1928,7 @@ func (e *TypeMapping) ToDefinition() Definition {
 }
 
 func (e *TypeMapping) ToPN() pn.PN {
-	return pn.CallPN(`type-mapping`, e.Type().ToPN(), e.Mapping().ToPN())
+	return pn.Call(`type-mapping`, e.Type().ToPN(), e.Mapping().ToPN())
 }
 
 func (e *unaryExpression) Expr() Expression {
@@ -1947,7 +1947,7 @@ func (e *UnaryMinusExpression) ToUnaryExpression() UnaryExpression {
 	return e
 }
 
-func (e *UnaryMinusExpression) ToPN() pn.PN { return pn.CallPN(`-`, e.Expr().ToPN()) }
+func (e *UnaryMinusExpression) ToPN() pn.PN { return pn.Call(`-`, e.Expr().ToPN()) }
 
 func (e *UnfoldExpression) AllContents(path []Expression, visitor PathVisitor) {
 	deepVisit(e, path, visitor, e.expr)
@@ -1961,7 +1961,7 @@ func (e *UnfoldExpression) ToUnaryExpression() UnaryExpression {
 	return e
 }
 
-func (e *UnfoldExpression) ToPN() pn.PN { return pn.CallPN(`unfold`, e.Expr().ToPN()) }
+func (e *UnfoldExpression) ToPN() pn.PN { return pn.Call(`unfold`, e.Expr().ToPN()) }
 
 func (e *UnlessExpression) AllContents(path []Expression, visitor PathVisitor) {
 	deepVisit(e, path, visitor, e.test, e.then, e.elseExpr)
@@ -2004,7 +2004,7 @@ func (e *VariableExpression) Contents(path []Expression, visitor PathVisitor) {
 	shallowVisit(e, path, visitor, e.expr)
 }
 
-func (e *VariableExpression) ToPN() pn.PN { return pn.CallPN(`var`, pn.LiteralPN(e.NameOrIndex())) }
+func (e *VariableExpression) ToPN() pn.PN { return pn.Call(`var`, pn.Literal(e.NameOrIndex())) }
 
 func (e *VariableExpression) ToUnaryExpression() UnaryExpression {
 	return e
@@ -2024,9 +2024,9 @@ func (e *VirtualQuery) Expr() Expression {
 
 func (e *VirtualQuery) ToPN() pn.PN {
 	if e.Expr().IsNop() {
-		return pn.CallPN(`virtual-query`)
+		return pn.Call(`virtual-query`)
 	}
-	return pn.CallPN(`virtual-query`, e.Expr().ToPN())
+	return pn.Call(`virtual-query`, e.Expr().ToPN())
 }
 
 func (e *VirtualQuery) ToQueryExpression() QueryExpression {
@@ -2042,14 +2042,14 @@ func (e *IfExpression) pnIf(name string) pn.PN {
 	if !e.Else().IsNop() {
 		entries = append(entries, pnBlockAsEntry(`else`, e.Else()))
 	}
-	return pn.MapPN(entries).AsCall(name)
+	return pn.Map(entries).AsCall(name)
 }
 
 func (e *namedDefinition) definitionPN(typeName string, parent string, returnType Expression) pn.PN {
 	entries := make([]pn.Entry, 0, 3)
-	entries = append(entries, pn.LiteralPN(e.Name()).WithName(`name`))
+	entries = append(entries, pn.Literal(e.Name()).WithName(`name`))
 	if parent != `` {
-		entries = append(entries, pn.LiteralPN(parent).WithName(`parent`))
+		entries = append(entries, pn.Literal(parent).WithName(`parent`))
 	}
 	if len(e.Parameters()) > 0 {
 		entries = append(entries, parametersEntry(e.Parameters()))
@@ -2060,7 +2060,7 @@ func (e *namedDefinition) definitionPN(typeName string, parent string, returnTyp
 	if returnType != nil {
 		entries = append(entries, returnType.ToPN().WithName(`returns`))
 	}
-	return pn.MapPN(entries).AsCall(typeName)
+	return pn.Map(entries).AsCall(typeName)
 }
 
 func parametersEntry(parameters []Expression) pn.Entry {
@@ -2072,22 +2072,22 @@ func parametersEntry(parameters []Expression) pn.Entry {
 			entries = append(entries, p.Type().ToPN().WithName(`type`))
 		}
 		if p.CapturesRest() {
-			entries = append(entries, pn.LiteralPN(true).WithName(`splat`))
+			entries = append(entries, pn.Literal(true).WithName(`splat`))
 		}
 		if p.Value() != nil {
 			entries = append(entries, p.Value().ToPN().WithName(`value`))
 		}
-		params[idx] = pn.MapPN(entries).WithName(p.Name())
+		params[idx] = pn.Map(entries).WithName(p.Name())
 	}
-	return pn.MapPN(params).WithName(`params`)
+	return pn.Map(params).WithName(`params`)
 }
 
 func (e *binaryExpression) binaryOp(op string) pn.PN {
-	return pn.CallPN(op, e.Lhs().ToPN(), e.Rhs().ToPN())
+	return pn.Call(op, e.Lhs().ToPN(), e.Rhs().ToPN())
 }
 
 func pnList(elements []Expression) pn.PN {
-	return pn.ListPN(pnMap(elements))
+	return pn.List(pnMap(elements))
 }
 
 func pnMap(elements []Expression) []pn.PN {

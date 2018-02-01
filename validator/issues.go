@@ -44,25 +44,25 @@ const (
 )
 
 func init() {
-	issue.HardIssue(VALIDATE_APPENDS_DELETES_NO_LONGER_SUPPORTED, `The operator '%{operator}' is no longer supported. See http://links.puppet.com/remove-plus-equals`)
+	issue.Hard(VALIDATE_APPENDS_DELETES_NO_LONGER_SUPPORTED, `The operator '%{operator}' is no longer supported. See http://links.puppet.com/remove-plus-equals`)
 
-	issue.HardIssue(VALIDATE_CAPTURES_REST_NOT_LAST, `Parameter $%{param} is not last, and has 'captures rest'`)
+	issue.Hard(VALIDATE_CAPTURES_REST_NOT_LAST, `Parameter $%{param} is not last, and has 'captures rest'`)
 
-	issue.HardIssue2(VALIDATE_CAPTURES_REST_NOT_SUPPORTED,
+	issue.Hard2(VALIDATE_CAPTURES_REST_NOT_SUPPORTED,
 		`Parameter $%{param} has 'captures rest' - not supported in %{container}`,
 		issue.HF{`container`: parser.A_an})
 
-	issue.HardIssue(VALIDATE_CATALOG_OPERATION_NOT_SUPPORTED_WHEN_SCRIPTING, `The catalog operation '%{operation}' is only available when compiling a catalog`)
+	issue.Hard(VALIDATE_CATALOG_OPERATION_NOT_SUPPORTED_WHEN_SCRIPTING, `The catalog operation '%{operation}' is only available when compiling a catalog`)
 
-	issue.HardIssue(VALIDATE_CROSS_SCOPE_ASSIGNMENT, `Illegal attempt to assign to '%{name}'. Cannot assign to variables in other namespaces`)
+	issue.Hard(VALIDATE_CROSS_SCOPE_ASSIGNMENT, `Illegal attempt to assign to '%{name}'. Cannot assign to variables in other namespaces`)
 
-	issue.HardIssue2(VALIDATE_DUPLICATE_DEFAULT,
+	issue.Hard2(VALIDATE_DUPLICATE_DEFAULT,
 		`This %{container} already has a 'default' entry - this is a duplicate`,
 		issue.HF{`container`: parser.Label})
 
 	issue.SoftIssue(VALIDATE_DUPLICATE_KEY, `The key '%{key}' is declared more than once`)
 
-	issue.HardIssue(VALIDATE_DUPLICATE_PARAMETER, `The parameter '%{param}' is declared more than once in the parameter list`)
+	issue.Hard(VALIDATE_DUPLICATE_PARAMETER, `The parameter '%{param}' is declared more than once in the parameter list`)
 
 	issue.SoftIssue(VALIDATE_FUTURE_RESERVED_WORD, `Use of future reserved word: '%{word}'`)
 
@@ -70,80 +70,80 @@ func init() {
 		`This %{expression} has no effect. A value was produced and then forgotten (one or more preceding expressions may have the wrong form)`,
 		issue.HF{`expression`: parser.Label})
 
-	issue.HardIssue2(VALIDATE_IDEM_NOT_ALLOWED_LAST,
+	issue.Hard2(VALIDATE_IDEM_NOT_ALLOWED_LAST,
 		`This %{expression} has no effect. %{container} can not end with a value-producing expression without other effect`,
 		issue.HF{`expression`: parser.Label, `container`: parser.A_anUc})
 
-	issue.HardIssue(VALIDATE_ILLEGAL_ASSIGNMENT_CONTEXT, `Assignment not allowed here`)
+	issue.Hard(VALIDATE_ILLEGAL_ASSIGNMENT_CONTEXT, `Assignment not allowed here`)
 
-	issue.HardIssue(VALIDATE_ILLEGAL_ASSIGNMENT_VIA_INDEX, `Illegal attempt to assign via [index/key]. Not an assignable reference`)
+	issue.Hard(VALIDATE_ILLEGAL_ASSIGNMENT_VIA_INDEX, `Illegal attempt to assign via [index/key]. Not an assignable reference`)
 
-	issue.HardIssue2(VALIDATE_ILLEGAL_ATTRIBUTE_APPEND,
+	issue.Hard2(VALIDATE_ILLEGAL_ATTRIBUTE_APPEND,
 		`Illegal +> operation on attribute %{attr}. This operator can not be used in %{expression}`,
 		issue.HF{`expression`: parser.A_an})
 
-	issue.HardIssue(VALIDATE_ILLEGAL_CLASSREF, `Illegal type reference. The given name '%{name}' does not conform to the naming rule`)
+	issue.Hard(VALIDATE_ILLEGAL_CLASSREF, `Illegal type reference. The given name '%{name}' does not conform to the naming rule`)
 
-	issue.HardIssue2(VALIDATE_ILLEGAL_DEFINITION_NAME,
+	issue.Hard2(VALIDATE_ILLEGAL_DEFINITION_NAME,
 		`Unacceptable name. The name '%{name}' is unacceptable as the name of %{value}`,
 		issue.HF{`value`: parser.A_an})
 
-	issue.HardIssue2(
+	issue.Hard2(
 		VALIDATE_ILLEGAL_EXPRESSION,
 		`Illegal expression. %{expression} is unacceptable as %{feature} in %{container}`,
 		issue.HF{`expression`: parser.A_anUc, `container`: parser.A_an})
 
-	issue.HardIssue(VALIDATE_ILLEGAL_HOSTNAME_CHARS, `The hostname '%{hostname}' contains illegal characters (only letters, digits, '_', '-', and '.' are allowed)`)
+	issue.Hard(VALIDATE_ILLEGAL_HOSTNAME_CHARS, `The hostname '%{hostname}' contains illegal characters (only letters, digits, '_', '-', and '.' are allowed)`)
 
-	issue.HardIssue(VALIDATE_ILLEGAL_HOSTNAME_INTERPOLATION, `An interpolated expression is not allowed in a hostname of a node`)
+	issue.Hard(VALIDATE_ILLEGAL_HOSTNAME_INTERPOLATION, `An interpolated expression is not allowed in a hostname of a node`)
 
-	issue.HardIssue(VALIDATE_ILLEGAL_NUMERIC_ASSIGNMENT, `Illegal attempt to assign to the numeric match result variable '$%{var}'. Numeric variables are not assignable`)
+	issue.Hard(VALIDATE_ILLEGAL_NUMERIC_ASSIGNMENT, `Illegal attempt to assign to the numeric match result variable '$%{var}'. Numeric variables are not assignable`)
 
-	issue.HardIssue(VALIDATE_ILLEGAL_NUMERIC_PARAMETER, `The numeric parameter name '$%{name}' cannot be used (clashes with numeric match result variables)`)
+	issue.Hard(VALIDATE_ILLEGAL_NUMERIC_PARAMETER, `The numeric parameter name '$%{name}' cannot be used (clashes with numeric match result variables)`)
 
-	issue.HardIssue(VALIDATE_ILLEGAL_PARAMETER_NAME, `Illegal parameter name. The given name '%{name}' does not conform to the naming rule /^[a-z_]\w*$/`)
+	issue.Hard(VALIDATE_ILLEGAL_PARAMETER_NAME, `Illegal parameter name. The given name '%{name}' does not conform to the naming rule /^[a-z_]\w*$/`)
 
-	issue.HardIssue2(VALIDATE_ILLEGAL_QUERY_EXPRESSION,
+	issue.Hard2(VALIDATE_ILLEGAL_QUERY_EXPRESSION,
 		`Illegal query expression. %{expression} cannot be used in a query`,
 		issue.HF{`expression`: parser.A_anUc})
 
-	issue.HardIssue2(VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING,
+	issue.Hard2(VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING,
 		`Illegal type mapping. Expected a Tuple[Regexp,String] on the left side, got %{expression}`,
 		issue.HF{`expression`: parser.A_an})
 
-	issue.HardIssue2(VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING,
+	issue.Hard2(VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING,
 		`Illegal type mapping. Expected a Type on the left side, got %{expression}`,
 		issue.HF{`expression`: parser.A_an})
 
-	issue.HardIssue(VALIDATE_MULTIPLE_ATTRIBUTES_UNFOLD, `Unfolding of attributes from Hash can only be used once per resource body`)
+	issue.Hard(VALIDATE_MULTIPLE_ATTRIBUTES_UNFOLD, `Unfolding of attributes from Hash can only be used once per resource body`)
 
-	issue.HardIssue2(VALIDATE_NOT_ABSOLUTE_TOP_LEVEL,
+	issue.Hard2(VALIDATE_NOT_ABSOLUTE_TOP_LEVEL,
 		`%{value} may only appear at top level`,
 		issue.HF{`value`: parser.A_anUc})
 
-	issue.HardIssue(VALIDATE_NOT_TOP_LEVEL, `Classes, definitions, and nodes may only appear at top level or inside other classes`)
+	issue.Hard(VALIDATE_NOT_TOP_LEVEL, `Classes, definitions, and nodes may only appear at top level or inside other classes`)
 
-	issue.HardIssue2(VALIDATE_NOT_RVALUE,
+	issue.Hard2(VALIDATE_NOT_RVALUE,
 		`Invalid use of expression. %{value} does not produce a value`,
 		issue.HF{`value`: parser.A_anUc})
 
-	issue.HardIssue(VALIDATE_NOT_VIRTUALIZABLE, `Resource Defaults/Overrides are not virtualizable`)
+	issue.Hard(VALIDATE_NOT_VIRTUALIZABLE, `Resource Defaults/Overrides are not virtualizable`)
 
-	issue.HardIssue2(VALIDATE_RESERVED_PARAMETER,
+	issue.Hard2(VALIDATE_RESERVED_PARAMETER,
 		`The parameter $%{param} redefines a built in parameter in %{container}`,
 		issue.HF{`container`: parser.A_an})
 
-	issue.HardIssue2(VALIDATE_RESERVED_TYPE_NAME,
+	issue.Hard2(VALIDATE_RESERVED_TYPE_NAME,
 		`The name: '%{name}' is already defined by Puppet and can not be used as the name of %{expression}`,
 		issue.HF{`expression`: parser.A_an})
 
-	issue.HardIssue(VALIDATE_RESERVED_WORD, `Use of reserved word: %{word}, must be quoted if intended to be a String value`)
+	issue.Hard(VALIDATE_RESERVED_WORD, `Use of reserved word: %{word}, must be quoted if intended to be a String value`)
 
-	issue.HardIssue2(VALIDATE_UNSUPPORTED_EXPRESSION,
+	issue.Hard2(VALIDATE_UNSUPPORTED_EXPRESSION,
 		`Expressions of type %{expression} are not supported in this version of Puppet`,
 		issue.HF{`expression`: parser.A_an})
 
-	issue.HardIssue2(VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT,
+	issue.Hard2(VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT,
 		`The operator '%{operator}' in %{value} is not supported`,
 		issue.HF{`value`: parser.A_an})
 }

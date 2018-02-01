@@ -65,12 +65,12 @@ type lexer struct {
 	context
 }
 
-type ParserOption int
+type Option int
 
-const PARSER_HANDLE_BACKTICK_STRINGS = ParserOption(1)
-const PARSER_HANDLE_HEX_ESCAPES = ParserOption(2)
-const PARSER_TASKS_ENABLED = ParserOption(3)
-const PARSER_EPP_MODE = ParserOption(4)
+const PARSER_HANDLE_BACKTICK_STRINGS = Option(1)
+const PARSER_HANDLE_HEX_ESCAPES = Option(2)
+const PARSER_TASKS_ENABLED = Option(3)
+const PARSER_EPP_MODE = Option(4)
 
 func NewSimpleLexer(filename string, source string) Lexer {
 	// Essentially a lexer that has no knowledge of interpolations
@@ -114,7 +114,7 @@ func CreatePspecParser() ExpressionParser {
 	return CreateParser(PARSER_HANDLE_BACKTICK_STRINGS, PARSER_HANDLE_HEX_ESCAPES)
 }
 
-func CreateParser(parserOptions ...ParserOption) ExpressionParser {
+func CreateParser(parserOptions ...Option) ExpressionParser {
 	ctx := &context{factory: DefaultFactory(), handleBacktickStrings: false, handleHexEscapes: false, tasks: false}
 	for _, option := range parserOptions {
 		switch option {
@@ -153,7 +153,7 @@ func (ctx *context) parseTopExpression(filename string, source string, singleExp
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
-			if err, ok = r.(*issue.ReportedIssue); !ok {
+			if err, ok = r.(*issue.Reported); !ok {
 				if err, ok = r.(*ParseError); !ok {
 					panic(r)
 				}

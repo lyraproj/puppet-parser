@@ -18,7 +18,7 @@ import (
 
 // Program to parse and validate a .pp or .epp file
 var validateOnly = flag.Bool("v", false, "validate only")
-var jsonFlag = flag.Bool("j", false, "json output")
+var jsonOuput = flag.Bool("j", false, "json output")
 var strict = flag.String("s", `off`, "strict (off, warning, or error)")
 var tasks = flag.Bool("t", false, "tasks")
 
@@ -39,13 +39,13 @@ func main() {
 	}
 
 	var result map[string]interface{}
-	if *jsonFlag {
+	if *jsonOuput {
 		result = make(map[string]interface{}, 2)
 	}
 
 	strictness := validator.Strict(*strict)
 
-	parseOpts := []parser.ParserOption{}
+	parseOpts := []parser.Option{}
 	if strings.HasSuffix(fileName, `.epp`) {
 		parseOpts = append(parseOpts, parser.PARSER_EPP_MODE)
 	}
@@ -54,9 +54,9 @@ func main() {
 	}
 
 	expr, err := parser.CreateParser(parseOpts...).Parse(args[0], string(content), false)
-	if *jsonFlag {
+	if *jsonOuput {
 		if err != nil {
-			if issue, ok := err.(*issue.ReportedIssue); ok {
+			if issue, ok := err.(*issue.Reported); ok {
 				result[`issues`] = []interface{}{issue.ToPN().ToData()}
 			} else {
 				result[`error`] = err.Error()

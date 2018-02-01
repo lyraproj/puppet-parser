@@ -213,8 +213,8 @@ func (v *basicChecker) Validate(e parser.Expression) {
 }
 
 func (v *basicChecker) initialize(strict Strictness) {
-	v.issues = make([]*issue.ReportedIssue, 0, 5)
-	v.severities = make(map[issue.IssueCode]issue.Severity, 5)
+	v.issues = make([]*issue.Reported, 0, 5)
+	v.severities = make(map[issue.Code]issue.Severity, 5)
 	v.Demote(VALIDATE_FUTURE_RESERVED_WORD, issue.SEVERITY_DEPRECATION)
 	v.Demote(VALIDATE_DUPLICATE_KEY, issue.Severity(strict))
 	v.Demote(VALIDATE_IDEM_EXPRESSION_NOT_LAST, issue.Severity(strict))

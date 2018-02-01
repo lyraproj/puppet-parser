@@ -717,22 +717,22 @@ func TestTypeMappingValidation(t *testing.T) {
 }
 
 func expectNoIssues(t *testing.T, str string) {
-	expectIssuesX(t, str, []parser.ParserOption{})
+	expectIssuesX(t, str, []parser.Option{})
 }
 
 func expectNoIssuesEPP(t *testing.T, str string) {
-	expectIssuesX(t, str, []parser.ParserOption{parser.PARSER_EPP_MODE})
+	expectIssuesX(t, str, []parser.Option{parser.PARSER_EPP_MODE})
 }
 
-func expectIssues(t *testing.T, str string, expectedIssueCodes ...issue.IssueCode) {
-	expectIssuesX(t, str, []parser.ParserOption{}, expectedIssueCodes...)
+func expectIssues(t *testing.T, str string, expectedIssueCodes ...issue.Code) {
+	expectIssuesX(t, str, []parser.Option{}, expectedIssueCodes...)
 }
 
-func expectIssuesEPP(t *testing.T, str string, expectedIssueCodes ...issue.IssueCode) {
-	expectIssuesX(t, str, []parser.ParserOption{parser.PARSER_EPP_MODE}, expectedIssueCodes...)
+func expectIssuesEPP(t *testing.T, str string, expectedIssueCodes ...issue.Code) {
+	expectIssuesX(t, str, []parser.Option{parser.PARSER_EPP_MODE}, expectedIssueCodes...)
 }
 
-func expectIssuesX(t *testing.T, str string, parserOptions []parser.ParserOption, expectedIssueCodes ...issue.IssueCode) {
+func expectIssuesX(t *testing.T, str string, parserOptions []parser.Option, expectedIssueCodes ...issue.Code) {
 	issues := parseAndValidate(t, str, parserOptions...)
 	if issues == nil {
 		return
@@ -764,9 +764,9 @@ nextIssue:
 	}
 }
 
-func parseAndValidate(t *testing.T, str string, parserOptions ...parser.ParserOption) []*issue.ReportedIssue {
+func parseAndValidate(t *testing.T, str string, parserOptions ...parser.Option) []*issue.Reported {
 	if PuppetTasks {
-		if expr := parse(t, str, append([]parser.ParserOption{parser.PARSER_TASKS_ENABLED}, parserOptions...)...); expr != nil {
+		if expr := parse(t, str, append([]parser.Option{parser.PARSER_TASKS_ENABLED}, parserOptions...)...); expr != nil {
 			v := ValidateTasks(expr)
 			return v.Issues()
 		}
@@ -777,7 +777,7 @@ func parseAndValidate(t *testing.T, str string, parserOptions ...parser.ParserOp
 	return nil
 }
 
-func parse(t *testing.T, str string, parserOptions ...parser.ParserOption) *parser.Program {
+func parse(t *testing.T, str string, parserOptions ...parser.Option) *parser.Program {
 	expr, err := parser.CreateParser(parserOptions...).Parse(``, str, false)
 	if err != nil {
 		t.Errorf(err.Error())

@@ -28,12 +28,12 @@ func (l *location) Pos() int {
 	return l.locator.PosOnLine(l.byteOffset)
 }
 
-func (ctx *context) parseIssue(issueCode issue.IssueCode) *issue.ReportedIssue {
-	return issue.NewReportedIssue(issueCode, issue.SEVERITY_ERROR, issue.NO_ARGS, &location{ctx.locator, ctx.Pos()})
+func (ctx *context) parseIssue(issueCode issue.Code) *issue.Reported {
+	return issue.NewReported(issueCode, issue.SEVERITY_ERROR, issue.NO_ARGS, &location{ctx.locator, ctx.Pos()})
 }
 
-func (ctx *context) parseIssue2(issueCode issue.IssueCode, args issue.H) *issue.ReportedIssue {
-	return issue.NewReportedIssue(issueCode, issue.SEVERITY_ERROR, args, &location{ctx.locator, ctx.Pos()})
+func (ctx *context) parseIssue2(issueCode issue.Code, args issue.H) *issue.Reported {
+	return issue.NewReported(issueCode, issue.SEVERITY_ERROR, args, &location{ctx.locator, ctx.Pos()})
 }
 
 const (
@@ -327,7 +327,7 @@ func (ctx *context) setTokenValue(token int, value interface{}) {
 	ctx.tokenValue = value
 }
 
-func (ctx *context) unterminatedQuote(start int, delimiter rune) *issue.ReportedIssue {
+func (ctx *context) unterminatedQuote(start int, delimiter rune) *issue.Reported {
 	ctx.SetPos(start)
 	var stringType string
 	if delimiter == '"' {
@@ -877,7 +877,7 @@ func (ctx *context) consumeQualifiedName(start int, token int) {
 		}
 
 		ctx.SetPos(start)
-		issueCode := issue.IssueCode(LEX_INVALID_NAME)
+		issueCode := issue.Code(LEX_INVALID_NAME)
 		if token == TOKEN_TYPE_NAME {
 			issueCode = LEX_INVALID_TYPE_NAME
 		} else if token == TOKEN_VARIABLE {

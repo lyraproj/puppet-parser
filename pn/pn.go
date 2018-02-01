@@ -64,19 +64,19 @@ type (
 	}
 )
 
-func ListPN(elements []PN) PN {
+func List(elements []PN) PN {
 	return &listPN{elements}
 }
 
-func MapPN(entries []Entry) PN {
+func Map(entries []Entry) PN {
 	return &mapPN{entries}
 }
 
-func LiteralPN(val interface{}) PN {
+func Literal(val interface{}) PN {
 	return &literalPN{val}
 }
 
-func CallPN(name string, elements ...PN) PN {
+func Call(name string, elements ...PN) PN {
 	return &callPN{listPN{elements}, name}
 }
 
@@ -87,7 +87,7 @@ func ToString(pn PN) string {
 }
 
 func (pn *listPN) AsCall(name string) PN {
-	return CallPN(name, pn.elements...)
+	return Call(name, pn.elements...)
 }
 
 func (pn *listPN) AsParameters() []PN {
@@ -164,7 +164,7 @@ func (e *mapEntry) Value() PN {
 }
 
 func (pn *mapPN) AsCall(name string) PN {
-	return CallPN(name, pn)
+	return Call(name, pn)
 }
 
 func (pn *mapPN) AsParameters() []PN {
@@ -207,7 +207,7 @@ func (pn *mapPN) WithName(name string) Entry {
 }
 
 func (pn *literalPN) AsCall(name string) PN {
-	return CallPN(name, pn)
+	return Call(name, pn)
 }
 
 func (pn *literalPN) AsParameters() []PN {

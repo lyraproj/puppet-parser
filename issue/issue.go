@@ -20,7 +20,7 @@ const (
 var NO_ARGS = H{}
 
 type (
-	IssueCode string
+	Code string
 
 	Severity int
 
@@ -40,14 +40,14 @@ type (
 	}
 
 	Issue struct {
-		code          IssueCode
+		code          Code
 		messageFormat string
 		argFormats    HF
 		demotable     bool
 	}
 
-	ReportedIssue struct {
-		issueCode IssueCode
+	Reported struct {
+		issueCode Code
 		severity  Severity
 		args      H
 		location  Location
@@ -76,25 +76,25 @@ func (l *location) Pos() int {
 	return l.pos
 }
 
-var issues = map[IssueCode]*Issue{}
+var issues = map[Code]*Issue{}
 
-func HardIssue(code IssueCode, messageFormat string) *Issue {
+func Hard(code Code, messageFormat string) *Issue {
 	return addIssue(code, messageFormat, false, nil)
 }
 
-func HardIssue2(code IssueCode, messageFormat string, argFormats HF) *Issue {
+func Hard2(code Code, messageFormat string, argFormats HF) *Issue {
 	return addIssue(code, messageFormat, false, argFormats)
 }
 
-func SoftIssue(code IssueCode, messageFormat string) *Issue {
+func SoftIssue(code Code, messageFormat string) *Issue {
 	return addIssue(code, messageFormat, true, nil)
 }
 
-func SoftIssue2(code IssueCode, messageFormat string, argFormats HF) *Issue {
+func SoftIssue2(code Code, messageFormat string, argFormats HF) *Issue {
 	return addIssue(code, messageFormat, true, argFormats)
 }
 
-func (issue *Issue) Code() IssueCode {
+func (issue *Issue) Code() Code {
 	return issue.code
 }
 
@@ -130,45 +130,45 @@ func (severity Severity) AssertValid() {
 	}
 }
 
-func addIssue(code IssueCode, messageFormat string, demotable bool, argFormats HF) *Issue {
+func addIssue(code Code, messageFormat string, demotable bool, argFormats HF) *Issue {
 	dsc := &Issue{code, messageFormat, argFormats, demotable}
 	issues[code] = dsc
 	return dsc
 }
 
-// Returns the Issue for an IssueCode. Will panic if the given code does not represent
+// Returns the Issue for a Code. Will panic if the given code does not represent
 // an existing issue
-func IssueForCode(code IssueCode) *Issue {
+func IssueForCode(code Code) *Issue {
 	if dsc, ok := issues[code]; ok {
 		return dsc
 	}
 	panic(fmt.Sprintf("internal error: no issue found for issue code '%s'", code))
 }
 
-func IssueForCode2(code IssueCode) (dsc *Issue, ok bool) {
+func IssueForCode2(code Code) (dsc *Issue, ok bool) {
 	dsc, ok = issues[code]
 	return
 }
 
-func NewReportedIssue(code IssueCode, severity Severity, args H, location Location) *ReportedIssue {
-	return &ReportedIssue{code, severity, args, location}
+func NewReported(code Code, severity Severity, args H, location Location) *Reported {
+	return &Reported{code, severity, args, location}
 }
 
-func (ri *ReportedIssue) Argument(str string) interface{} {
+func (ri *Reported) Argument(str string) interface{} {
 	return ri.args[str]
 }
 
-func (ri *ReportedIssue) OffsetByLocation(location Location) *ReportedIssue {
+func (ri *Reported) OffsetByLocation(location Location) *Reported {
 	loc := ri.location
 	if loc == nil {
 		loc = location
 	} else {
 		loc = NewLocation(location.File(), location.Line()+loc.Line(), location.Pos())
 	}
-	return &ReportedIssue{ri.issueCode, ri.severity, ri.args, loc}
+	return &Reported{ri.issueCode, ri.severity, ri.args, loc}
 }
 
-func (ri *ReportedIssue) Error() (str string) {
+func (ri *Reported) Error() (str string) {
 	issue := IssueForCode(ri.issueCode)
 	var args H
 	af := issue.argFormats
@@ -186,24 +186,24 @@ func (ri *ReportedIssue) Error() (str string) {
 	return appendLocation(MapSprintf(issue.messageFormat, args), ri.location)
 }
 
-func (ri *ReportedIssue) String() (str string) {
+func (ri *Reported) String() (str string) {
 	return ri.Error()
 }
 
-func (ri *ReportedIssue) Code() IssueCode {
+func (ri *Reported) Code() Code {
 	return ri.issueCode
 }
 
-func (ri *ReportedIssue) Severity() Severity {
+func (ri *Reported) Severity() Severity {
 	return ri.severity
 }
 
 // Represent the reported using polish notation
-func (ri *ReportedIssue) ToPN() pn.PN {
-	return pn.MapPN([]pn.Entry{
-		pn.LiteralPN(ri.issueCode).WithName(`code`),
-		pn.LiteralPN(ri.severity.String()).WithName(`severity`),
-		pn.LiteralPN(ri.Error()).WithName(`message`)})
+func (ri *Reported) ToPN() pn.PN {
+	return pn.Map([]pn.Entry{
+		pn.Literal(ri.issueCode).WithName(`code`),
+		pn.Literal(ri.severity.String()).WithName(`severity`),
+		pn.Literal(ri.Error()).WithName(`message`)})
 }
 
 func appendLocation(str string, location Location) string {

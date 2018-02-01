@@ -20,7 +20,7 @@ type (
 		Validate(e parser.Expression)
 
 		// Return all reported issues (should be called after validation)
-		Issues() []*issue.ReportedIssue
+		Issues() []*issue.Reported
 
 		setPathAndSubject(path []parser.Expression, expr parser.Expression)
 	}
@@ -29,8 +29,8 @@ type (
 	AbstractValidator struct {
 		path       []parser.Expression
 		subject    parser.Expression
-		issues     []*issue.ReportedIssue
-		severities map[issue.IssueCode]issue.Severity
+		issues     []*issue.Reported
+		severities map[issue.Code]issue.Severity
 	}
 
 	Strictness int
@@ -62,7 +62,7 @@ func (s Strictness) String() string {
 	}
 }
 
-func (v *AbstractValidator) Demote(code issue.IssueCode, severity issue.Severity) {
+func (v *AbstractValidator) Demote(code issue.Code, severity issue.Severity) {
 	issue := issue.IssueForCode(code)
 	severity.AssertValid()
 	if !issue.IsDemotable() {
@@ -72,13 +72,13 @@ func (v *AbstractValidator) Demote(code issue.IssueCode, severity issue.Severity
 }
 
 // Accept an issue during validation
-func (v *AbstractValidator) Accept(code issue.IssueCode, e parser.Expression, args issue.H) {
+func (v *AbstractValidator) Accept(code issue.Code, e parser.Expression, args issue.H) {
 	severity, ok := v.severities[code]
 	if !ok {
 		severity = issue.SEVERITY_ERROR
 	}
 	if severity != issue.SEVERITY_IGNORE {
-		v.issues = append(v.issues, issue.NewReportedIssue(code, severity, args, e))
+		v.issues = append(v.issues, issue.NewReported(code, severity, args, e))
 	}
 }
 
@@ -105,7 +105,7 @@ func (v *AbstractValidator) ContainerOf(e parser.Expression) parser.Expression {
 	return nil
 }
 
-func (v *AbstractValidator) Issues() []*issue.ReportedIssue {
+func (v *AbstractValidator) Issues() []*issue.Reported {
 	return v.issues
 }
 
