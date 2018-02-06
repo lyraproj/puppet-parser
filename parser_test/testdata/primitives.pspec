@@ -261,17 +261,48 @@ Examples('Double Quoted String',
     Given(`"unknown \k escape"`),
     Parses_to(`(concat "unknown \\k escape")`)
   ),
-  Example('handles interpolated variables without {} delimiters',
-    Given(`"hello $var"`),
-    Parses_to(`(concat "hello " (str (var "var")))`)
-  ),
-  Example('handles interpolated variables with {} delimiters',
-    Given(`"hello ${var}"`),
-    Parses_to(`(concat "hello " (str (var "var")))`)
-  ),
-  Example('handles complex interpolated expressions',
-    Given(`"Before ${{ a => true, b => "hello"}} and after"`),
-    Parses_to(`(concat "Before " (str (hash (=> (qn "a") true) (=> (qn "b") (concat "hello")))) " and after")`)
+  Examples('interpolates',
+    Example('variables without {} delimiters',
+      Given(`"hello $var"`),
+      Parses_to(`(concat "hello " (str (var "var")))`)
+    ),
+    Example('variables with {} delimiters',
+      Given(`"hello ${var}"`),
+      Parses_to(`(concat "hello " (str (var "var")))`)
+    ),
+    Example('complex expressions',
+      Given(`"Before ${{ a => true, b => "hello"}} and after"`),
+      Parses_to(`(concat "Before " (str (hash (=> (qn "a") true) (=> (qn "b") (concat "hello")))) " and after")`)
+    ),
+    Examples('expressions starting with QualifedName',
+      Example('name becomes a Variable',
+        Given(`"hello ${var}"`),
+        Parses_to(`(concat "hello " (str (var "var")))`)),
+
+      Example('name in AccessExpression becomes a Variable',
+        Given(`"hello ${var['one']}"`),
+        Parses_to(`(concat "hello " (str (access (var "var") "one")))`)),
+
+      Example('name in nested AccessExpression becomes a Variable',
+        Given(`"hello ${var['one']['two']}"`),
+        Parses_to(`(concat "hello " (str (access (access (qn "var") "one") "two")))`)),
+
+      Example('name in CallMethodExpression becomes a Variable',
+        Given(`"hello ${var.type}"`),
+        Parses_to(`(concat "hello " (str (call-method {:functor (. (var "var") (qn "type")) :args []})))`)),
+
+      Example('name in CallMethodExpression with nested NamedAccess becomes a Variable',
+        Given(`"hello ${var.foo.type}"`),
+        Parses_to(`(concat "hello " (str (call-method {:functor (. (. (var "var") (qn "foo")) (qn "type")) :args []})))`)),
+
+      Example('name in CallMethodExpression with nested AccessExpression becomes a Variable',
+        Given(`"hello ${var['one'].type}"`),
+        Parses_to(`(concat "hello " (str (call-method {:functor (. (access (var "var") "one") (qn "type")) :args []})))`)),
+
+      Example('name in CallMethodExpression with nested AccessExpression becomes a Variable',
+        Given(`"hello ${var['one'].foo.type}"`),
+        Parses_to(`(concat "hello " (str (call-method {:functor (. (. (access (var "var") "one") (qn "foo")) (qn "type")) :args []})))`)),
+    ),
   ),
   Example('handles unicode escapes consisting of 4 hexadecimal digits',
     Given(`"x\u2713y"`),

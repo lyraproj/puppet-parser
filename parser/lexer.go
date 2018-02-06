@@ -1131,15 +1131,29 @@ func (ctx *context) interpolate(start int) Expression {
 		ctx.nextToken()
 		expr := ctx.parse(TOKEN_RC, true)
 
-		// If the result is a single QualifiedName, then it's actually a variable since the `${var}` is the
-		// same as `$var`
-		if identifier, ok := expr.(*QualifiedName); ok {
-			expr = ctx.factory.Variable(identifier, ctx.locator, start, ctx.Pos()-start)
-		} else if access, ok := expr.(*AccessExpression); ok {
+		// If the result is a single QualifiedName or an AccessExpression or CallMemberExpression with a QualifiedName
+		// as the LHS, then it's actually a variable since the `${var}` is the same as `$var`
+		switch expr.(type) {
+		case *QualifiedName:
+			expr = ctx.factory.Variable(expr, ctx.locator, start, ctx.Pos()-start)
+		case *AccessExpression:
+			access := expr.(*AccessExpression)
 			if identifier, ok := access.operand.(*QualifiedName); ok {
 				expr = ctx.factory.Access(
 					ctx.factory.Variable(identifier, ctx.locator, start, identifier.byteLength()+1),
 					access.keys, ctx.locator, start, access.byteLength()+1)
+			}
+		case *CallMethodExpression:
+			call := expr.(*CallMethodExpression)
+			if identifier, ok := call.functor.(*QualifiedName); ok {
+				expr = ctx.factory.CallMethod(
+					ctx.factory.Variable(identifier, ctx.locator, start, identifier.byteLength()+1),
+					call.arguments, call.lambda, ctx.locator, start, call.byteLength()+1)
+			} else if ne, ok := call.functor.(*NamedAccessExpression); ok {
+				modNe := ctx.convertNamedAccessLHS(ne, start)
+				if modNe != ne {
+					expr = ctx.factory.CallMethod(modNe, call.arguments, call.lambda, ctx.locator, start, call.byteLength()+1)
+				}
 			}
 		}
 		return ctx.factory.Text(expr, ctx.locator, start, ctx.Pos()-start)
@@ -1156,6 +1170,34 @@ func (ctx *context) interpolate(start int) Expression {
 	}
 	textExpr := ctx.factory.QualifiedName(ctx.tokenValue.(string), ctx.locator, start+1, ctx.Pos()-(start+1))
 	return ctx.factory.Text(ctx.factory.Variable(textExpr, ctx.locator, start, ctx.Pos()-start), ctx.locator, start, ctx.Pos()-start)
+}
+
+func (ctx *context) convertNamedAccessLHS(expr *NamedAccessExpression, start int) Expression {
+	lhs := expr.lhs
+	switch lhs.(type) {
+	case *QualifiedName:
+		return ctx.factory.NamedAccess(
+			ctx.factory.Variable(lhs, ctx.locator, start, lhs.byteLength()+1),
+			expr.rhs, ctx.locator, start, expr.byteLength()+1)
+	case *AccessExpression:
+		access := lhs.(*AccessExpression)
+		if identifier, ok := access.operand.(*QualifiedName); ok {
+			lhs = ctx.factory.Access(
+				ctx.factory.Variable(identifier, ctx.locator, start, identifier.byteLength()+1),
+				access.keys, ctx.locator, start, access.byteLength()+1)
+		}
+		return ctx.factory.NamedAccess(lhs, expr.rhs, ctx.locator, start, expr.byteLength()+1)
+	case *NamedAccessExpression:
+		return ctx.factory.NamedAccess(
+			ctx.convertNamedAccessLHS(lhs.(*NamedAccessExpression), start),
+			expr.rhs, ctx.locator, start, expr.byteLength()+1)
+	}
+	if identifier, ok := lhs.(*QualifiedName); ok {
+		return ctx.factory.NamedAccess(
+			ctx.factory.Variable(identifier, ctx.locator, start, identifier.byteLength()+1),
+			expr.rhs, ctx.locator, start, expr.byteLength()+1)
+	}
+	return expr
 }
 
 func (ctx *context) consumeBacktickedString() {

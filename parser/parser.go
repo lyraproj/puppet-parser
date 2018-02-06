@@ -54,6 +54,8 @@ type Lexer interface {
 
 	SyntaxError()
 
+	TokenStartPos() int
+
 	TokenValue() interface{}
 
 	TokenString() string
@@ -102,6 +104,10 @@ func (l *lexer) TokenString() string {
 
 func (l *lexer) TokenValue() interface{} {
 	return l.context.tokenValue
+}
+
+func (l *lexer) TokenStartPos() int {
+	return l.context.tokenStartPos
 }
 
 func (l *lexer) AssertToken(token int) {
