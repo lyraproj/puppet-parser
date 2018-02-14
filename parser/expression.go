@@ -1312,7 +1312,13 @@ func (e *LiteralInteger) ToLiteralValue() LiteralValue {
 	return e
 }
 
-func (e *LiteralInteger) ToPN() pn.PN { return pn.Literal(e.Value()) }
+func (e *LiteralInteger) ToPN() pn.PN {
+	if e.radix == 10 {
+		return pn.Literal(e.Value())
+	}
+	return pn.Map([]pn.Entry{
+		pn.Literal(e.radix).WithName(`radix`), pn.Literal(e.value).WithName(`value`)}).AsCall(`int`)
+}
 
 func (e *LiteralList) Elements() []Expression {
 	return e.elements

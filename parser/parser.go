@@ -52,6 +52,8 @@ type Lexer interface {
 
 	NextToken() int
 
+	SetPos(pos int)
+
 	SyntaxError()
 
 	TokenStartPos() int
@@ -92,6 +94,10 @@ func (l *lexer) CurrentToken() int {
 func (l *lexer) NextToken() int {
 	l.context.nextToken()
 	return l.context.currentToken
+}
+
+func (l *lexer) SetPos(pos int) {
+	l.context.SetPos(pos)
 }
 
 func (l *lexer) SyntaxError() {

@@ -18,8 +18,8 @@ func TestInteger(t *testing.T) {
 	expectDump(t, `0`, `0`)
 	expectDump(t, `123`, `123`)
 	expectDump(t, `+123`, `123`)
-	expectDump(t, `0XABC`, `2748`)
-	expectDump(t, `0772`, `506`)
+	expectDump(t, `0XABC`, `(int {:radix 16 :value 2748})`)
+	expectDump(t, `0772`, `(int {:radix 8 :value 506})`)
 	expectError(t, `3g`, `digit expected at line 1:2`)
 	expectError(t, `3ö`, `digit expected at line 1:2`)
 	expectError(t, `0x3g21`, `hexadecimal digit expected at line 1:4`)
@@ -1006,7 +1006,7 @@ func TestDefinition(t *testing.T) {
 			`(=> "notify" (access (qr "Service") "httpd"))]}]})]})`)
 }
 
-func TestApplication(t *testing.T) {
+func TestCapabilityMappping(t *testing.T) {
 	expectDump(t,
 		Unindent(`
       MyCap produces Cap {
@@ -1020,7 +1020,7 @@ func TestApplication(t *testing.T) {
 		`(produces (qn "attr") ["Cap"])`)
 }
 
-func TestCapabilityMappping(t *testing.T) {
+func TestApplication(t *testing.T) {
 	expectDump(t,
 		Unindent(`
       application lamp(

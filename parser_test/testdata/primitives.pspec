@@ -42,27 +42,27 @@ Examples('Integer',
   ),
   Example('zero hex',
     Given('0x0'),
-    Parses_to('0')
+    Parses_to('(int {:radix 16 :value 0})')
   ),
   Example('positive hex',
     Given('0xa2'),
-    Parses_to('162')
+    Parses_to('(int {:radix 16 :value 162})')
   ),
   Example('negative hex',
     Given('-0xa'),
-    Parses_to('-10')
+    Parses_to('(int {:radix 16 :value -10})')
   ),
   Example('hex uppercase',
     Given('0XABC'),
-    Parses_to('2748')
-  ),
-  Example('negative octal',
-    Given('0123'),
-    Parses_to('83')
+    Parses_to('(int {:radix 16 :value 2748})')
   ),
   Example('positive octal',
+    Given('0123'),
+    Parses_to('(int {:radix 8 :value 83})')
+  ),
+  Example('negative octal',
     Given('-0123'),
-    Parses_to('-83')
+    Parses_to('(int {:radix 8 :value -83})')
   ),
   Example('followed by letter',
     Given('3g'),
