@@ -219,7 +219,7 @@ func (ctx *context) parse(expectedEnd int, singleExpression bool) (expr Expressi
 		if ctx.currentToken == expectedEnd {
 			expr = ctx.factory.Undef(ctx.locator, start, 0)
 		} else {
-			expr = ctx.assignment()
+			expr = ctx.relationship()
 			ctx.assertToken(expectedEnd)
 		}
 		return
@@ -322,14 +322,14 @@ func (ctx *context) expressions(endToken int, producerFunc func() Expression) (e
 
 func (ctx *context) syntacticStatement() (expr Expression) {
 	var args []Expression
-	expr = ctx.assignment()
+	expr = ctx.relationship()
 	for ctx.currentToken == TOKEN_COMMA {
 		ctx.nextToken()
 		if args == nil {
 			args = make([]Expression, 0, 2)
 			args = append(args, expr)
 		}
-		args = append(args, ctx.assignment())
+		args = append(args, ctx.relationship())
 	}
 	if args != nil {
 		expr = &commaSeparatedList{LiteralList{positioned{ctx.locator, expr.byteOffset(), ctx.Pos() - expr.byteOffset()}, args}}
@@ -342,17 +342,17 @@ func (ctx *context) collectionEntry() (expr Expression) {
 }
 
 func (ctx *context) argument() (expr Expression) {
-	expr = ctx.handleKeyword(ctx.assignment)
+	expr = ctx.handleKeyword(ctx.relationship)
 	if ctx.currentToken == TOKEN_FARROW {
 		ctx.nextToken()
-		value := ctx.handleKeyword(ctx.assignment)
+		value := ctx.handleKeyword(ctx.relationship)
 		expr = ctx.factory.KeyedEntry(expr, value, ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
 	}
 	return
 }
 
 func (ctx *context) hashEntry() (expr Expression) {
-	return ctx.handleKeyword(ctx.assignment)
+	return ctx.handleKeyword(ctx.relationship)
 }
 
 func (ctx *context) handleKeyword(next func() Expression) (expr Expression) {
@@ -369,8 +369,22 @@ func (ctx *context) handleKeyword(next func() Expression) (expr Expression) {
 	return
 }
 
+func (ctx *context) relationship() (expr Expression) {
+	expr = ctx.assignment()
+	for {
+		switch ctx.currentToken {
+		case TOKEN_IN_EDGE, TOKEN_IN_EDGE_SUB, TOKEN_OUT_EDGE, TOKEN_OUT_EDGE_SUB:
+			op := ctx.tokenString()
+			ctx.nextToken()
+			expr = ctx.factory.RelOp(op, expr, ctx.resource(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+		default:
+			return expr
+		}
+	}
+}
+
 func (ctx *context) assignment() (expr Expression) {
-	expr = ctx.relationship()
+	expr = ctx.resource()
 	for {
 		switch ctx.currentToken {
 		case TOKEN_ASSIGN, TOKEN_ADD_ASSIGN, TOKEN_SUBTRACT_ASSIGN:
@@ -389,20 +403,6 @@ func (ctx *context) assignment() (expr Expression) {
 			default:
 				return expr
 			}
-		default:
-			return expr
-		}
-	}
-}
-
-func (ctx *context) relationship() (expr Expression) {
-	expr = ctx.resource()
-	for {
-		switch ctx.currentToken {
-		case TOKEN_IN_EDGE, TOKEN_IN_EDGE_SUB, TOKEN_OUT_EDGE, TOKEN_OUT_EDGE_SUB:
-			op := ctx.tokenString()
-			ctx.nextToken()
-			expr = ctx.factory.RelOp(op, expr, ctx.resource(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
 		default:
 			return expr
 		}
@@ -691,7 +691,7 @@ func (ctx *context) atomExpression() (expr Expression) {
 	switch ctx.currentToken {
 	case TOKEN_LP, TOKEN_WSLP:
 		ctx.nextToken()
-		expr = ctx.factory.Parenthesized(ctx.assignment(), ctx.locator, atomStart, ctx.Pos()-atomStart)
+		expr = ctx.factory.Parenthesized(ctx.relationship(), ctx.locator, atomStart, ctx.Pos()-atomStart)
 		ctx.assertToken(TOKEN_RP)
 		ctx.nextToken()
 
