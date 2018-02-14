@@ -8,30 +8,36 @@ import (
 )
 
 type (
-	// Roughly Polish notation of an expression, i.e. an operand in string form
-	// and Operator()s. Suitable for simple presentation formats such as Clojure or JSON/YAML
-	// capable of representing boolean, integer, float, string, hash, and array without
-	// type loss.
+	// PN - Puppet Extended S-Expresssion Notation
 	//
+	// A PN forms a directed acyclig graph of nodes. There are four types of nodes:
+	//
+	// * Literal: A boolean, integer, float, string, or undef
+	//
+	// * List: An ordered list of nodes
+  //
+	// * Map: An ordered map of string to node associations
+	//
+	// * Call: A named list of nodes.
 	PN interface {
-		// Produces a compact, LISP like syntax. Suitable for tests.
+		// Format produces a compact, Clojure like syntax. Suitable for tests.
 		Format(b *bytes.Buffer)
 
-		// Produces an object that where all values are of primitive type or
+		// ToData produces an object that where all values are of primitive type or
 		// slices or maps. This format is suitable for output as JSON or YAML
 		//
 		ToData() interface{}
 
-		// Turn this PN into an argument in a call or change the name if the PN Is a call already
+		// AsCall turns this PN into an argument in a call or change the name if the PN Is a call already
 		AsCall(name string) PN
 
-		// Return the PN as a parameter list
+		// AsParameters returns the PN as a parameter list
 		AsParameters() []PN
 
-		// Create a key/value pair from the given name and this PN
+		// WithName creates a key/value pair from the given name and this PN
 		WithName(name string) Entry
 
-		// Returns the Format output as a string
+		// String returns the Format output as a string
 		String() string
 	}
 

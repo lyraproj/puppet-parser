@@ -42,7 +42,7 @@ type (
 		// Returns false for all expressions except the Noop expression
 		IsNop() bool
 
-		// Represent the expression using polish notation
+		// Represent the expression using Puppet Extended S-Expresssion Notation (PN)
 		//
 		// An expression is in one of two forms:
 		//

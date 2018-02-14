@@ -198,7 +198,7 @@ func (ri *Reported) Severity() Severity {
 	return ri.severity
 }
 
-// Represent the reported using polish notation
+// Represent the Reported using Puppet Extended S-Expresssion Notation (PN)
 func (ri *Reported) ToPN() pn.PN {
 	return pn.Map([]pn.Entry{
 		pn.Literal(ri.issueCode).WithName(`code`),

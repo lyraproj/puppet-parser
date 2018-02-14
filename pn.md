@@ -1,4 +1,4 @@
-# The PN (Pops Notation) format
+## The Puppet Extended S-Expression Notation (PN)
 
 ### Objective
 
