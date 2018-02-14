@@ -16,7 +16,7 @@ A PN forms a directed acyclig graph of nodes. There are five types of nodes:
 
 * Literal: A boolean, integer, float, string, or undef
 * List: An ordered list of nodes
-* Map: An unordered map of string to node associations
+* Map: An ordered map of string to node associations
 * Call: A named list of nodes.
 
 ### PN represented as Data
@@ -28,8 +28,18 @@ PN Node | Data type
 --------|----------
 `Literal` | `Boolean`, `Integer`, `Float`, `String`, and `Undef`
 `List` | `Array[Data]`
-`Map` | `Hash[Pattern[/^[A-Za-z_-][0-9A-Za-z_-]*$/, `Data`]
-`Call` | `Struct['^',Tuple[String,Data,1]]`
+`Map` | `Struct['#', Array[Data]]`
+`Call` | `Struct['^', Tuple[String[1], Data, 1]]`
+
+The `Map` is converted into a single element `Hash` with using the key
+`'#'` and then an array with an even number of elements where evenly
+positioned elements are keys for the value at the next position. The
+reason for this is that JSON (and other formats) will not retain the
+order of a hash and in Puppet that order is significant.
+
+A `Call` is similar to a `Map` but uses the key `'^'`. The first element
+of the associated array is the name of the function and any subsequent
+elements are arguments to that function.
 
 ### PN represented as String
 
@@ -49,8 +59,13 @@ PN Node | Sample string representation
 ### PN represented as JSON or YAML
 
 When representing PN as JSON or YAML it must first be converted to `Data`. For JSON, this
-means that literals are represented verbatim, lists will be a JSON arrays, maps will be
-a JSON objects. The only thing that is a bit special is the `Call` which becomes a JSON
-object similar to: `{ "^": [ "myFunc", 1, 2, "b" ] }`
+means that literals are represented verbatim nad lists will be a JSON arrays.
 
+Examples:
+A PN `Map` represented as JSON:
 
+    {:a 2 :b 3 :c true} => { "#": ["a", 2, "b", 3, "c", true] }
+
+A PN `Call` represented as JSON:
+
+    (myFunc 1 2 "b") => { "^": [ "myFunc", 1, 2, "b" ] }

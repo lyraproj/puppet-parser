@@ -151,7 +151,6 @@ func (pn *callPN) Format(b *bytes.Buffer) {
 }
 
 func (pn *callPN) ToData() interface{} {
-	hash := make(map[string]interface{}, 2)
 	top := len(pn.elements)
 	args := make([]interface{}, 0, top+1)
 	args = append(args, pn.name)
@@ -159,8 +158,7 @@ func (pn *callPN) ToData() interface{} {
 		params := pn.listPN.ToData()
 		args = append(args, params.([]interface{})...)
 	}
-	hash[`^`] = args
-	return hash
+	return map[string]interface{}{`^`: args}
 }
 
 func (pn *callPN) String() string {
@@ -207,11 +205,12 @@ func formatEntry(entry Entry, b *bytes.Buffer) {
 }
 
 func (pn *mapPN) ToData() interface{} {
-	me := make(map[string]interface{}, len(pn.entries))
+	top := len(pn.entries) * 2
+	args := make([]interface{}, 0, top)
 	for _, entry := range pn.entries {
-		me[entry.Key()] = entry.Value().ToData()
+		args = append(args, entry.Key(), entry.Value().ToData())
 	}
-	return me
+	return map[string]interface{}{`#`: args}
 }
 
 func (pn *mapPN) String() string {
