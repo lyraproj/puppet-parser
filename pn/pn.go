@@ -35,6 +35,10 @@ type (
 		String() string
 	}
 
+	pnError struct {
+		message string
+	}
+
 	// Entry in hash
 	Entry interface {
 		Key() string
@@ -64,11 +68,23 @@ type (
 	}
 )
 
+var keyPattern = regexp.MustCompile(`^[A-Za-z_-][0-9A-Za-z_-]*$`)
+
+func (e *pnError) Error() string {
+	return e.message
+}
+
 func List(elements []PN) PN {
 	return &listPN{elements}
 }
 
 func Map(entries []Entry) PN {
+	for _, e := range entries {
+		if !keyPattern.MatchString(e.Key()) {
+			panic(pnError{fmt.Sprintf("key '%s' does not conform to pattern %s",
+				e.Key(), keyPattern.String())})
+		}
+	}
 	return &mapPN{entries}
 }
 
