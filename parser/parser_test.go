@@ -57,7 +57,7 @@ func TestDefault(t *testing.T) {
 }
 
 func TestUndef(t *testing.T) {
-	expectDump(t, `undef`, `null`)
+	expectDump(t, `undef`, `nil`)
 }
 
 func TestSingleQuoted(t *testing.T) {
@@ -76,6 +76,10 @@ func TestDoubleQuoted(t *testing.T) {
 		`(concat "unknown \\k escape")`)
 
 	expectDump(t,
+		`"control \u{14}"`,
+		`(concat "control \o024")`)
+
+	expectDump(t,
 		`"$var"`,
 		`(concat (str (var "var")))`)
 
@@ -89,7 +93,7 @@ func TestDoubleQuoted(t *testing.T) {
 
 	expectDump(t,
 		`"hello ${}"`,
-		`(concat "hello " (str null))`)
+		`(concat "hello " (str nil))`)
 
 	expectDump(t,
 		`"Before ${{ a => true, b => "hello"}} and after"`,
@@ -593,7 +597,7 @@ func TestArray(t *testing.T) {
 func TestHash(t *testing.T) {
 	expectDump(t,
 		`{ a => true, b => false, c => undef, d => 12, e => 23.5, c => 'hello' }`,
-		`(hash (=> (qn "a") true) (=> (qn "b") false) (=> (qn "c") null) (=> (qn "d") 12) (=> (qn "e") 23.5) (=> (qn "c") "hello"))`)
+		`(hash (=> (qn "a") true) (=> (qn "b") false) (=> (qn "c") nil) (=> (qn "d") 12) (=> (qn "e") 23.5) (=> (qn "c") "hello"))`)
 
 	expectDump(t,
 		`{a => 1, b => 2,}`,

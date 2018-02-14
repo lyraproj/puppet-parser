@@ -1,6 +1,6 @@
 Example('undef',
   Given('undef'),
-  Parses_to('null')
+  Parses_to('nil')
 )
 Example('default',
   Given('default'),

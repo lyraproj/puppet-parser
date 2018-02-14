@@ -21,7 +21,7 @@ func DoubleQuote(str string, b *bytes.Buffer) {
 			b.WriteString(`\\`)
 		default:
 			if c < 0x20 {
-				fmt.Fprintf(b, `\u{%X}`, c)
+				fmt.Fprintf(b, `\o%3.3o`, c)
 			} else {
 				b.WriteRune(c)
 			}

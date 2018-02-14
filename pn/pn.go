@@ -221,7 +221,7 @@ var STRIP_TRAILING_ZEROES = regexp.MustCompile("\\A(.*(?:\\.0|[1-9]))0+(e[+-]?\\
 func (pn *literalPN) Format(b *bytes.Buffer) {
 	switch pn.val.(type) {
 	case nil:
-		b.WriteString(`null`)
+		b.WriteString(`nil`)
 	case string:
 		DoubleQuote(pn.val.(string), b)
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
