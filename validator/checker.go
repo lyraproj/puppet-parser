@@ -385,6 +385,10 @@ func (v *basicChecker) check_LiteralHash(e *parser.LiteralHash) {
 	for _, entry := range e.Entries() {
 		key := entry.(*parser.KeyedEntry).Key()
 		if literalKey, ok := literal.ToLiteral(key); ok {
+			switch key.(type) {
+			case *parser.LiteralList, *parser.LiteralHash:
+				literalKey = key.ToPN().String()
+			}
 			if _, ok = unique[literalKey]; ok {
 				v.Accept(VALIDATE_DUPLICATE_KEY, entry, issue.H{`key`: key.String()})
 			} else {
