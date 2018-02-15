@@ -3,12 +3,12 @@
 ### Objective
 
 The primary objective for this format is to provide a short but precise
-human readable format of the parser AST. This format is needed to write
-tests that verifies the parsers function.
+human readable format of the puppet language AST. This format is needed to write
+tests that verifies the parser's function.
 
 Another objective is to provide easy transport of the AST using JSON
-or similar protocol that are confined to boolean, number, string,
-undef, array, and object. The PN conversion to `Data` was specifically
+or similar data formats that are constrained to boolean, number, string,
+undef, array, and object data types. The PN conversion to `Data` was specifically
 designed with this objective in mind.
 
 ### Format
@@ -32,8 +32,8 @@ PN Node | Data type
 `Call` | `Struct['^', Tuple[String[1], Data, 1]]`
 
 The `Map` is converted into a single element `Hash` with using the key
-`'#'` and then an array with an even number of elements where evenly
-positioned elements are keys for the value at the next position. The
+`'#'` and then an array with an even number of elements where an evenly
+positioned element is the key for the value at the next position. The
 reason for this is that JSON (and other formats) will not retain the
 order of a hash and in Puppet that order is significant.
 
@@ -43,7 +43,7 @@ elements are arguments to that function.
 
 ### PN represented as String
 
-The native string representation of a PN is similar to Clojure.
+The native textual representation of a PN is similar to Clojure.
 
 PN Node | Sample string representation
 --------|----------
@@ -59,7 +59,7 @@ PN Node | Sample string representation
 ### PN represented as JSON or YAML
 
 When representing PN as JSON or YAML it must first be converted to `Data`. For JSON, this
-means that literals are represented verbatim nad lists will be a JSON arrays.
+means that literals are represented verbatim and lists as JSON arrays.
 
 Examples:
 A PN `Map` represented as JSON:
