@@ -644,6 +644,12 @@ func TestBlock(t *testing.T) {
 			`(= (var "r") "revealed") `+
 			`(= (var "map") (hash (=> "ipl" "meaning") (=> 4.2e+01 "life"))) `+
 			`(concat (str (var "t")) " " (str (access (var "map") "ipl")) " of " (str (access (var "map") 4.2e+01)) (str (access (array 3 (concat " is not " (str (var "r")))) 1)) " here"))`)
+
+	expectError(t,
+		Unindent(`
+      $a = 'a',
+      $b = 'b'`),
+		`Extraneous comma between statements at line 1:10`)
 }
 
 func TestFunctionDefintion(t *testing.T) {

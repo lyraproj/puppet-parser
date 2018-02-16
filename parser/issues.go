@@ -42,6 +42,7 @@ const (
 	PARSE_EXPECTED_TYPE_NAME                = `PARSE_EXPECTED_TYPE_NAME`
 	PARSE_EXPECTED_TYPE_NAME_AFTER_TYPE     = `PARSE_EXPECTED_TYPE_NAME_AFTER_TYPE`
 	PARSE_EXPECTED_VARIABLE                 = `PARSE_EXPECTED_VARIABLE`
+	PARSE_EXTRANEOUS_COMMA                  = `PARSE_EXTRANEOUS_COMMA`
 	PARSE_ILLEGAL_EPP_PARAMETERS            = `PARSE_ILLEGAL_EPP_PARAMETERS`
 	PARSE_INVALID_RESOURCE                  = `PARSE_INVALID_RESOURCE`
 	PARSE_INVALID_ATTRIBUTE                 = `PARSE_INVALID_ATTRIBUTE`
@@ -89,6 +90,7 @@ func init() {
 	issue.Hard(PARSE_EXPECTED_TYPE_NAME, `expected type name`)
 	issue.Hard(PARSE_EXPECTED_TYPE_NAME_AFTER_TYPE, `expected type name to follow 'type'`)
 	issue.Hard(PARSE_EXPECTED_VARIABLE, `expected variable declaration`)
+	issue.Hard(PARSE_EXTRANEOUS_COMMA, `Extraneous comma between statements`)
 	issue.Hard(PARSE_ILLEGAL_EPP_PARAMETERS, `Ambiguous EPP parameter expression. Probably missing '<%%-' before parameters to remove leading whitespace`)
 	issue.Hard(PARSE_INVALID_ATTRIBUTE, `invalid attribute operation`)
 	issue.Hard(PARSE_INVALID_RESOURCE, `invalid resource expression`)

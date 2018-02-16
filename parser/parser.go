@@ -312,6 +312,18 @@ func (ctx *context) transformCalls(exprs []Expression, start int) (result []Expr
 		cnFunc.rvalRequired = false
 	}
 	result = append(result, memo)
+	for _, ex := range result {
+		if csl, ok := ex.(*commaSeparatedList); ok {
+			// This happens when a block contains extraneous commas between statements. The
+			// location of the comma is estimated to be right after the first statement in
+			// the list
+			f := csl.elements[0]
+			p := f.byteOffset() + f.byteLength()
+			l := ctx.locator
+			loc := issue.NewLocation(f.File(), l.LineForOffset(p), l.PosOnLine(p))
+			panic(issue.NewReported(PARSE_EXTRANEOUS_COMMA, issue.SEVERITY_ERROR, issue.NO_ARGS, loc))
+		}
+	}
 	return
 }
 
