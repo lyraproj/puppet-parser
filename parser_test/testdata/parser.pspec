@@ -1,7 +1,13 @@
 
-Example(`AccessExpression`,
-  Given(`$var['one']`),
-  Parses_to(`(access (var "var") "one")`))
+Examples(`AccessExpression`,
+  Example('one argument',
+    Given(`$var['one']`),
+    Parses_to(`(access (var "var") "one")`)),
+
+  Example('several arguments',
+    Given(`Variant[String[1,10],Integer,Float]`),
+    Parses_to(`(access (qr "Variant") (access (qr "String") 1 10) (qr "Integer") (qr "Float"))'`)),
+)
 
 Example(`ApplicationExpression`,
   Given(`application lamp($x) {}`),
@@ -199,6 +205,10 @@ Examples(`FunctionDefinition`,
   Example(`with body`,
     Given(`function a { $a = 2 }`),
     Parses_to(`(function {:name "a" :body [(= (var "a") 2)]})`)),
+
+  Example(`with return type`,
+    Given(`function a() >> Integer { 2 }`),
+    Parses_to(`(function {:name "a" :body [2] :returns (qr "Integer")})`)),
 )
 
 Examples(`HeredocExpression`,
@@ -276,9 +286,15 @@ Example('InExpression',
   Given(`'eat' in ['eat', 'ate', 'eating']`),
   Parses_to(`(in "eat" (array "eat" "ate" "eating"))`))
 
-Example(`LiteralBoolean`,
-  Given(`true`),
-  Parses_to(`true`))
+Examples(`LiteralBoolean`,
+  Example(`true`,
+    Given(`true`),
+    Parses_to(`true`)),
+
+  Example(`false`,
+    Given(`false`),
+    Parses_to(`false`)),
+)
 
 Examples(`LiteralFloat`,
   Example('42.3',
@@ -328,9 +344,15 @@ Example(`LiteralString`,
   Given(`'a'`),
   Parses_to(`"a"`))
 
-Example('MatchExpression',
-  Given(`'a' =~ /a/`),
-  Parses_to(`(=~ "a" (regexp "a"))`))
+Examples('MatchExpression',
+  Example('=~',
+    Given(`'a' =~ /a/`),
+    Parses_to(`(=~ "a" (regexp "a"))`)),
+
+  Example('!~',
+    Given(`'a' !~ /a/`),
+    Parses_to(`(!~ "a" (regexp "a"))`))
+)
 
 Example(`NamedAccessExpression`,
   # The actual NamedAccess is the functor (. (. (qn "a") (qn "b")) (qn "c"))
@@ -377,6 +399,10 @@ Examples(`PlanDefinition`,
   Example(`with body`,
     Given(`plan a { $a = 2 }`),
     Parses_to(`(plan {:name "a" :body [(= (var "a") 2)]})`)),
+
+  Example(`with return type`,
+    Given(`plan a() >> Integer { 2 }`),
+    Parses_to(`(plan {:name "a" :body [2] :returns (qr "Integer")})`)),
 )
 
 Example(`ParenthesizedExpression`,
@@ -413,13 +439,37 @@ Example(`ResourceDefaultsExpression`,
   Given(`Something { message => 'syntax ok' }`),
   Parses_to(`(resource-defaults {:type (qr "Something") :ops [(=> "message" "syntax ok")]})`))
 
-Example(`ResourceDefinition`,
-  Given(`define a::b(String $c) { notify($) }`),
-  Parses_to(`(define {:name "a::b" :params {:c {:type (qr "String")}} :body [(invoke {:functor (qn "notify") :args [(var "")]})]})`))
+Examples(`ResourceDefinition`,
+  Example(`without parameters`,
+    Given(`define a {}`),
+    Parses_to(`(define {:name "a" :body []})`)),
 
-Example(`ResourceExpression`,
-  Given(`file { '/tmp/foo': mode => '0640' }`),
-  Parses_to(`(resource {:type (qn "file") :bodies [{:title "/tmp/foo" :ops [(=> "mode" "0640")]}]})`))
+  Example(`with parameter`,
+    Given(`define a($b) {}`),
+    Parses_to(`(define {:name "a" :params {:b {}} :body []})`)),
+
+  Example(`with parameter using type and default`,
+    Given(`define a(String $b = 3) {}`),
+    Parses_to(`(define {:name "a" :params {:b {:type (qr "String") :value 3}} :body []}))`)),
+
+  Example(`with body`,
+    Given(`define a { $a = 2 }`),
+    Parses_to(`(define {:name "a" :body [(= (var "a") 2)]})`)),
+)
+
+Examples(`ResourceExpression`,
+  Example(`with one body`,
+    Given(`file { '/tmp/foo': mode => '0640' }`),
+    Parses_to(`(resource {:type (qn "file") :bodies [{:title "/tmp/foo" :ops [(=> "mode" "0640")]}]})`)),
+
+  Example(`with multiple bodies`,
+    Given(`file { '/tmp/foo': mode => '0640'; '/tmp/bar': mode => '0642' }`),
+    Parses_to(`(resource {:type (qn "file") :bodies [{:title "/tmp/foo" :ops [(=> "mode" "0640")]} {:title "/tmp/bar" :ops [(=> "mode" "0642")]}]})`)),
+
+  Example(`using *=>`,
+    Given(`file { '/tmp/foo': * => { mode => '0777' }}`),
+    Parses_to(`(resource {:type (qn "file") :bodies [{:title "/tmp/foo" :ops [(splat-hash (hash (=> (qn "mode") "0777")))]}]})`)),
+)
 
 Example(`ResourceOverrideExpression`,
   Given(`File['/tmp/foo.txt'] { mode => '0644' }`),
