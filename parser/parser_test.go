@@ -1795,13 +1795,13 @@ func dump(e Expression) string {
 func TestEPP(t *testing.T) {
 	expectDumpEPP(t,
 		``,
-		`(render-s "")`)
+		`(lambda {:body (epp (render-s ""))})`)
 
 	expectDumpEPP(t,
 		Unindent(`
       some arbitrary text
       spanning multiple lines`),
-		`(render-s "some arbitrary text\nspanning multiple lines")`)
+		`(lambda {:body (epp (render-s "some arbitrary text\nspanning multiple lines"))})`)
 
 	expectDumpEPP(t,
 		Unindent(`
@@ -1846,14 +1846,14 @@ func TestEPP(t *testing.T) {
         user: "<%= $username %>"
         password: "<%= $password %>"
       }`),
-		`(block `+
+		`(lambda {:body (epp `+
 			`(render-s "vcenter: {\n  host: \"") `+
 			`(render (var "host")) `+
 			`(render-s "\"\n  user: \"") `+
 			`(render (var "username")) `+
 			`(render-s "\"\n  password: \"") `+
 			`(render (var "password")) `+
-			`(render-s "\"\n}"))`)
+			`(render-s "\"\n}"))})`)
 
 	expectDumpEPP(t,
 		Unindent(`

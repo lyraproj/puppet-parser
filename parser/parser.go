@@ -182,10 +182,21 @@ func (ctx *context) parseTopExpression(filename string, source string, singleExp
 			ctx.nextToken()
 		}
 
+		asEppLambda := func(e Expression) Expression {
+			if l, ok := e.(*LambdaExpression); ok {
+				if _, ok = l.body.(*EppExpression); ok {
+					return e
+				}
+			}
+			if _, ok := e.(*BlockExpression); !ok {
+				e = ctx.factory.Block([]Expression{e}, ctx.locator, 0, ctx.Pos())
+			}
+			return ctx.factory.EppExpression([]Expression{}, e, ctx.locator, 0, ctx.Pos())
+		}
+
 		if ctx.currentToken == TOKEN_END {
 			// No EPP in the source.
-			te := ctx.factory.RenderString(text, ctx.locator, 0, ctx.Pos())
-			expr = ctx.factory.Block([]Expression{te}, ctx.locator, 0, ctx.Pos())
+			expr = asEppLambda(ctx.factory.RenderString(text, ctx.locator, 0, ctx.Pos()))
 			return
 		}
 
@@ -193,9 +204,9 @@ func (ctx *context) parseTopExpression(filename string, source string, singleExp
 			if text != `` {
 				panic(ctx.parseIssue(PARSE_ILLEGAL_EPP_PARAMETERS))
 			}
-			eppParams := ctx.lambdaParameterList()
-			expr = ctx.factory.Block([]Expression{
-				ctx.factory.EppExpression(eppParams, ctx.parse(TOKEN_END, false), ctx.locator, 0, ctx.Pos())}, ctx.locator, 0, ctx.Pos())
+			expr = asEppLambda(
+				ctx.factory.EppExpression(
+					ctx.lambdaParameterList(), ctx.parse(TOKEN_END, false), ctx.locator, 0, ctx.Pos()))
 			return
 		}
 
@@ -206,7 +217,7 @@ func (ctx *context) parseTopExpression(filename string, source string, singleExp
 
 		for {
 			if ctx.currentToken == TOKEN_END {
-				expr = ctx.factory.Block(ctx.transformCalls(expressions, 0), ctx.locator, 0, ctx.Pos())
+				expr = asEppLambda(ctx.factory.Block(ctx.transformCalls(expressions, 0), ctx.locator, 0, ctx.Pos()))
 				return
 			}
 			expressions = append(expressions, ctx.expression())
