@@ -1148,12 +1148,27 @@ func (ctx *context) typeAliasOrDefinition() Expression {
 		switch body.(type) {
 		case *QualifiedReference:
 			if ctx.currentToken == TOKEN_LC {
-				body = ctx.factory.KeyedEntry(body, ctx.expression(), ctx.locator, bodyStart, ctx.Pos()-bodyStart)
+				pn := body.(*QualifiedReference)
+				hash := ctx.expression().(*LiteralHash)
+				if pn.name == `Object` {
+					body = ctx.factory.Access(ctx.factory.QualifiedReference(`Object`, ctx.locator, bodyStart, 0), []Expression{hash}, ctx.locator, bodyStart, ctx.Pos()-bodyStart)
+				} else {
+					pref := ctx.factory.String(`parent`, ctx.locator, pn.byteOffset(), pn.byteLength())
+					hash := ctx.factory.Hash(
+						append([]Expression{ ctx.factory.KeyedEntry(pref, pn, ctx.locator, pn.byteOffset(), pn.byteLength()) }, hash.entries...),
+						ctx.locator, bodyStart, ctx.Pos()-bodyStart)
+					body = ctx.factory.Access(ctx.factory.QualifiedReference(`Object`, ctx.locator, bodyStart, 0), []Expression{hash}, ctx.locator, bodyStart, ctx.Pos()-bodyStart)
+				}
 			}
-			return ctx.addDefinition(ctx.factory.TypeAlias(fqr.name, body, ctx.locator, start, ctx.Pos()-start))
-		default:
-			return ctx.addDefinition(ctx.factory.TypeAlias(fqr.name, body, ctx.locator, start, ctx.Pos()-start))
+		case *LiteralList:
+			lr := body.(*LiteralList)
+			if len(lr.elements) == 1 {
+				body = ctx.factory.Access(ctx.factory.QualifiedReference(`Object`, ctx.locator, bodyStart, 0), lr.elements, ctx.locator, bodyStart, ctx.Pos()-bodyStart)
+			}
+		case *LiteralHash:
+			body = ctx.factory.Access(ctx.factory.QualifiedReference(`Object`, ctx.locator, bodyStart, 0), []Expression { body }, ctx.locator, bodyStart, ctx.Pos()-bodyStart)
 		}
+		return ctx.addDefinition(ctx.factory.TypeAlias(fqr.name, body, ctx.locator, start, ctx.Pos()-start))
 	case TOKEN_INHERITS:
 		ctx.nextToken()
 		nameExpr := ctx.typeName()
