@@ -808,7 +808,9 @@ func (v *basicChecker) isIdem(e parser.Expression) bool {
 		return v.idem_IfExpression(&e.(*parser.UnlessExpression).IfExpression)
 	case *parser.ParenthesizedExpression:
 		return v.isIdem(e.(*parser.ParenthesizedExpression).Expr())
-	case *parser.AssignmentExpression, *parser.RelationshipExpression, *parser.RenderExpression, *parser.RenderStringExpression:
+	case *parser.AssignmentExpression, *parser.RelationshipExpression,
+		*parser.RenderExpression, *parser.RenderStringExpression,
+		*parser.MatchExpression:
 		return false
 	case parser.BinaryExpression, parser.LiteralValue, parser.UnaryExpression:
 		return true
