@@ -954,7 +954,7 @@ func (ctx *context) skipDecimalDigits() (digitCount int) {
 
 type escapeHandler func(buffer *bytes.Buffer, ctx *context, c rune)
 
-func (ctx *context) consumeDelimitedString(delimiter rune, interpolateSegments []Expression, handler escapeHandler) (segments []Expression) {
+func (ctx *context) consumeDelimitedString(delimiter rune, delimiterStart int, interpolateSegments []Expression, handler escapeHandler) (segments []Expression) {
 	buf := bytes.NewBufferString(``)
 	ec, start := ctx.Next()
 	segments = interpolateSegments
@@ -962,7 +962,7 @@ func (ctx *context) consumeDelimitedString(delimiter rune, interpolateSegments [
 		switch ec {
 		case 0:
 			if delimiter != '/' {
-				panic(ctx.unterminatedQuote(start-1, delimiter))
+				panic(ctx.unterminatedQuote(delimiterStart, delimiter))
 			}
 			ctx.setToken(TOKEN_DIVIDE)
 			return
@@ -982,7 +982,7 @@ func (ctx *context) consumeDelimitedString(delimiter rune, interpolateSegments [
 			ec, _ = ctx.Next()
 			switch ec {
 			case 0:
-				panic(ctx.unterminatedQuote(start-1, delimiter))
+				panic(ctx.unterminatedQuote(delimiterStart, delimiter))
 
 			case delimiter:
 				buf.WriteRune(delimiter)
@@ -1219,7 +1219,7 @@ func (ctx *context) consumeDoubleQuotedString() {
 	if ctx.factory != nil {
 		segments = make([]Expression, 0, 4)
 	}
-	segments = ctx.consumeDelimitedString('"', segments,
+	segments = ctx.consumeDelimitedString('"', ctx.Pos() - 1, segments,
 		func(buf *bytes.Buffer, ctx *context, ec rune) {
 			switch ec {
 			case '\\', '\'':
@@ -1258,21 +1258,25 @@ func (ctx *context) consumeDoubleQuotedString() {
 
 	if len(segments) > 0 {
 		// Result of the consumeDelimitedString is just the tail
-		if ctx.currentToken == TOKEN_STRING {
-			tail := ctx.tokenValue.(string)
-			if tail != `` {
-				segments = append(segments, ctx.factory.String(tail, ctx.locator, ctx.tokenStartPos, ctx.Pos()-ctx.tokenStartPos))
-			}
+		tail := ctx.tokenValue.(string)
+		if tail != `` {
+			segments = append(segments, ctx.factory.String(tail, ctx.locator, ctx.tokenStartPos, ctx.Pos()-ctx.tokenStartPos))
 		}
 	} else {
 		segments = append(segments, ctx.factory.String(ctx.tokenValue.(string), ctx.locator, ctx.tokenStartPos, ctx.Pos()-ctx.tokenStartPos))
 	}
 	firstPos := segments[0].byteOffset()
+	if len(segments) == 1 {
+		if _, ok := segments[0].(*LiteralString); ok {
+		// Avoid turning a single string literal into a concatenated string
+			return
+		}
+	}
 	ctx.setTokenValue(TOKEN_CONCATENATED_STRING, ctx.factory.ConcatenatedString(segments, ctx.locator, firstPos, ctx.Pos()-firstPos))
 }
 
 func (ctx *context) consumeSingleQuotedString() {
-	ctx.consumeDelimitedString('\'', nil, func(buf *bytes.Buffer, ctx *context, ec rune) {
+	ctx.consumeDelimitedString('\'', ctx.Pos() - 1, nil, func(buf *bytes.Buffer, ctx *context, ec rune) {
 		buf.WriteRune('\\')
 		if ec != '\\' {
 			buf.WriteRune(ec)
@@ -1286,7 +1290,7 @@ func (ctx *context) consumeSingleQuotedString() {
 // The method returns true if a regexp was found, false otherwise
 func (ctx *context) consumeRegexp() bool {
 	start := ctx.Pos()
-	ctx.consumeDelimitedString('/', nil, func(buf *bytes.Buffer, ctx *context, ec rune) {
+	ctx.consumeDelimitedString('/', start - 1, nil, func(buf *bytes.Buffer, ctx *context, ec rune) {
 		buf.WriteRune('\\')
 		buf.WriteRune(ec)
 	})

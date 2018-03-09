@@ -205,21 +205,15 @@ Examples('Operator precedence',
     Given('$x = a * (b + c)'),
     Parses_to('(= (var "x") (* (qn "a") (paren (+ (qn "b") (qn "c")))))')),
   Example('9',
-    Given('$x = $y -= $z'),
-    Parses_to('(= (var "x") (-= (var "y") (var "z")))')),
-  Example('10',
     Given('$x = $y + $z % 5'),
     Parses_to('(= (var "x") (+ (var "y") (% (var "z") 5)))')),
-  Example('11',
-    Given('$x = $y += $z'),
-    Parses_to('(= (var "x") (+= (var "y") (var "z")))')),
-  Example('12',
+  Example('10',
     Given('$y = $x =~ $z'),
     Parses_to('(= (var "y") (=~ (var "x") (var "z")))')),
-  Example('13',
+  Example('11',
     Given('$y = $x !~ $z'),
     Parses_to('(= (var "y") (!~ (var "x") (var "z")))')),
-  Example('14',
+  Example('12',
     Given('$x = +b'),
     Validates_with(Error(LEX_UNEXPECTED_TOKEN))),
 )
@@ -249,17 +243,23 @@ Examples('Single Quoted String',
 )
 
 Examples('Double Quoted String',
-  Example('is parsed into a concatenated string',
-    Given(`"the string"`),
-    Parses_to(`(concat "the string")`)
-  ),
-  Example('translates escapes for newline, tab, space, carriage return, and escape',
-    Given(`"string\\n\nwith\\t\t,\\s\s, and \\r\r\n"`),
-    Parses_to(`(concat "string\\n\nwith\\t\t,\\s , and \\r\r\n")`)
-  ),
-  Example('retains unknown escapes',
-    Given(`"unknown \k escape"`),
-    Parses_to(`(concat "unknown \\k escape")`)
+  Examples('without interpolations',
+    Example('is parsed into a string',
+      Given(`"the string"`),
+      Parses_to(`"the string"`)
+    ),
+    Example('translates escapes for newline, tab, space, carriage return, and escape',
+      Given(`"string\\n\nwith\\t\t,\\s\s, and \\r\r\n"`),
+      Parses_to(`"string\\n\nwith\\t\t,\\s , and \\r\r\n"`)
+    ),
+    Example('retains unknown escapes',
+      Given(`"unknown \k escape"`),
+      Parses_to(`"unknown \\k escape"`)
+    ),
+    Example('can contain line breaks',
+      Given(Source(`"some
+text"`)),
+      Parses_to(`"some\ntext"`)),
   ),
   Examples('interpolates',
     Example('variables without {} delimiters',
@@ -272,7 +272,7 @@ Examples('Double Quoted String',
     ),
     Example('complex expressions',
       Given(`"Before ${{ a => true, b => "hello"}} and after"`),
-      Parses_to(`(concat "Before " (str (hash (=> (qn "a") true) (=> (qn "b") (concat "hello")))) " and after")`)
+      Parses_to(`(concat "Before " (str (hash (=> (qn "a") true) (=> (qn "b") "hello"))) " and after")`)
     ),
     Examples('expressions starting with QualifedName',
       Example('name becomes a Variable',
@@ -306,11 +306,11 @@ Examples('Double Quoted String',
   ),
   Example('handles unicode escapes consisting of 4 hexadecimal digits',
     Given(`"x\u2713y"`),
-    Parses_to(`(concat "x✓y")`)
+    Parses_to(`"x✓y"`)
   ),
   Example('handles brace limited unicode escapes',
     Given(`"x\u{1f452}y"`),
-    Parses_to(`(concat "x👒y")`)
+    Parses_to(`"x👒y"`)
   ),
   Example('rejects malformed variable names',
     Given(`"$Var"`),

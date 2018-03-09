@@ -125,28 +125,28 @@ Examples(`ComparisonExpression`,
 
 Examples(`ConcatenatedString`,
   Example(`plain`,
-    Given(`"a"`),
-    Parses_to(`(concat "a")`)),
+    Given(`"a$x"`),
+    Parses_to(`(concat "a" (str (var "x")))`)),
 
   Example(`tab`,
-    Given(`"\t"`),
-    Parses_to(`(concat "\t")`)),
+    Given(`"\t$x"`),
+    Parses_to(`(concat "\t" (str (var "x")))`)),
 
   Example(`cr`,
-    Given(`"\r"`),
-    Parses_to(`(concat "\r")`)),
+    Given(`"\r$x"`),
+    Parses_to(`(concat "\r" (str (var "x")))`)),
 
   Example(`nl`,
-    Given(`"\n"`),
-    Parses_to(`(concat "\n")`)),
+    Given(`"\n$x"`),
+    Parses_to(`(concat "\n" (str (var "x")))`)),
 
   Example(`space`,
-    Given(`"\s"`),
-    Parses_to(`(concat " ")`)),
+    Given(`"\s$x"`),
+    Parses_to(`(concat " " (str (var "x")))`)),
 
   Example(`control`,
-    Given(`"\u{14}"`),
-    Parses_to(`(concat "\o024")`)),
+    Given(`"\u{14}$x"`),
+    Parses_to(`(concat "\o024" (str (var "x")))`)),
 
   Example(`simple interpolation`,
     Given(`"x$y."`),
@@ -340,9 +340,59 @@ Example(`LiteralRegularExpression`,
   Given(`/a/`),
   Parses_to(`(regexp "a")`))
 
-Example(`LiteralString`,
-  Given(`'a'`),
-  Parses_to(`"a"`))
+Examples(`LiteralString`,
+  Examples('single quoted',
+    Example(`plain`,
+      Given(`'a'`),
+      Parses_to(`"a"`)),
+
+    Example(`tab`,
+      Given(`'\t'`),
+      Parses_to(`"\\t"`)),
+
+    Example(`cr`,
+      Given(`'\r'`),
+      Parses_to(`"\\r"`)),
+
+    Example(`nl`,
+      Given(`'\n'`),
+      Parses_to(`"\\n"`)),
+
+    Example(`space`,
+      Given(`'\s'`),
+      Parses_to(`"\\s"`)),
+
+    Example(`control`,
+      Given(`'\u{14}'`),
+      Parses_to(`"\\u{14}"`)),
+  ),
+
+  Examples('double qouted',
+    Example(`plain`,
+      Given(`"a"`),
+      Parses_to(`"a"`)),
+
+    Example(`tab`,
+      Given(`"\t"`),
+      Parses_to(`"\t"`)),
+
+    Example(`cr`,
+      Given(`"\r"`),
+      Parses_to(`"\r"`)),
+
+    Example(`nl`,
+      Given(`"\n"`),
+      Parses_to(`"\n"`)),
+
+    Example(`space`,
+      Given(`"\s"`),
+      Parses_to(`" "`)),
+
+    Example(`control`,
+      Given(`"\u{14}"`),
+      Parses_to(`"\o024"`)),
+  ),
+)
 
 Examples('MatchExpression',
   Example('=~',
@@ -520,6 +570,3 @@ Examples(`UnlessExpression`,
     Given(`unless 1 { true } else { unless 2 { false } }`),
     Parses_to(`(unless {:test 1 :then [true] :else [(unless {:test 2 :then [false]})]})`)),
 )
-
-
-

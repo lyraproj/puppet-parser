@@ -69,15 +69,15 @@ func TestSingleQuoted(t *testing.T) {
 func TestDoubleQuoted(t *testing.T) {
 	expectDump(t,
 		`"string\nwith\t\\t,\s\\s, \\r, and \\n\r\n"`,
-		`(concat "string\nwith\t\\t, \\s, \\r, and \\n\r\n")`)
+		`"string\nwith\t\\t, \\s, \\r, and \\n\r\n"`)
 
 	expectDump(t,
 		`"unknown \k escape"`,
-		`(concat "unknown \\k escape")`)
+		`"unknown \\k escape"`)
 
 	expectDump(t,
 		`"control \u{14}"`,
-		`(concat "control \o024")`)
+		`"control \o024"`)
 
 	expectDump(t,
 		`"$var"`,
@@ -97,9 +97,9 @@ func TestDoubleQuoted(t *testing.T) {
 
 	expectDump(t,
 		`"Before ${{ a => true, b => "hello"}} and after"`,
-		`(concat "Before " (str (hash (=> (qn "a") true) (=> (qn "b") (concat "hello")))) " and after")`)
+		`(concat "Before " (str (hash (=> (qn "a") true) (=> (qn "b") "hello"))) " and after")`)
 
-	expectDump(t, `"x\u{1f452}y"`, `(concat "x👒y")`)
+	expectDump(t, `"x\u{1f452}y"`, `"x👒y"`)
 
 	expectError(t,
 		`"$Var"`,
@@ -116,7 +116,7 @@ func TestDoubleQuoted(t *testing.T) {
       $x = "y${var"`),
 		"unterminated double quoted string at line 1:13")
 
-	expectDump(t, `"x\u2713y"`, `(concat "x✓y")`)
+	expectDump(t, `"x\u2713y"`, `"x✓y"`)
 }
 
 func TestRegexp(t *testing.T) {
@@ -757,7 +757,7 @@ func TestNodeDefinition(t *testing.T) {
 		Unindent(`
       node /[a-f].*/, "example.com" {
       }`),
-		`(node {:matches [(regexp "[a-f].*") (concat "example.com")] :body []})`)
+		`(node {:matches [(regexp "[a-f].*") "example.com"] :body []})`)
 
 	expectDump(t,
 		Unindent(`
