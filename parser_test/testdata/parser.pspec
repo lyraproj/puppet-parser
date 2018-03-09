@@ -160,33 +160,33 @@ Examples(`ConcatenatedString`,
 Examples('EppExpression',
   Example(`empty`,
     Given(Epp_source(``)),
-    Parses_to(`(lambda {:body (epp (render-s ""))})`)),
+    Parses_to(`(lambda {:body [(epp (render-s ""))]})`)),
 
   Example(`comment`,
     Given(Epp_source(`some <%#-%>text`)),
-    Parses_to(`(lambda {:body (epp (render-s "some text"))})`)),
+    Parses_to(`(lambda {:body [(epp (render-s "some text"))]})`)),
 
   Example(`empty argument list`,
     Given(Epp_source(`<%||%> some text`)),
-    Parses_to(`(lambda {:body (epp (render-s " some text"))})`)),
+    Parses_to(`(lambda {:body [(epp (render-s " some text"))]})`)),
 
   Example(`single line with expression`,
     Given(Epp_source(`<%-||-%> some <%- $x = 3 %> text`)),
-    Parses_to(`(lambda {:body (epp (render-s "some") (= (var "x") 3) (render-s " text"))})`)),
+    Parses_to(`(lambda {:body [(epp (render-s "some") (= (var "x") 3) (render-s " text"))]})`)),
 
   Example(`multi-line text`,
     Given(Epp_source(@(SRC))),
       some arbitrary text
       spanning multiple lines
       |-SRC
-    Parses_to(`(lambda {:body (epp (render-s "some arbitrary text\nspanning multiple lines"))})`)),
+    Parses_to(`(lambda {:body [(epp (render-s "some arbitrary text\nspanning multiple lines"))]})`)),
 
   Example(`parameter and expression`,
     Given(Epp_source(@(SRC))),
       <%- | Boolean $a | -%>
       v = <%= $a %>
       |-SRC
-    Parses_to(`(lambda {:params {:a {:type (qr "Boolean")}} :body (epp (render-s "v = ") (render (var "a")))})`))
+    Parses_to(`(lambda {:params {:a {:type (qr "Boolean")}} :body [(epp (render-s "v = ") (render (var "a")))]})`))
 )
 
 Examples(`FunctionDefinition`,

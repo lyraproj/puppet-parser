@@ -1339,7 +1339,7 @@ func TestIf(t *testing.T) {
       } else {
         3
       }`),
-		`(= (var "x") (if {:test (var "y") :then [1] :else (if {:test (var "z") :then [2] :else [3]})}))`)
+		`(= (var "x") (if {:test (var "y") :then [1] :else [(if {:test (var "z") :then [2] :else [3]})]}))`)
 
 	expectDump(t,
 		Unindent(`
@@ -1801,24 +1801,24 @@ func dump(e Expression) string {
 func TestEPP(t *testing.T) {
 	expectDumpEPP(t,
 		``,
-		`(lambda {:body (epp (render-s ""))})`)
+		`(lambda {:body [(epp (render-s ""))]})`)
 
 	expectDumpEPP(t,
 		Unindent(`
       some arbitrary text
       spanning multiple lines`),
-		`(lambda {:body (epp (render-s "some arbitrary text\nspanning multiple lines"))})`)
+		`(lambda {:body [(epp (render-s "some arbitrary text\nspanning multiple lines"))]})`)
 
 	expectDumpEPP(t,
 		Unindent(`
       <%||%> some arbitrary text
       spanning multiple lines`),
-		`(lambda {:body (epp (render-s " some arbitrary text\nspanning multiple lines"))})`)
+		`(lambda {:body [(epp (render-s " some arbitrary text\nspanning multiple lines"))]})`)
 
 	expectDumpEPP(t,
 		Unindent(`
       <%||%> some <%#-%>text`),
-		`(lambda {:body (epp (render-s " some text"))})`)
+		`(lambda {:body [(epp (render-s " some text"))]})`)
 
 	expectErrorEPP(t,
 		Unindent(`
@@ -1828,17 +1828,17 @@ func TestEPP(t *testing.T) {
 	expectDumpEPP(t,
 		Unindent(`
       <%||%> some <%%-%%-%%> text`),
-		`(lambda {:body (epp (render-s " some <%-%%-%> text"))})`)
+		`(lambda {:body [(epp (render-s " some <%-%%-%> text"))]})`)
 
 	expectDumpEPP(t,
 		Unindent(`
       <%||-%> some <-% %-> text`),
-		`(lambda {:body (epp (render-s "some <-% %-> text"))})`)
+		`(lambda {:body [(epp (render-s "some <-% %-> text"))]})`)
 
 	expectDumpEPP(t,
 		Unindent(`
       <%-||-%> some <%- $x = 3 %> text`),
-		`(lambda {:body (epp (render-s "some") (= (var "x") 3) (render-s " text"))})`)
+		`(lambda {:body [(epp (render-s "some") (= (var "x") 3) (render-s " text"))]})`)
 
 	expectErrorEPP(t,
 		Unindent(`
@@ -1852,14 +1852,14 @@ func TestEPP(t *testing.T) {
         user: "<%= $username %>"
         password: "<%= $password %>"
       }`),
-		`(lambda {:body (epp `+
+		`(lambda {:body [(epp `+
 			`(render-s "vcenter: {\n  host: \"") `+
 			`(render (var "host")) `+
 			`(render-s "\"\n  user: \"") `+
 			`(render (var "username")) `+
 			`(render-s "\"\n  password: \"") `+
 			`(render (var "password")) `+
-			`(render-s "\"\n}"))})`)
+			`(render-s "\"\n}"))]})`)
 
 	expectDumpEPP(t,
 		Unindent(`
@@ -1894,7 +1894,7 @@ func TestEPP(t *testing.T) {
 			`:keys_trusted {:type (qr "Array")} `+
 			`:keys_requestkey {:type (qr "String")} `+
 			`:keys_controlkey {:type (qr "String")}} `+
-			`:body (epp `+
+			`:body [(epp `+
 			`(render-s "\n\n\n") `+
 			`(if {`+
 			`:test (var "keys_enable") `+
@@ -1919,7 +1919,7 @@ func TestEPP(t *testing.T) {
 			`(render-s "controlkey ") `+
 			`(render (var "keys_controlkey")) `+
 			`(render-s "\n")]}) `+
-			`(render-s "\n")]}))})`)
+			`(render-s "\n")]}))]})`)
 
 	// Fail on EPP constructs unless EPP is enabled
 	expectError(t,

@@ -1069,10 +1069,6 @@ func (e *FunctionDefinition) ToPN() pn.PN {
 	return e.definitionPN(`function`, ``, e.returnType)
 }
 
-func (e *PlanDefinition) ToPN() pn.PN {
-	return e.definitionPN(`plan`, ``, e.returnType)
-}
-
 func (e *HeredocExpression) Syntax() string {
 	return e.syntax
 }
@@ -1532,6 +1528,10 @@ func (e *ParenthesizedExpression) ToUnaryExpression() UnaryExpression {
 }
 
 func (e *ParenthesizedExpression) ToPN() pn.PN { return pn.Call(`paren`, e.Expr().ToPN()) }
+
+func (e *PlanDefinition) ToPN() pn.PN {
+	return e.definitionPN(`plan`, ``, e.returnType)
+}
 
 func (e *Program) Definitions() []Definition {
 	return e.definitions
@@ -2112,5 +2112,5 @@ func pnBlockAsEntry(name string, expr Expression) pn.Entry {
 	if block, ok := expr.(*BlockExpression); ok {
 		return pnList(block.Statements()).WithName(name)
 	}
-	return expr.ToPN().WithName(name)
+	return pn.List(pnMapArgs(expr)).WithName(name)
 }
