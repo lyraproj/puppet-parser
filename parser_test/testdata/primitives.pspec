@@ -235,11 +235,10 @@ Examples('Single Quoted String',
     Given(`'the \tstring\t'`),
     Parses_to(`"the \\tstring\\t"`)
   ),
-  Example('can not contain line breaks',
-    Given(Source(`'the \tstring
-  \t'`)),
-    Validates_with(Error(LEX_UNTERMINATED_STRING))
-  )
+  Example('can contain line breaks',
+    Given(Source(`'some
+text'`)),
+    Parses_to(`"some\ntext"`)),
 )
 
 Examples('Double Quoted String',
@@ -262,6 +261,10 @@ text"`)),
       Parses_to(`"some\ntext"`)),
   ),
   Examples('interpolates',
+    Example('can contain line breaks',
+      Given(Source(`"some
+$text"`)),
+      Parses_to(`(concat "some\n" (str (var "text")))`)),
     Example('variables without {} delimiters',
       Given(`"hello $var"`),
       Parses_to(`(concat "hello " (str (var "var")))`)

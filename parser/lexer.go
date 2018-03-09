@@ -967,13 +967,6 @@ func (ctx *context) consumeDelimitedString(delimiter rune, delimiterStart int, i
 			ctx.setToken(TOKEN_DIVIDE)
 			return
 
-		case '\n':
-			if delimiter != '/' {
-				panic(ctx.unterminatedQuote(start-1, delimiter))
-			}
-			buf.WriteRune(ec)
-			ec, _ = ctx.Next()
-
 		case delimiter:
 			ctx.setTokenValue(TOKEN_STRING, buf.String())
 			return
