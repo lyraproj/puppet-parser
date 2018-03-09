@@ -936,7 +936,14 @@ func (ctx *context) resourceExpression(start int, first Expression, form string)
 	bodiesStart := ctx.Pos()
 	ctx.nextToken()
 	titleStart := ctx.Pos()
-	firstTitle := ctx.expression()
+	var firstTitle Expression
+
+	// First attribute might be a * => operator. No attempt should be made
+	// to read it as an expression.
+	if ctx.currentToken != TOKEN_MULTIPLY {
+		firstTitle = ctx.expression()
+	}
+
 	if ctx.currentToken != TOKEN_COLON {
 		// Resource body without title
 		ctx.SetPos(titleStart)
