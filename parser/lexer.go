@@ -845,11 +845,29 @@ func isUppercaseLetter(c rune) bool {
 
 func (ctx *context) consumeQualifiedName(start int, token int) {
 	lastStartsWithUnderscore := false
-	for {
+	hasDash := false
+	outer: for {
 		c, n := ctx.Peek()
 		for isLetterOrDigit(c) {
 			ctx.Advance(n)
 			c, n = ctx.Peek()
+		}
+
+		if c == '-' && token == TOKEN_IDENTIFIER {
+			// Valid only if a letter or digit is present before end of name
+			i := ctx.Pos() + n
+			for {
+				c, n = ctx.PeekAt(i);
+				i += n;
+				if isLetterOrDigit(c) {
+					hasDash = true
+					ctx.SetPos(i);
+					continue outer;
+				}
+				if c != '-' {
+					break outer;
+				}
+			}
 		}
 
 		if c != ':' {
@@ -895,24 +913,29 @@ func (ctx *context) consumeQualifiedName(start int, token int) {
 	}
 
 	word := ctx.From(start)
-	ctx.setTokenValue(token, word)
 
 	if token == TOKEN_IDENTIFIER {
-		if kwToken, ok := keywords[word]; ok {
+		if hasDash {
+			token = TOKEN_STRING
+		} else if kwToken, ok := keywords[word]; ok {
 			switch kwToken {
 			case TOKEN_BOOLEAN:
 				ctx.setTokenValue(kwToken, word == `true`)
+				return
 			case TOKEN_DEFAULT:
 				ctx.setTokenValue(kwToken, DEFAULT_INSTANCE)
+				return
 			case TOKEN_PLAN:
 				if ctx.tasks {
-					ctx.setTokenValue(kwToken, word)
+					token = kwToken
 				}
 			default:
-				ctx.setTokenValue(kwToken, word)
+				token = kwToken
 			}
 		}
 	}
+
+	ctx.setTokenValue(token, word)
 }
 
 func (ctx *context) consumeFloat(start int, d rune) {

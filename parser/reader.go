@@ -87,6 +87,22 @@ func (r *stringReader) Peek() (c rune, size int) {
 	return c, size
 }
 
+func (r *stringReader) PeekAt(pos int) (c rune, size int) {
+	if pos < 0 || pos >= len(r.text) {
+		return
+	}
+	c = rune(r.text[pos])
+	if c < utf8.RuneSelf {
+		size = 1
+		return
+	}
+	c, size = utf8.DecodeRuneInString(r.text[pos:])
+	if c == utf8.RuneError {
+		panic(r.invalidUnicode())
+	}
+	return c, size
+}
+
 func (r *stringReader) Advance(size int) {
 	r.i += size
 }
