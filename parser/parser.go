@@ -441,7 +441,7 @@ func (ctx *context) assignment() (expr Expression) {
 func (ctx *context) resource() (expr Expression) {
 	expr = ctx.expression()
 	if ctx.currentToken == TOKEN_LC {
-		expr = ctx.resourceExpression(expr.byteOffset(), expr, `regular`)
+		expr = ctx.resourceExpression(expr.byteOffset(), expr, REGULAR)
 	}
 	return
 }
@@ -673,9 +673,9 @@ func (ctx *context) unaryExpression() Expression {
 		return ctx.factory.Unfold(expr, ctx.locator, unaryStart, ctx.Pos()-unaryStart)
 
 	case TOKEN_AT, TOKEN_ATAT:
-		kind := `virtual`
+		kind := VIRTUAL
 		if ctx.currentToken == TOKEN_ATAT {
-			kind = `exported`
+			kind = EXPORTED
 		}
 		ctx.nextToken()
 		expr := ctx.primaryExpression()
@@ -932,7 +932,7 @@ func (ctx *context) caseOption() Expression {
 	return ctx.factory.When(expressions, block, ctx.locator, start, ctx.Pos()-start)
 }
 
-func (ctx *context) resourceExpression(start int, first Expression, form string) (expr Expression) {
+func (ctx *context) resourceExpression(start int, first Expression, form ResourceForm) (expr Expression) {
 	bodiesStart := ctx.Pos()
 	ctx.nextToken()
 	titleStart := ctx.Pos()

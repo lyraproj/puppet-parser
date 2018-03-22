@@ -471,7 +471,7 @@ func (v *basicChecker) check_ResourceBody(e *parser.ResourceBody) {
 }
 
 func (v *basicChecker) check_ResourceDefaultsExpression(e *parser.ResourceDefaultsExpression) {
-	if e.Form() != `regular` {
+	if e.Form() != parser.REGULAR {
 		v.Accept(VALIDATE_NOT_VIRTUALIZABLE, e, issue.NO_ARGS)
 	}
 }
@@ -481,7 +481,7 @@ func (v *basicChecker) check_ResourceExpression(e *parser.ResourceExpression) {
 	// to enable better error message of the result of the expression rather than the static instruction.
 	// (This can be revised as there are static constructs that are illegal, but require updating many
 	// tests that expect the detailed reporting).
-	if e.Form() != `regular` {
+	if e.Form() != parser.REGULAR {
 		if typeName, ok := e.TypeName().(*parser.QualifiedName); ok && typeName.Name() == `class` {
 			v.Accept(VALIDATE_NOT_VIRTUALIZABLE, e, issue.NO_ARGS)
 		}
@@ -489,7 +489,7 @@ func (v *basicChecker) check_ResourceExpression(e *parser.ResourceExpression) {
 }
 
 func (v *basicChecker) check_ResourceOverrideExpression(e *parser.ResourceOverrideExpression) {
-	if e.Form() != `regular` {
+	if e.Form() != parser.REGULAR {
 		v.Accept(VALIDATE_NOT_VIRTUALIZABLE, e, issue.NO_ARGS)
 	}
 }

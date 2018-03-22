@@ -52,10 +52,10 @@ type ExpressionFactory interface {
 	RenderExpression(expr Expression, locator *Locator, offset int, length int) Expression
 	RenderString(text string, locator *Locator, offset int, length int) Expression
 	ReservedWord(value string, future bool, locator *Locator, offset int, length int) Expression
-	Resource(form string, typeName Expression, bodies []Expression, locator *Locator, offset int, length int) Expression
+	Resource(form ResourceForm, typeName Expression, bodies []Expression, locator *Locator, offset int, length int) Expression
 	ResourceBody(title Expression, operations []Expression, locator *Locator, offset int, length int) Expression
-	ResourceDefaults(form string, typeRef Expression, operations []Expression, locator *Locator, offset int, length int) Expression
-	ResourceOverride(form string, resources Expression, operations []Expression, locator *Locator, offset int, length int) Expression
+	ResourceDefaults(form ResourceForm, typeRef Expression, operations []Expression, locator *Locator, offset int, length int) Expression
+	ResourceOverride(form ResourceForm, resources Expression, operations []Expression, locator *Locator, offset int, length int) Expression
 	Select(rval Expression, entries []Expression, locator *Locator, offset int, length int) Expression
 	Selector(key Expression, value Expression, locator *Locator, offset int, length int) Expression
 	Site(statements Expression, locator *Locator, offset int, length int) Expression
@@ -275,7 +275,7 @@ func (f *defaultExpressionFactory) ReservedWord(value string, future bool, locat
 	return &ReservedWord{positioned{locator, offset, length}, value, future}
 }
 
-func (f *defaultExpressionFactory) Resource(form string, typeName Expression, bodies []Expression, locator *Locator, offset int, length int) Expression {
+func (f *defaultExpressionFactory) Resource(form ResourceForm, typeName Expression, bodies []Expression, locator *Locator, offset int, length int) Expression {
 	return &ResourceExpression{abstractResource{positioned{locator, offset, length}, form}, typeName, bodies}
 }
 
@@ -283,11 +283,11 @@ func (f *defaultExpressionFactory) ResourceBody(title Expression, operations []E
 	return &ResourceBody{positioned{locator, offset, length}, title, operations}
 }
 
-func (f *defaultExpressionFactory) ResourceDefaults(form string, typeRef Expression, operations []Expression, locator *Locator, offset int, length int) Expression {
+func (f *defaultExpressionFactory) ResourceDefaults(form ResourceForm, typeRef Expression, operations []Expression, locator *Locator, offset int, length int) Expression {
 	return &ResourceDefaultsExpression{abstractResource{positioned{locator, offset, length}, form}, typeRef, operations}
 }
 
-func (f *defaultExpressionFactory) ResourceOverride(form string, resources Expression, operations []Expression, locator *Locator, offset int, length int) Expression {
+func (f *defaultExpressionFactory) ResourceOverride(form ResourceForm, resources Expression, operations []Expression, locator *Locator, offset int, length int) Expression {
 	return &ResourceOverrideExpression{abstractResource{positioned{locator, offset, length}, form}, resources, operations}
 }
 

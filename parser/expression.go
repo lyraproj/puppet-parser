@@ -68,9 +68,11 @@ type (
 		updateOffsetAndLength(offset int, length int)
 	}
 
+	ResourceForm string
+
 	AbstractResource interface {
 		Expression
-		Form() string
+		Form() ResourceForm
 	}
 
 	Definition interface {
@@ -508,7 +510,7 @@ type (
 	// Abstract types
 	abstractResource struct {
 		positioned
-		form string
+		form ResourceForm
 	}
 
 	binaryExpression struct {
@@ -547,6 +549,12 @@ type (
 		positioned
 		expr Expression
 	}
+)
+
+const(
+	VIRTUAL = ResourceForm(`virtual`)
+	EXPORTED = ResourceForm(`exported`)
+	REGULAR = ResourceForm(`regular`)
 )
 
 func (e *Locator) String() string {
@@ -656,7 +664,7 @@ func shallowVisit(e Expression, path []Expression, visitor PathVisitor, children
 	}
 }
 
-func (e *abstractResource) Form() string {
+func (e *abstractResource) Form() ResourceForm {
 	return e.form
 }
 
@@ -1722,8 +1730,8 @@ func (e *ResourceDefaultsExpression) Contents(path []Expression, visitor PathVis
 func (e *ResourceDefaultsExpression) ToPN() pn.PN {
 	entries := make([]pn.Entry, 0, 3)
 	entries = append(entries, e.TypeRef().ToPN().WithName(`type`), pnList(e.Operations()).WithName(`ops`))
-	if e.Form() != `regular` {
-		entries = append(entries, pn.Literal(e.Form()).WithName(`form`))
+	if e.Form() != REGULAR {
+		entries = append(entries, pn.Literal(string(e.Form())).WithName(`form`))
 	}
 	return pn.Map(entries).AsCall(`resource-defaults`)
 }
@@ -1752,8 +1760,8 @@ func (e *ResourceExpression) ToPN() pn.PN {
 		bodies = append(bodies, body.ToPN().AsParameters()...)
 	}
 	entries = append(entries, pn.List(bodies).WithName(`bodies`))
-	if e.Form() != `regular` {
-		entries = append(entries, pn.Literal(e.Form()).WithName(`form`))
+	if e.Form() != REGULAR {
+		entries = append(entries, pn.Literal(string(e.Form())).WithName(`form`))
 	}
 	return pn.Map(entries).AsCall(`resource`)
 }
@@ -1777,8 +1785,8 @@ func (e *ResourceOverrideExpression) Contents(path []Expression, visitor PathVis
 func (e *ResourceOverrideExpression) ToPN() pn.PN {
 	entries := make([]pn.Entry, 0, 3)
 	entries = append(entries, e.Resources().ToPN().WithName(`resources`), pnList(e.Operations()).WithName(`ops`))
-	if e.Form() != `regular` {
-		entries = append(entries, pn.Literal(e.Form()).WithName(`form`))
+	if e.Form() != REGULAR {
+		entries = append(entries, pn.Literal(string(e.Form())).WithName(`form`))
 	}
 	return pn.Map(entries).AsCall(`resource-override`)
 }

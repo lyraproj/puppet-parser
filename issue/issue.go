@@ -183,7 +183,14 @@ func (ri *Reported) Error() (str string) {
 	} else {
 		args = ri.args
 	}
-	return appendLocation(MapSprintf(issue.messageFormat, args), ri.location)
+	pfx := MapSprintf(issue.messageFormat, args)
+	if ri.location == nil {
+		return pfx
+	}
+	b := bytes.NewBufferString(pfx)
+	b.WriteByte(' ')
+	appendLocation(b, ri.location)
+	return b.String()
 }
 
 func (ri *Reported) String() (str string) {
@@ -206,35 +213,37 @@ func (ri *Reported) ToPN() pn.PN {
 		pn.Literal(ri.Error()).WithName(`message`)})
 }
 
-func appendLocation(str string, location Location) string {
+func appendLocation(b *bytes.Buffer, location Location) {
 	if location == nil {
-		return str
+		return
 	}
-	b := bytes.NewBufferString(str)
+	file := location.File()
 	line := location.Line()
+	if file == `` && line <= 0 {
+		return
+	}
+
 	pos := location.Pos()
-	if file := location.File(); file != `` {
+	b.WriteByte('(')
+	if file != `` {
+		b.WriteString(`file: `)
+		b.WriteString(file)
 		if line > 0 {
-			b.WriteString(` at `)
-			b.WriteString(file)
-			b.WriteByte(':')
-			fmt.Fprintf(b, `%d`, line)
-			if pos > 0 {
-				b.WriteByte(':')
-				fmt.Fprintf(b, `%d`, pos)
-			}
-		} else {
-			b.WriteString(` in `)
-			b.WriteString(file)
-		}
-	} else if line > 0 {
-		b.WriteString(` at line `)
-		fmt.Fprintf(b, `%d`, line)
-		if pos > 0 {
-			b.WriteByte(':')
-			fmt.Fprintf(b, `%d`, pos)
+			b.WriteString(`, `)
 		}
 	}
+	if line > 0 {
+		fmt.Fprintf(b, `line: %d`, line)
+		if pos > 0 {
+			fmt.Fprintf(b, `, column: %d`, pos)
+		}
+	}
+	b.WriteByte(')')
+}
+
+func LocationString(location Location) string {
+	b := bytes.NewBufferString(``)
+	appendLocation(b, location)
 	return b.String()
 }
 

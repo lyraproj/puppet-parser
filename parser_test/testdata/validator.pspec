@@ -1,0 +1,207 @@
+Examples('the validator reports',
+  Example('assignment to numeric variable',
+    Given(`$1 = 'y'`),
+    Validates_with(Error(VALIDATE_ILLEGAL_NUMERIC_ASSIGNMENT))),
+
+  Example('assignment to an access expression',
+    Given(`$x['h'] = 'y'`),
+    Validates_with(Error(VALIDATE_ILLEGAL_ASSIGNMENT_VIA_INDEX))),
+
+  Example('assignment to a cross-scope variable',
+    Given(`$b::z = 'y'`),
+    Validates_with(Error(VALIDATE_CROSS_SCOPE_ASSIGNMENT))),
+
+  Examples('multiple variable assign',
+    Example('when receiver list contains a numeric variable',
+      Given(`[$a, $1] = 'y'`),
+      Validates_with(Error(VALIDATE_ILLEGAL_NUMERIC_ASSIGNMENT))),
+
+    Example('when receiver list contains an access expression',
+      Given(`[$a, $b['h']] = 'y'`),
+      Validates_with(Error(VALIDATE_ILLEGAL_ASSIGNMENT_VIA_INDEX))),
+
+    Example('when receiver list contains cross-scope variable',
+      Given(`[$a, $b::z] = 'y'`),
+      Validates_with(Error(VALIDATE_CROSS_SCOPE_ASSIGNMENT))
+    ),
+  ),
+  Examples('no longer supported',
+    Example('append expression',
+      Given(`$x += 'y'`),
+      Validates_with(Error(VALIDATE_APPENDS_DELETES_NO_LONGER_SUPPORTED))),
+
+    Example('delete expression',
+      Given(`$x -= 'y'`),
+      Validates_with(Error(VALIDATE_APPENDS_DELETES_NO_LONGER_SUPPORTED))),
+  ),
+
+  Example('attribute append in resource',
+    Given(`service { apache: require +> File['apache.pem'] }`),
+    Validates_with(Error(VALIDATE_ILLEGAL_ATTRIBUTE_APPEND))),
+
+  Examples('use of splash rocket',
+    Example('in resource defaults',
+      Given(@(SRC)),
+        File {
+          * => $file_ownership
+        }
+        |-SRC
+      Validates_with(Error(VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT))),
+
+    Example('in resource override',
+      Given(@(SRC)),
+        File['/tmp/foo'] {
+          * => $file_ownership
+        }
+        |-SRC
+      Validates_with(Error(VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT))),
+
+    Example('where RHS is not RVALUE',
+      Given(@(SRC)),
+        file { '/tmp/foo':
+          * => function foo {}
+        }
+        |-SRC
+      Validates_with(Error(VALIDATE_NOT_TOP_LEVEL, VALIDATE_NOT_RVALUE))),
+  ),
+
+  Example('call using unknown functor',
+    Given(`$x('a')`),
+    Validates_with(Error(VALIDATE_ILLEGAL_EXPRESSION))),
+
+  Example('binary op with LHS that is not an RVALUE',
+    Given(`define foo() {} < 3`),
+    Validates_with(Error(VALIDATE_NOT_TOP_LEVEL, VALIDATE_NOT_RVALUE))),
+
+  Examples('expression that are not placed last in block',
+    Example('idempotent  array',
+      Given(@(SRC)),
+        ['a', 'b']
+        $x = 3
+        |-SRC
+      Validates_with(Error(VALIDATE_IDEM_EXPRESSION_NOT_LAST))),
+
+    Example('idempotent case',
+      Given(@(SRC)),
+        case $z {
+        2: { true }
+        default: { false }
+        }
+        $x = 3
+        |-SRC
+      Validates_with(Error(VALIDATE_IDEM_EXPRESSION_NOT_LAST))),
+
+    Example('case with side effect in case',
+      Given(@(SRC)),
+        case $z {
+        2: { $v = true }
+        default: { false }
+        }
+        $x = 3
+        |-SRC
+      Validates_ok()),
+
+    Example('case with side effect in test',
+      Given(@(SRC)),
+        case $z {
+        ($y = 2): { true }
+        default: { false }
+        }
+        $x = 3
+        |-SRC
+      Validates_ok()),
+
+    Example('case with side effect in default',
+      Given(@(SRC)),
+        case $z {
+        2: { true }
+        3: { false }
+        default: { $v = 1 }
+        }
+        $x = 3
+        |-SRC
+      Validates_ok()),
+
+    Example('idempotent if',
+      Given(@(SRC)),
+        if $z { 3 } else { 4 }
+        $x = 3
+        |-SRC
+      Validates_with(Error(VALIDATE_IDEM_EXPRESSION_NOT_LAST))),
+
+    Example('if with side effect in test',
+      Given(@(SRC)),
+        if ($v = $z) { 3 } else { 4 }
+        $x = 3
+        |-SRC
+      Validates_ok()),
+
+    Example('if with side effect in then',
+      Given(@(SRC)),
+        if $z { $v = 3 } else { 4 }
+        $x = 3
+        |-SRC
+      Validates_ok()),
+
+    Example('if with side effect in else',
+      Given(@(SRC)),
+        if $z { 3 } else { $v = 4 }
+        $x = 3
+        |-SRC
+      Validates_ok()),
+
+    Example('idempotent unless',
+      Given(@(SRC)),
+        unless $z { 3 } else { 4 }
+        $x = 3
+        |-SRC
+      Validates_with(Error(VALIDATE_IDEM_EXPRESSION_NOT_LAST))),
+
+    Example('unless with side effect in test',
+      Given(@(SRC)),
+        unless ($v = $z) { 3 } else { 4 }
+        $x = 3
+        |-SRC
+      Validates_ok()),
+
+    Example('unless with side effect in then',
+      Given(@(SRC)),
+        unless $z { $v = 3 } else { 4 }
+        $x = 3
+        |-SRC
+      Validates_ok()),
+
+    Example('unless with side effect in else',
+      Given(@(SRC)),
+        unless $z { 3 } else { $v = 4 }
+        $x = 3
+        |-SRC
+      Validates_ok()),
+
+    Example('idempotent parenthesis',
+      Given(@(SRC)),
+        (3 + 4)
+        $x = 3
+        |-SRC
+      Validates_with(Error(VALIDATE_IDEM_EXPRESSION_NOT_LAST))),
+
+    Example('parenthesis with side effect',
+      Given(@(SRC)),
+        ($v = 3 + 4)
+        $x = 3
+        |-SRC
+      Validates_ok()),
+  ),
+
+  Example('method names that start with upper case letter',
+    Given(`$y.Size()`),
+    Validates_with(Error(VALIDATE_ILLEGAL_EXPRESSION))),
+
+  Example('method names that contain dash',
+    Given(`$y.hello-there()`),
+    Validates_with(Error(VALIDATE_ILLEGAL_EXPRESSION))),
+
+  Example('method names that are legal identifiers',
+    Given(`$y.hello_there()`),
+    Validates_ok()),
+)

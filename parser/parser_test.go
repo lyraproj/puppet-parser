@@ -20,10 +20,10 @@ func TestInteger(t *testing.T) {
 	expectDump(t, `+123`, `123`)
 	expectDump(t, `0XABC`, `(int {:radix 16 :value 2748})`)
 	expectDump(t, `0772`, `(int {:radix 8 :value 506})`)
-	expectError(t, `3g`, `digit expected at line 1:2`)
-	expectError(t, `3ö`, `digit expected at line 1:2`)
-	expectError(t, `0x3g21`, `hexadecimal digit expected at line 1:4`)
-	expectError(t, `078`, `octal digit expected at line 1:3`)
+	expectError(t, `3g`, `digit expected (line: 1, column: 2)`)
+	expectError(t, `3ö`, `digit expected (line: 1, column: 2)`)
+	expectError(t, `0x3g21`, `hexadecimal digit expected (line: 1, column: 4)`)
+	expectError(t, `078`, `octal digit expected (line: 1, column: 3)`)
 }
 
 func TestNegativeInteger(t *testing.T) {
@@ -40,11 +40,11 @@ func TestFloat(t *testing.T) {
 	expectDump(t, `12.23e12`, `1.223e+13`)
 	expectDump(t, `12.23e-12`, `1.223e-11`)
 
-	expectError(t, `123.a`, `digit expected at line 1:5`)
-	expectError(t, `123.4a`, `digit expected at line 1:6`)
+	expectError(t, `123.a`, `digit expected (line: 1, column: 5)`)
+	expectError(t, `123.4a`, `digit expected (line: 1, column: 6)`)
 
-	expectError(t, `123.45ex`, `digit expected at line 1:8`)
-	expectError(t, `123.45e3x`, `digit expected at line 1:9`)
+	expectError(t, `123.45ex`, `digit expected (line: 1, column: 8)`)
+	expectError(t, `123.45e3x`, `digit expected (line: 1, column: 9)`)
 }
 
 func TestBoolean(t *testing.T) {
@@ -103,18 +103,18 @@ func TestDoubleQuoted(t *testing.T) {
 
 	expectError(t,
 		`"$Var"`,
-		`malformed interpolation expression at line 1:2`)
+		`malformed interpolation expression (line: 1, column: 2)`)
 
 	expectError(t,
 		Unindent(`
       $x = "y
       notice($x)`),
-		"unterminated double quoted string at line 1:6")
+		"unterminated double quoted string (line: 1, column: 6)")
 
 	expectError(t,
 		Unindent(`
       $x = "y${var"`),
-		"unterminated double quoted string at line 1:13")
+		"unterminated double quoted string (line: 1, column: 13)")
 
 	expectDump(t, `"x\u2713y"`, `"x✓y"`)
 }
@@ -137,7 +137,7 @@ func TestRegexp(t *testing.T) {
 
 	expectError(t,
 		`$a = /.*`,
-		`unexpected token '/' at line 1:6`)
+		`unexpected token '/' (line: 1, column: 6)`)
 }
 
 func TestReserved(t *testing.T) {
@@ -167,7 +167,7 @@ func TestHeredoc(t *testing.T) {
       @(END)
       This is
       heredoc text`),
-		"unterminated heredoc at line 1:1")
+		"unterminated heredoc (line: 1, column: 1)")
 
 	expectDump(t,
 		Unindent(`
@@ -198,7 +198,7 @@ func TestHeredoc(t *testing.T) {
       /t)
       This\nis\nheredoc\ntext
       -END`),
-		`unterminated @( at line 1:1`)
+		`unterminated @( (line: 1, column: 1)`)
 
 	expectError(t,
 		Unindent(`
@@ -206,12 +206,12 @@ func TestHeredoc(t *testing.T) {
       This\nis\nheredoc\ntext
 
       `),
-		`unterminated heredoc at line 1:1`)
+		`unterminated heredoc (line: 1, column: 1)`)
 
 	expectError(t,
 		Unindent(`
       @(END)`),
-		`unterminated heredoc at line 1:1`)
+		`unterminated heredoc (line: 1, column: 1)`)
 }
 
 func TestHeredocSyntax(t *testing.T) {
@@ -226,7 +226,7 @@ func TestHeredocSyntax(t *testing.T) {
       @(END:json:yaml)
       This is
       heredoc text`),
-		`more than one syntax declaration in heredoc at line 1:11`)
+		`more than one syntax declaration in heredoc (line: 1, column: 11)`)
 }
 
 func TestHeredocFlags(t *testing.T) {
@@ -271,14 +271,14 @@ func TestHeredocFlags(t *testing.T) {
       @(END/k)
       This\nis\nheredoc\ntext
       -END`),
-		`illegal heredoc escape 'k' at line 1:7`)
+		`illegal heredoc escape 'k' (line: 1, column: 7)`)
 
 	expectError(t,
 		Unindent(`
       @(END/t/s)
       This\nis\nheredoc\ntext
       -END`),
-		`more than one declaration of escape flags in heredoc at line 1:8`)
+		`more than one declaration of escape flags in heredoc (line: 1, column: 8)`)
 }
 
 func TestHeredocStripNL(t *testing.T) {
@@ -373,7 +373,7 @@ func TestHeredocInterpolate(t *testing.T) {
         This is
         heredoc $text
         |- END`),
-		`more than one tag declaration in heredoc at line 1:8`)
+		`more than one tag declaration in heredoc (line: 1, column: 8)`)
 
 	expectError(t,
 		Unindent(`
@@ -382,7 +382,7 @@ func TestHeredocInterpolate(t *testing.T) {
         This is
         heredoc $text
         |- END`),
-		`unterminated @( at line 1:1`)
+		`unterminated @( (line: 1, column: 1)`)
 
 	expectError(t,
 		Unindent(`
@@ -390,7 +390,7 @@ func TestHeredocInterpolate(t *testing.T) {
         This is
         heredoc $text
         |-`),
-		`empty heredoc tag at line 1:1`)
+		`empty heredoc tag (line: 1, column: 1)`)
 
 	expectError(t,
 		Unindent(`
@@ -398,7 +398,7 @@ func TestHeredocInterpolate(t *testing.T) {
         This is
         heredoc $text
         |-`),
-		`empty heredoc tag at line 1:1`)
+		`empty heredoc tag (line: 1, column: 1)`)
 }
 
 func TestHeredocNewlineEscape(t *testing.T) {
@@ -461,35 +461,35 @@ func TestHeredocUnicodeEscape(t *testing.T) {
       @(END/u)
         A hat \u{1f452 symbol
         |- END`),
-		`malformed unicode escape sequence at line 2:9`)
+		`malformed unicode escape sequence (line: 2, column: 9)`)
 
 	expectError(t,
 		Unindent(`
       @(END/u)
         A hat \u{1f45234} symbol
         |- END`),
-		`malformed unicode escape sequence at line 2:9`)
+		`malformed unicode escape sequence (line: 2, column: 9)`)
 
 	expectError(t,
 		Unindent(`
       @(END/u)
         A hat \u{1} symbol
         |- END`),
-		`malformed unicode escape sequence at line 2:9`)
+		`malformed unicode escape sequence (line: 2, column: 9)`)
 
 	expectError(t,
 		Unindent(`
       @(END/u)
         A checkmark \u271 symbol
         |- END`),
-		`malformed unicode escape sequence at line 2:15`)
+		`malformed unicode escape sequence (line: 2, column: 15)`)
 
 	expectError(t,
 		Unindent(`
       @(END/u)
         A checkmark \ux271 symbol
         |- END`),
-		`malformed unicode escape sequence at line 2:15`)
+		`malformed unicode escape sequence (line: 2, column: 15)`)
 }
 
 func TestMLCommentAfterHeredocTag(t *testing.T) {
@@ -537,27 +537,27 @@ func TestVariable(t *testing.T) {
 
 	expectError(t,
 		`$var:b`,
-		`unexpected token ':' at line 1:5`)
+		`unexpected token ':' (line: 1, column: 5)`)
 
 	expectError(t,
 		`$Var`,
-		`invalid variable name at line 1:2`)
+		`invalid variable name (line: 1, column: 2)`)
 
 	expectError(t,
 		`$:var::b`,
-		`invalid variable name at line 1:1`)
+		`invalid variable name (line: 1, column: 1)`)
 
 	expectError(t,
 		`$::var::B`,
-		`invalid variable name at line 1:1`)
+		`invalid variable name (line: 1, column: 1)`)
 
 	expectError(t,
 		`$::var::_b::c`,
-		`invalid variable name at line 1:1`)
+		`invalid variable name (line: 1, column: 1)`)
 
 	expectError(t,
 		`$::_var::b`,
-		`unexpected token '_' at line 1:4`)
+		`unexpected token '_' (line: 1, column: 4)`)
 }
 
 func TestArray(t *testing.T) {
@@ -587,11 +587,11 @@ func TestArray(t *testing.T) {
 
 	expectError(t,
 		`[1,2 3]`,
-		`expected one of ',' or ']', got 'integer literal' at line 1:6`)
+		`expected one of ',' or ']', got 'integer literal' (line: 1, column: 6)`)
 
 	expectError(t,
 		`[1,2,3`,
-		`expected one of ',' or ']', got 'EOF' at line 1:7`)
+		`expected one of ',' or ']', got 'EOF' (line: 1, column: 7)`)
 }
 
 func TestHash(t *testing.T) {
@@ -609,15 +609,15 @@ func TestHash(t *testing.T) {
 
 	expectError(t,
 		`{a => 1, b, 2}`,
-		`expected '=>' to follow hash key at line 1:12`)
+		`expected '=>' to follow hash key (line: 1, column: 12)`)
 
 	expectError(t,
 		`{a => 1 b => 2}`,
-		`expected one of ',' or '}', got 'identifier' at line 1:9`)
+		`expected one of ',' or '}', got 'identifier' (line: 1, column: 9)`)
 
 	expectError(t,
 		`{a => 1, b => 2`,
-		`expected one of ',' or '}', got 'EOF' at line 1:16`)
+		`expected one of ',' or '}', got 'EOF' (line: 1, column: 16)`)
 }
 
 func TestBlock(t *testing.T) {
@@ -649,7 +649,7 @@ func TestBlock(t *testing.T) {
 		Unindent(`
       $a = 'a',
       $b = 'b'`),
-		`Extraneous comma between statements at line 1:10`)
+		`Extraneous comma between statements (line: 1, column: 10)`)
 }
 
 func TestFunctionDefintion(t *testing.T) {
@@ -683,38 +683,38 @@ func TestFunctionDefintion(t *testing.T) {
 	expectError(t,
 		Unindent(`
       function foo($1) {}`),
-		`expected variable declaration at line 1:16`)
+		`expected variable declaration (line: 1, column: 16)`)
 
 	expectError(t,
 		Unindent(`
       function myFunc(Integer *numbers) >> Integer {
          numbers.size
       }`),
-		`expected variable declaration at line 1:33`)
+		`expected variable declaration (line: 1, column: 33)`)
 
 	expectError(t,
 		Unindent(`
       function myFunc(Integer *$numbers) >> $var {
          numbers.size
       }`),
-		`expected type name at line 1:43`)
+		`expected type name (line: 1, column: 43)`)
 
 	expectError(t,
 		Unindent(`
       function 'myFunc'() {
          true
       }`),
-		`expected a name to follow keyword 'function' at line 1:10`)
+		`expected a name to follow keyword 'function' (line: 1, column: 10)`)
 
 	expectError(t,
 		Unindent(`
       function myFunc() true`),
-		`expected token '{', got 'boolean literal' at line 1:19`)
+		`expected token '{', got 'boolean literal' (line: 1, column: 19)`)
 
 	expectError(t,
 		Unindent(`
       function myFunc() >> Boolean true`),
-		`expected token '{', got 'boolean literal' at line 1:30`)
+		`expected token '{', got 'boolean literal' (line: 1, column: 30)`)
 }
 
 func TestPlanDefintion(t *testing.T) {
@@ -734,7 +734,7 @@ func TestPlanDefintion(t *testing.T) {
 		`(plan {:name "foo" :params {:p1 {:value "yo"} :p2 {}} :body []})`, PARSER_TASKS_ENABLED)
 
 	expectError(t, `$a = plan`,
-		`expected a name to follow keyword 'plan' at line 1:10`, PARSER_TASKS_ENABLED)
+		`expected a name to follow keyword 'plan' (line: 1, column: 10)`, PARSER_TASKS_ENABLED)
 
 	expectDump(t, `$a = plan`,
 		`(= (var "a") (qn "plan"))`)
@@ -794,13 +794,13 @@ func TestNodeDefinition(t *testing.T) {
 		Unindent(`
       node [hosta.com, hostb.com] {
       }`),
-		Unindent(`hostname expected at line 1:7`))
+		Unindent(`hostname expected (line: 1, column: 7)`))
 
 	expectError(t,
 		Unindent(`
       node example.* {
       }`),
-		Unindent(`expected name or number to follow '.' at line 1:15`))
+		Unindent(`expected name or number to follow '.' (line: 1, column: 15)`))
 }
 
 func TestSiteDefinition(t *testing.T) {
@@ -838,28 +838,28 @@ func TestTypeDefinition(t *testing.T) {
       type MyType inherits OtherType [{
         # What statements that can be included here is not yet speced
       }]`),
-		`expected token '{', got '[' at line 1:32`)
+		`expected token '{', got '[' (line: 1, column: 32)`)
 
 	expectError(t,
 		Unindent(`
       type MyType inherits $other {
         # What statements that can be included here is not yet speced
       }`),
-		`expected type name to follow 'inherits' at line 1:28`)
+		`expected type name to follow 'inherits' (line: 1, column: 28)`)
 
 	expectError(t,
 		Unindent(`
       type MyType[a,b] {
         # What statements that can be included here is not yet speced
       }`),
-		`expected type name to follow 'type' at line 1:19`)
+		`expected type name to follow 'type' (line: 1, column: 19)`)
 
 	expectError(t,
 		Unindent(`
       type MyType << {
         # What statements that can be included here is not yet speced
       }`),
-		`unexpected token '<<' at line 1:15`)
+		`unexpected token '<<' (line: 1, column: 15)`)
 }
 
 func TestTypeAlias(t *testing.T) {
@@ -875,7 +875,7 @@ func TestTypeAlias(t *testing.T) {
 
 	expectError(t,
 		`type Mod::myType[a, b] = Object[{}]`,
-		`invalid type name at line 1:6`)
+		`invalid type name (line: 1, column: 6)`)
 }
 
 func TestTypeMapping(t *testing.T) {
@@ -947,19 +947,19 @@ func TestClass(t *testing.T) {
 		Unindent(`
       class 'myclass' {
       }`),
-		`a quoted string is not valid as a name at this location at line 1:7`)
+		`a quoted string is not valid as a name at this location (line: 1, column: 7)`)
 
 	expectError(t,
 		Unindent(`
       class class {
       }`),
-		`'class' keyword not allowed at this location at line 1:7`)
+		`'class' keyword not allowed at this location (line: 1, column: 7)`)
 
 	expectError(t,
 		Unindent(`
       class [a, b] {
       }`),
-		`expected name of class at line 1:7`)
+		`expected name of class (line: 1, column: 7)`)
 }
 
 func TestDefinition(t *testing.T) {
@@ -1097,12 +1097,12 @@ func TestCallNamed(t *testing.T) {
 	expectError(t,
 		Unindent(`
       $x = myFunc(3`),
-		`expected one of ',' or ')', got 'EOF' at line 1:14`)
+		`expected one of ',' or ')', got 'EOF' (line: 1, column: 14)`)
 
 	expectError(t,
 		Unindent(`
       $x = myFunc() || $r + 2 }`),
-		`expected token '{', got 'variable' at line 1:18`)
+		`expected token '{', got 'variable' (line: 1, column: 18)`)
 
 }
 
@@ -1222,15 +1222,15 @@ func TestIdentifiers(t *testing.T) {
 
 	expectError(t,
 		`abc:cde`,
-		`unexpected token ':' at line 1:4`)
+		`unexpected token ':' (line: 1, column: 4)`)
 
 	expectError(t,
 		`Ab::bc`,
-		`invalid type name at line 1:1`)
+		`invalid type name (line: 1, column: 1)`)
 
 	expectError(t,
 		`$x = ::3m`,
-		`:: not followed by name segment at line 1:6`)
+		`:: not followed by name segment (line: 1, column: 6)`)
 }
 
 func TestRestOfLineComment(t *testing.T) {
@@ -1269,14 +1269,14 @@ func TestSingleQuote(t *testing.T) {
 		Unindent(`
       $x = 'y
       notice($x)`),
-		"unterminated single quoted string at line 1:6")
+		"unterminated single quoted string (line: 1, column: 6)")
 }
 
 func TestUnterminatedQuoteEscapedEnd(t *testing.T) {
 	expectError(t,
 		Unindent(`
       $x = 'y\`),
-		"unterminated single quoted string at line 1:6")
+		"unterminated single quoted string (line: 1, column: 6)")
 }
 
 func TestStrayTilde(t *testing.T) {
@@ -1284,7 +1284,7 @@ func TestStrayTilde(t *testing.T) {
 		Unindent(`
       $x ~ 'y'
       notice($x)`),
-		"unexpected token '~' at line 1:4")
+		"unexpected token '~' (line: 1, column: 4)")
 }
 
 func TestUnknownToken(t *testing.T) {
@@ -1292,7 +1292,7 @@ func TestUnknownToken(t *testing.T) {
 		Unindent(`
       $x ^ 'y'
       notice($x)`),
-		"unexpected token '^' at line 1:4")
+		"unexpected token '^' (line: 1, column: 4)")
 }
 
 func TestUnterminatedComment(t *testing.T) {
@@ -1301,7 +1301,7 @@ func TestUnterminatedComment(t *testing.T) {
       $x = 'y'
       /* The above is a variable assignment
       notice($y)`),
-		"unterminated /* */ comment at line 2:1")
+		"unterminated /* */ comment (line: 2, column: 1)")
 }
 
 func TestIf(t *testing.T) {
@@ -1350,7 +1350,7 @@ func TestIf(t *testing.T) {
 
 	expectError(t,
 		`$x = else { 3 }`,
-		`unexpected token 'else' at line 1:6`)
+		`unexpected token 'else' (line: 1, column: 6)`)
 }
 
 func TestUnless(t *testing.T) {
@@ -1395,7 +1395,7 @@ func TestUnless(t *testing.T) {
       } else {
         3
       }`),
-		`elsif not supported in unless expression at line 3:8`)
+		`elsif not supported in unless expression (line: 3, column: 8)`)
 }
 
 func TestSelector(t *testing.T) {
@@ -1587,7 +1587,7 @@ func TestResource(t *testing.T) {
         mode => '0640',
         ensure => present
       `),
-		`expected token '}', got 'EOF' at line 4:1`)
+		`expected token '}', got 'EOF' (line: 4, column: 1)`)
 
 	expectError(t,
 		Unindent(`
@@ -1595,7 +1595,7 @@ func TestResource(t *testing.T) {
         mode, '0640',
         ensure, present
       }`),
-		`invalid attribute operation at line 2:8`)
+		`invalid attribute operation (line: 2, column: 8)`)
 
 	expectError(t,
 		Unindent(`
@@ -1603,7 +1603,7 @@ func TestResource(t *testing.T) {
         'mode' => '0640',
         'ensure' => present
       }`),
-		`expected attribute name at line 2:3`)
+		`expected attribute name (line: 2, column: 3)`)
 }
 
 func TestMultipleBodies(t *testing.T) {
@@ -1629,7 +1629,7 @@ func TestMultipleBodies(t *testing.T) {
         mode => '0640',
         ensure => present;
       }`),
-		`resource title expected at line 4:1`)
+		`resource title expected (line: 4, column: 1)`)
 }
 
 func TestStatmentCallWithUnparameterizedHash(t *testing.T) {
@@ -1641,7 +1641,7 @@ func TestStatmentCallWithUnparameterizedHash(t *testing.T) {
 func TestNonStatmentCallWithUnparameterizedHash(t *testing.T) {
 	expectError(t,
 		`something { message => 'syntax ok' }`,
-		`This expression is invalid. Did you try declaring a 'something' resource without a title? at line 1:1`)
+		`This expression is invalid. Did you try declaring a 'something' resource without a title? (line: 1, column: 1)`)
 }
 
 func TestResourceDefaults(t *testing.T) {
@@ -1681,7 +1681,7 @@ func TestResourceOverride(t *testing.T) {
 func TestInvalidResource(t *testing.T) {
 	expectError(t,
 		`'File' { mode => '0644' }`,
-		`invalid resource expression at line 1:1`)
+		`invalid resource expression (line: 1, column: 1)`)
 }
 
 func TestVirtualResourceCollector(t *testing.T) {
@@ -1769,7 +1769,7 @@ func TestOperators(t *testing.T) {
 
 	expectError(t,
 		`$x = +b`,
-		`unexpected token '+' at line 1:7`)
+		`unexpected token '+' (line: 1, column: 7)`)
 }
 
 func TestMatch(t *testing.T) {
@@ -1823,7 +1823,7 @@ func TestEPP(t *testing.T) {
 	expectErrorEPP(t,
 		Unindent(`
       <%||%> some <%#-text`),
-		`unbalanced epp comment at line 1:13`)
+		`unbalanced epp comment (line: 1, column: 13)`)
 
 	expectDumpEPP(t,
 		Unindent(`
@@ -1843,7 +1843,7 @@ func TestEPP(t *testing.T) {
 	expectErrorEPP(t,
 		Unindent(`
       <%-||-%> some <%- $x = 3 -% $y %> text`),
-		`invalid operator '-%' at line 1:28`)
+		`invalid operator '-%' (line: 1, column: 28)`)
 
 	expectBlockEPP(t,
 		Unindent(`
@@ -1925,21 +1925,21 @@ func TestEPP(t *testing.T) {
 	expectError(t,
 		Unindent(`
       <% $x = 3 %> text`),
-		`unexpected token '<' at line 1:1`)
+		`unexpected token '<' (line: 1, column: 1)`)
 
 	expectError(t,
 		Unindent(`
       $x = 3 %> 4`),
-		`unexpected token '>' at line 1:9`)
+		`unexpected token '>' (line: 1, column: 9)`)
 
 	expectError(t,
 		Unindent(`
       $x = 3 -%> 4`),
-		`unexpected token '%' at line 1:9`)
+		`unexpected token '%' (line: 1, column: 9)`)
 
 	expectErrorEPP(t,
 		"\n<% |String $x| %>\n",
-		`Ambiguous EPP parameter expression. Probably missing '<%-' before parameters to remove leading whitespace at line 2:5`)
+		`Ambiguous EPP parameter expression. Probably missing '<%-' before parameters to remove leading whitespace (line: 2, column: 5)`)
 }
 
 func expectDumpEPP(t *testing.T, source string, expected string) {
