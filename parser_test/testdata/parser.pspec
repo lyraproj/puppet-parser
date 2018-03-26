@@ -407,7 +407,7 @@ Examples('MatchExpression',
 Example(`NamedAccessExpression`,
   # The actual NamedAccess is the functor (. (. (qn "a") (qn "b")) (qn "c"))
   Given('a.b.c'),
-  Parses_to(`(call-method {:functor (. (. (qn "a") (qn "b")) (qn "c")) :args []})`))
+  Parses_to(`(call-method {:functor (. (call-method {:functor (. (qn "a") (qn "b")) :args []}) (qn "c")) :args []})`))
 
 Examples(`NodeDefinition`,
   Example('name',

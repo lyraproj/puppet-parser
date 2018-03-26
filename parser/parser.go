@@ -459,13 +459,21 @@ func (ctx *context) expression() (expr Expression) {
 			}
 		default:
 			if namedAccess, ok := expr.(*NamedAccessExpression); ok {
-				// Transform into method call
-				expr = ctx.factory.CallMethod(namedAccess, make([]Expression, 0), nil, ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+				// Transform into method calls
+				expr = ctx.convertLhsToCall(namedAccess)
 			}
 		}
 		break
 	}
 	return
+}
+
+func (ctx *context) convertLhsToCall(ne *NamedAccessExpression) Expression {
+	f := ctx.factory
+	if nal, ok := ne.lhs.(*NamedAccessExpression); ok {
+		ne = f.NamedAccess(ctx.convertLhsToCall(nal), ne.rhs, ctx.locator, ne.byteOffset(), ne.byteLength()).(*NamedAccessExpression)
+	}
+	return f.CallMethod(ne, make([]Expression, 0), nil, ctx.locator, ne.byteOffset(), ne.byteLength())
 }
 
 func (ctx *context) selectExpression() (expr Expression) {
