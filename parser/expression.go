@@ -61,9 +61,11 @@ type (
 		//
 		ToPN() pn.PN
 
-		byteLength() int
+		ByteLength() int
 
-		byteOffset() int
+		ByteOffset() int
+
+		Locator() *Locator
 
 		updateOffsetAndLength(offset int, length int)
 	}
@@ -617,12 +619,16 @@ func (e *positioned) Pos() int {
 
 func (e *positioned) IsNop() bool { return false }
 
-func (e *positioned) byteLength() int {
+func (e *positioned) ByteLength() int {
 	return e.length
 }
 
-func (e *positioned) byteOffset() int {
+func (e *positioned) ByteOffset() int {
 	return e.offset
+}
+
+func (e *positioned) Locator() *Locator {
+	return e.locator
 }
 
 func (e *positioned) updateOffsetAndLength(offset int, length int) {

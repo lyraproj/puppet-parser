@@ -1156,19 +1156,19 @@ func (ctx *context) interpolate(start int) Expression {
 			access := expr.(*AccessExpression)
 			if identifier, ok := access.operand.(*QualifiedName); ok {
 				expr = ctx.factory.Access(
-					ctx.factory.Variable(identifier, ctx.locator, start, identifier.byteLength()+1),
-					access.keys, ctx.locator, start, access.byteLength()+1)
+					ctx.factory.Variable(identifier, ctx.locator, start, identifier.ByteLength()+1),
+					access.keys, ctx.locator, start, access.ByteLength()+1)
 			}
 		case *CallMethodExpression:
 			call := expr.(*CallMethodExpression)
 			if identifier, ok := call.functor.(*QualifiedName); ok {
 				expr = ctx.factory.CallMethod(
-					ctx.factory.Variable(identifier, ctx.locator, start, identifier.byteLength()+1),
-					call.arguments, call.lambda, ctx.locator, start, call.byteLength()+1)
+					ctx.factory.Variable(identifier, ctx.locator, start, identifier.ByteLength()+1),
+					call.arguments, call.lambda, ctx.locator, start, call.ByteLength()+1)
 			} else if ne, ok := call.functor.(*NamedAccessExpression); ok {
 				modNe := ctx.convertNamedAccessLHS(ne, start)
 				if modNe != ne {
-					expr = ctx.factory.CallMethod(modNe, call.arguments, call.lambda, ctx.locator, start, call.byteLength()+1)
+					expr = ctx.factory.CallMethod(modNe, call.arguments, call.lambda, ctx.locator, start, call.ByteLength()+1)
 				}
 			}
 		}
@@ -1193,25 +1193,25 @@ func (ctx *context) convertNamedAccessLHS(expr *NamedAccessExpression, start int
 	switch lhs.(type) {
 	case *QualifiedName:
 		return ctx.factory.NamedAccess(
-			ctx.factory.Variable(lhs, ctx.locator, start, lhs.byteLength()+1),
-			expr.rhs, ctx.locator, start, expr.byteLength()+1)
+			ctx.factory.Variable(lhs, ctx.locator, start, lhs.ByteLength()+1),
+			expr.rhs, ctx.locator, start, expr.ByteLength()+1)
 	case *AccessExpression:
 		access := lhs.(*AccessExpression)
 		if identifier, ok := access.operand.(*QualifiedName); ok {
 			lhs = ctx.factory.Access(
-				ctx.factory.Variable(identifier, ctx.locator, start, identifier.byteLength()+1),
-				access.keys, ctx.locator, start, access.byteLength()+1)
+				ctx.factory.Variable(identifier, ctx.locator, start, identifier.ByteLength()+1),
+				access.keys, ctx.locator, start, access.ByteLength()+1)
 		}
-		return ctx.factory.NamedAccess(lhs, expr.rhs, ctx.locator, start, expr.byteLength()+1)
+		return ctx.factory.NamedAccess(lhs, expr.rhs, ctx.locator, start, expr.ByteLength()+1)
 	case *NamedAccessExpression:
 		return ctx.factory.NamedAccess(
 			ctx.convertNamedAccessLHS(lhs.(*NamedAccessExpression), start),
-			expr.rhs, ctx.locator, start, expr.byteLength()+1)
+			expr.rhs, ctx.locator, start, expr.ByteLength()+1)
 	}
 	if identifier, ok := lhs.(*QualifiedName); ok {
 		return ctx.factory.NamedAccess(
-			ctx.factory.Variable(identifier, ctx.locator, start, identifier.byteLength()+1),
-			expr.rhs, ctx.locator, start, expr.byteLength()+1)
+			ctx.factory.Variable(identifier, ctx.locator, start, identifier.ByteLength()+1),
+			expr.rhs, ctx.locator, start, expr.ByteLength()+1)
 	}
 	return expr
 }
@@ -1281,7 +1281,7 @@ func (ctx *context) consumeDoubleQuotedString() {
 	} else {
 		segments = append(segments, ctx.factory.String(ctx.tokenValue.(string), ctx.locator, ctx.tokenStartPos, ctx.Pos()-ctx.tokenStartPos))
 	}
-	firstPos := segments[0].byteOffset()
+	firstPos := segments[0].ByteOffset()
 	if len(segments) == 1 {
 		if _, ok := segments[0].(*LiteralString); ok {
 		// Avoid turning a single string literal into a concatenated string

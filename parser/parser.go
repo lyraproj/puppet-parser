@@ -290,7 +290,7 @@ func (ctx *context) transformCalls(exprs []Expression, start int) (result []Expr
 			} else {
 				args = []Expression{expr}
 			}
-			cn := ctx.factory.CallNamed(memo, false, args, nil, ctx.locator, memo.byteOffset(), (expr.byteOffset()+expr.byteLength())-memo.byteOffset())
+			cn := ctx.factory.CallNamed(memo, false, args, nil, ctx.locator, memo.ByteOffset(), (expr.ByteOffset()+expr.ByteLength())-memo.ByteOffset())
 			if cnFunc, ok := expr.(*CallNamedFunctionExpression); ok {
 				cnFunc.rvalRequired = true
 			}
@@ -318,7 +318,7 @@ func (ctx *context) transformCalls(exprs []Expression, start int) (result []Expr
 			// location of the comma is estimated to be right after the first statement in
 			// the list
 			f := csl.elements[0]
-			p := f.byteOffset() + f.byteLength()
+			p := f.ByteOffset() + f.ByteLength()
 			l := ctx.locator
 			loc := issue.NewLocation(f.File(), l.LineForOffset(p), l.PosOnLine(p))
 			panic(issue.NewReported(PARSE_EXTRANEOUS_COMMA, issue.SEVERITY_ERROR, issue.NO_ARGS, loc))
@@ -361,7 +361,7 @@ func (ctx *context) syntacticStatement() (expr Expression) {
 		args = append(args, ctx.relationship())
 	}
 	if args != nil {
-		expr = &commaSeparatedList{LiteralList{positioned{ctx.locator, expr.byteOffset(), ctx.Pos() - expr.byteOffset()}, args}}
+		expr = &commaSeparatedList{LiteralList{positioned{ctx.locator, expr.ByteOffset(), ctx.Pos() - expr.ByteOffset()}, args}}
 	}
 	return
 }
@@ -375,7 +375,7 @@ func (ctx *context) argument() (expr Expression) {
 	if ctx.currentToken == TOKEN_FARROW {
 		ctx.nextToken()
 		value := ctx.handleKeyword(ctx.relationship)
-		expr = ctx.factory.KeyedEntry(expr, value, ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+		expr = ctx.factory.KeyedEntry(expr, value, ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 	}
 	return
 }
@@ -405,7 +405,7 @@ func (ctx *context) relationship() (expr Expression) {
 		case TOKEN_IN_EDGE, TOKEN_IN_EDGE_SUB, TOKEN_OUT_EDGE, TOKEN_OUT_EDGE_SUB:
 			op := ctx.tokenString()
 			ctx.nextToken()
-			expr = ctx.factory.RelOp(op, expr, ctx.resource(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+			expr = ctx.factory.RelOp(op, expr, ctx.resource(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 		default:
 			return expr
 		}
@@ -419,7 +419,7 @@ func (ctx *context) assignment() (expr Expression) {
 		case TOKEN_ASSIGN, TOKEN_ADD_ASSIGN, TOKEN_SUBTRACT_ASSIGN:
 			op := ctx.tokenString()
 			ctx.nextToken()
-			expr = ctx.factory.Assignment(op, expr, ctx.assignment(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+			expr = ctx.factory.Assignment(op, expr, ctx.assignment(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 		case TOKEN_PIPE:
 			switch expr.(type) {
 			case *QualifiedName:
@@ -441,7 +441,7 @@ func (ctx *context) assignment() (expr Expression) {
 func (ctx *context) resource() (expr Expression) {
 	expr = ctx.expression()
 	if ctx.currentToken == TOKEN_LC {
-		expr = ctx.resourceExpression(expr.byteOffset(), expr, REGULAR)
+		expr = ctx.resourceExpression(expr.ByteOffset(), expr, REGULAR)
 	}
 	return
 }
@@ -471,9 +471,9 @@ func (ctx *context) expression() (expr Expression) {
 func (ctx *context) convertLhsToCall(ne *NamedAccessExpression) Expression {
 	f := ctx.factory
 	if nal, ok := ne.lhs.(*NamedAccessExpression); ok {
-		ne = f.NamedAccess(ctx.convertLhsToCall(nal), ne.rhs, ctx.locator, ne.byteOffset(), ne.byteLength()).(*NamedAccessExpression)
+		ne = f.NamedAccess(ctx.convertLhsToCall(nal), ne.rhs, ctx.locator, ne.ByteOffset(), ne.ByteLength()).(*NamedAccessExpression)
 	}
-	return f.CallMethod(ne, make([]Expression, 0), nil, ctx.locator, ne.byteOffset(), ne.byteLength())
+	return f.CallMethod(ne, make([]Expression, 0), nil, ctx.locator, ne.ByteOffset(), ne.ByteLength())
 }
 
 func (ctx *context) selectExpression() (expr Expression) {
@@ -494,7 +494,7 @@ func (ctx *context) orExpression() (expr Expression) {
 		switch ctx.currentToken {
 		case TOKEN_OR:
 			ctx.nextToken()
-			expr = ctx.factory.Or(expr, ctx.orExpression(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+			expr = ctx.factory.Or(expr, ctx.orExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 		default:
 			return
 		}
@@ -507,7 +507,7 @@ func (ctx *context) andExpression() (expr Expression) {
 		switch ctx.currentToken {
 		case TOKEN_AND:
 			ctx.nextToken()
-			expr = ctx.factory.And(expr, ctx.andExpression(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+			expr = ctx.factory.And(expr, ctx.andExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 		default:
 			return
 		}
@@ -521,7 +521,7 @@ func (ctx *context) compareExpression() (expr Expression) {
 		case TOKEN_LESS, TOKEN_LESS_EQUAL, TOKEN_GREATER, TOKEN_GREATER_EQUAL:
 			op := ctx.tokenString()
 			ctx.nextToken()
-			expr = ctx.factory.Comparison(op, expr, ctx.compareExpression(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+			expr = ctx.factory.Comparison(op, expr, ctx.compareExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 
 		default:
 			return
@@ -537,7 +537,7 @@ func (ctx *context) equalExpression() (expr Expression) {
 		case TOKEN_EQUAL, TOKEN_NOT_EQUAL:
 			op := ctx.tokenString()
 			ctx.nextToken()
-			expr = ctx.factory.Comparison(op, expr, ctx.equalExpression(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+			expr = ctx.factory.Comparison(op, expr, ctx.equalExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 
 		default:
 			return
@@ -553,7 +553,7 @@ func (ctx *context) shiftExpression() (expr Expression) {
 		case TOKEN_LSHIFT, TOKEN_RSHIFT:
 			op := ctx.tokenString()
 			ctx.nextToken()
-			expr = ctx.factory.Arithmetic(op, expr, ctx.shiftExpression(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+			expr = ctx.factory.Arithmetic(op, expr, ctx.shiftExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 
 		default:
 			return
@@ -569,7 +569,7 @@ func (ctx *context) additiveExpression() (expr Expression) {
 		case TOKEN_ADD, TOKEN_SUBTRACT:
 			op := ctx.tokenString()
 			ctx.nextToken()
-			expr = ctx.factory.Arithmetic(op, expr, ctx.additiveExpression(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+			expr = ctx.factory.Arithmetic(op, expr, ctx.additiveExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 
 		default:
 			return
@@ -585,7 +585,7 @@ func (ctx *context) multiplicativeExpression() (expr Expression) {
 		case TOKEN_MULTIPLY, TOKEN_DIVIDE, TOKEN_REMAINDER:
 			op := ctx.tokenString()
 			ctx.nextToken()
-			expr = ctx.factory.Arithmetic(op, expr, ctx.multiplicativeExpression(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+			expr = ctx.factory.Arithmetic(op, expr, ctx.multiplicativeExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 
 		default:
 			return
@@ -601,7 +601,7 @@ func (ctx *context) matchExpression() (expr Expression) {
 		case TOKEN_MATCH, TOKEN_NOT_MATCH:
 			op := ctx.tokenString()
 			ctx.nextToken()
-			expr = ctx.factory.Match(op, expr, ctx.matchExpression(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+			expr = ctx.factory.Match(op, expr, ctx.matchExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 
 		default:
 			return
@@ -615,7 +615,7 @@ func (ctx *context) inExpression() (expr Expression) {
 		switch ctx.currentToken {
 		case TOKEN_IN:
 			ctx.nextToken()
-			expr = ctx.factory.In(expr, ctx.inExpression(), ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+			expr = ctx.factory.In(expr, ctx.inExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 
 		default:
 			return expr
@@ -634,7 +634,7 @@ func (ctx *context) keyedEntry() Expression {
 	}
 	ctx.nextToken()
 	value := ctx.hashEntry()
-	return ctx.factory.KeyedEntry(key, value, ctx.locator, key.byteOffset(), ctx.Pos()-key.byteOffset())
+	return ctx.factory.KeyedEntry(key, value, ctx.locator, key.ByteOffset(), ctx.Pos()-key.ByteOffset())
 }
 
 func (ctx *context) hashExpression() (entries []Expression) {
@@ -706,7 +706,7 @@ func (ctx *context) primaryExpression() (expr Expression) {
 		case TOKEN_LB:
 			ctx.nextToken()
 			params := ctx.arrayExpression()
-			expr = ctx.factory.Access(expr, params, ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+			expr = ctx.factory.Access(expr, params, ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 		case TOKEN_DOT:
 			ctx.nextToken()
 			var rhs Expression
@@ -716,7 +716,7 @@ func (ctx *context) primaryExpression() (expr Expression) {
 			} else {
 				rhs = ctx.atomExpression()
 			}
-			expr = ctx.factory.NamedAccess(expr, rhs, ctx.locator, expr.byteOffset(), ctx.Pos()-expr.byteOffset())
+			expr = ctx.factory.NamedAccess(expr, rhs, ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 		default:
 			return
 		}
@@ -898,7 +898,7 @@ func (ctx *context) selectorsExpression(test Expression) (expr Expression) {
 	} else {
 		selectors = []Expression{ctx.selectorEntry()}
 	}
-	return ctx.factory.Select(test, selectors, ctx.locator, test.byteOffset(), ctx.Pos()-test.byteOffset())
+	return ctx.factory.Select(test, selectors, ctx.locator, test.ByteOffset(), ctx.Pos()-test.ByteOffset())
 }
 
 func (ctx *context) selectorEntry() (expr Expression) {
@@ -985,7 +985,7 @@ func (ctx *context) resourceExpression(start int, first Expression, form Resourc
 			ops := ctx.attributeOperations()
 			expr = ctx.factory.ResourceOverride(form, first, ops, ctx.locator, start, ctx.Pos()-start)
 		default:
-			ctx.SetPos(first.byteOffset())
+			ctx.SetPos(first.ByteOffset())
 			panic(ctx.parseIssue(PARSE_INVALID_RESOURCE))
 		}
 	} else {
@@ -1031,12 +1031,12 @@ func (ctx *context) resourceBodies(title Expression) (result []Expression) {
 
 func (ctx *context) resourceBody(title Expression) Expression {
 	if ctx.currentToken != TOKEN_COLON {
-		ctx.SetPos(title.byteOffset())
+		ctx.SetPos(title.ByteOffset())
 		panic(ctx.parseIssue(PARSE_EXPECTED_TITLE))
 	}
 	ctx.nextToken()
 	ops := ctx.attributeOperations()
-	return ctx.factory.ResourceBody(title, ops, ctx.locator, title.byteOffset(), ctx.Pos()-title.byteOffset())
+	return ctx.factory.ResourceBody(title, ops, ctx.locator, title.ByteOffset(), ctx.Pos()-title.ByteOffset())
 }
 
 func (ctx *context) attributeOperations() (result []Expression) {
@@ -1130,7 +1130,7 @@ func (ctx *context) collectExpression(lhs Expression) Expression {
 		ctx.assertToken(TOKEN_RC)
 		ctx.nextToken()
 	}
-	return ctx.factory.Collect(lhs, collectQuery, attributeOps, ctx.locator, lhs.byteOffset(), ctx.Pos()-lhs.byteOffset())
+	return ctx.factory.Collect(lhs, collectQuery, attributeOps, ctx.locator, lhs.ByteOffset(), ctx.Pos()-lhs.ByteOffset())
 }
 
 func (ctx *context) typeAliasOrDefinition() Expression {
@@ -1158,12 +1158,12 @@ func (ctx *context) typeAliasOrDefinition() Expression {
 			if ctx.currentToken == TOKEN_LC {
 				pn := body.(*QualifiedReference)
 				hash := ctx.expression().(*LiteralHash)
-				if pn.name == `Object` {
-					body = ctx.factory.Access(ctx.factory.QualifiedReference(`Object`, ctx.locator, bodyStart, 0), []Expression{hash}, ctx.locator, bodyStart, ctx.Pos()-bodyStart)
+				if pn.name == `Object` || pn.name == `TypeSet` {
+					body = ctx.factory.Access(pn, []Expression{hash}, ctx.locator, bodyStart, ctx.Pos()-bodyStart)
 				} else {
-					pref := ctx.factory.String(`parent`, ctx.locator, pn.byteOffset(), pn.byteLength())
+					pref := ctx.factory.String(`parent`, ctx.locator, pn.ByteOffset(), pn.ByteLength())
 					hash := ctx.factory.Hash(
-						append([]Expression{ ctx.factory.KeyedEntry(pref, pn, ctx.locator, pn.byteOffset(), pn.byteLength()) }, hash.entries...),
+						append([]Expression{ ctx.factory.KeyedEntry(pref, pn, ctx.locator, pn.ByteOffset(), pn.ByteLength()) }, hash.entries...),
 						ctx.locator, bodyStart, ctx.Pos()-bodyStart)
 					body = ctx.factory.Access(ctx.factory.QualifiedReference(`Object`, ctx.locator, bodyStart, 0), []Expression{hash}, ctx.locator, bodyStart, ctx.Pos()-bodyStart)
 				}
@@ -1208,7 +1208,7 @@ func (ctx *context) callFunctionExpression(functorExpr Expression) Expression {
 	if ctx.currentToken == TOKEN_PIPE {
 		block = ctx.lambda()
 	}
-	start := functorExpr.byteOffset()
+	start := functorExpr.ByteOffset()
 	if namedAccess, ok := functorExpr.(*NamedAccessExpression); ok {
 		return ctx.factory.CallMethod(namedAccess, args, block, ctx.locator, start, ctx.Pos()-start)
 	}
@@ -1269,9 +1269,9 @@ func (ctx *context) processHashEntries(exprs []Expression) (result []Expression)
 }
 
 func (ctx *context) newHashWithoutBraces(entries []Expression) Expression {
-	start := entries[0].byteOffset()
+	start := entries[0].ByteOffset()
 	last := entries[len(entries)-1]
-	end := last.byteOffset() + last.byteLength()
+	end := last.ByteOffset() + last.ByteLength()
 	return ctx.factory.Hash(entries, ctx.locator, start, end-start)
 }
 
@@ -1564,7 +1564,7 @@ func (ctx *context) capabilityMapping(component Expression, kind string) Express
 		// No action
 	case *ReservedWord:
 		// All reserved words are lowercase only
-		component = ctx.factory.QualifiedName(ctx.qualifiedName(component.(*ReservedWord).Name()), ctx.locator, component.byteOffset(), component.byteLength())
+		component = ctx.factory.QualifiedName(ctx.qualifiedName(component.(*ReservedWord).Name()), ctx.locator, component.ByteOffset(), component.ByteLength())
 	}
 	return ctx.addDefinition(ctx.factory.CapabilityMapping(kind, component, ctx.qualifiedName(capName), mappings, ctx.locator, start, ctx.Pos()-start))
 }
