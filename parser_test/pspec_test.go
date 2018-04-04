@@ -6,5 +6,5 @@ import (
 )
 
 func TestAll(t *testing.T) {
-	pspec.RunPspecTests(t, `testdata`)
+	pspec.RunPspecTests(t, `testdata`, nil)
 }
