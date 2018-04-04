@@ -16,6 +16,8 @@ const (
 
 type (
 	Validator interface {
+		Clear()
+
 		// Validate the semantics of the given expression
 		Validate(e parser.Expression)
 
@@ -23,6 +25,12 @@ type (
 		Issues() []*issue.Reported
 
 		setPathAndSubject(path []parser.Expression, expr parser.Expression)
+	}
+
+	ParserValidator interface {
+		// Parse parses and validates the given source and returns the resulting expression together
+		// with an optional Result. The result will be nil if no warnings or errors were generated.
+		Parse(filename string, source string) (parser.Expression, issue.Result)
 	}
 
 	// All validators should "inherit" from this struct
@@ -34,6 +42,11 @@ type (
 	}
 
 	Strictness int
+
+	parserValidator struct {
+		parser parser.ExpressionParser
+		validator Validator
+	}
 )
 
 func Strict(str string) Strictness {
@@ -109,6 +122,10 @@ func (v *AbstractValidator) Issues() []*issue.Reported {
 	return v.issues
 }
 
+func (v *AbstractValidator) Clear() {
+	v.issues = make([]*issue.Reported, 0, 5)
+}
+
 func (v *AbstractValidator) setPathAndSubject(path []parser.Expression, subject parser.Expression) {
 	v.path = path
 	v.subject = subject
@@ -133,10 +150,31 @@ func ValidateTasks(e parser.Expression) Validator {
 func Validate(v Validator, e parser.Expression) {
 	path := make([]parser.Expression, 0, 16)
 
+	v.Clear()
 	v.setPathAndSubject(path, e)
 	v.Validate(e)
 	e.AllContents(path, func(path []parser.Expression, expr parser.Expression) {
 		v.setPathAndSubject(path, expr)
 		v.Validate(expr)
 	})
+}
+
+func NewParserValidator(parser parser.ExpressionParser, validator Validator) ParserValidator {
+	return &parserValidator{parser, validator}
+}
+
+func (pv *parserValidator) Parse(filename string, source string) (parser.Expression, issue.Result) {
+	expr, err := pv.parser.Parse(filename, source, false)
+	if err != nil {
+		if i, ok := err.(*issue.Reported); ok {
+			return nil, issue.NewResult([]*issue.Reported{i})
+		}
+		panic(err.Error())
+	}
+	Validate(pv.validator, expr)
+	issues := pv.validator.Issues()
+	if len(issues) == 0 {
+		return expr, nil
+	}
+	return expr, issue.NewResult(issues)
 }
