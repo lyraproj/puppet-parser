@@ -744,8 +744,11 @@ func (v *basicChecker) checkRValue(e parser.Expression) {
 }
 
 func (v *basicChecker) checkTop(e parser.Expression, c parser.Expression) {
+	if c == nil {
+		return
+	}
 	switch c.(type) {
-	case nil, *parser.HostClassDefinition, *parser.Program:
+	case *parser.HostClassDefinition, *parser.Program:
 		return
 
 	case *parser.BlockExpression:
@@ -793,8 +796,11 @@ func (v *basicChecker) endsWithIdem(e *parser.BlockExpression) parser.Expression
 // is known to be unchanged after the expression has been evaluated). The result is not 100% authoritative for
 // negative answers since analysis of function behavior is not possible.
 func (v *basicChecker) isIdem(e parser.Expression) bool {
+	if e == nil {
+		return true
+	}
 	switch e.(type) {
-	case nil, *parser.AccessExpression, *parser.ConcatenatedString, *parser.HeredocExpression, *parser.LiteralList, *parser.LiteralHash, *parser.Nop, *parser.SelectorExpression:
+	case *parser.AccessExpression, *parser.ConcatenatedString, *parser.HeredocExpression, *parser.LiteralList, *parser.LiteralHash, *parser.Nop, *parser.SelectorExpression:
 		return true
 	case *parser.BlockExpression:
 		return v.idem_BlockExpression(e.(*parser.BlockExpression))
