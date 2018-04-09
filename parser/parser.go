@@ -405,7 +405,7 @@ func (ctx *context) relationship() (expr Expression) {
 		case TOKEN_IN_EDGE, TOKEN_IN_EDGE_SUB, TOKEN_OUT_EDGE, TOKEN_OUT_EDGE_SUB:
 			op := ctx.tokenString()
 			ctx.nextToken()
-			expr = ctx.factory.RelOp(op, expr, ctx.resource(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
+			expr = ctx.factory.RelOp(op, expr, ctx.assignment(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 		default:
 			return expr
 		}
