@@ -627,6 +627,10 @@ func (e *positioned) ByteOffset() int {
 	return e.offset
 }
 
+func (e *positioned) Location() issue.Location {
+	return e
+}
+
 func (e *positioned) Locator() *Locator {
 	return e.locator
 }

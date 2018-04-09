@@ -39,6 +39,10 @@ type (
 		Pos() int
 	}
 
+	Located interface {
+		Location() Location
+	}
+
 	Issue struct {
 		code          Code
 		messageFormat string
@@ -169,6 +173,12 @@ func (ri *Reported) OffsetByLocation(location Location) *Reported {
 }
 
 func (ri *Reported) Error() (str string) {
+	b := bytes.NewBufferString(``)
+	ri.ErrorTo(b)
+	return b.String()
+}
+
+func (ri *Reported) ErrorTo(b *bytes.Buffer) {
 	issue := IssueForCode(ri.issueCode)
 	var args H
 	af := issue.argFormats
@@ -183,14 +193,11 @@ func (ri *Reported) Error() (str string) {
 	} else {
 		args = ri.args
 	}
-	pfx := MapSprintf(issue.messageFormat, args)
-	if ri.location == nil {
-		return pfx
+	MapFprintf(b, issue.messageFormat, args)
+	if ri.location != nil {
+		b.WriteByte(' ')
+		appendLocation(b, ri.location)
 	}
-	b := bytes.NewBufferString(pfx)
-	b.WriteByte(' ')
-	appendLocation(b, ri.location)
-	return b.String()
 }
 
 func (ri *Reported) String() (str string) {
