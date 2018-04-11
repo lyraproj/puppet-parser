@@ -420,18 +420,6 @@ func (ctx *context) assignment() (expr Expression) {
 			op := ctx.tokenString()
 			ctx.nextToken()
 			expr = ctx.factory.Assignment(op, expr, ctx.assignment(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
-		case TOKEN_PIPE:
-			switch expr.(type) {
-			case *QualifiedName:
-				expr = ctx.callFunctionExpression(expr)
-			case *CallMethodExpression:
-				cm := expr.(*CallMethodExpression)
-				if cm.lambda == nil {
-					cm.lambda = ctx.lambda()
-				}
-			default:
-				return expr
-			}
 		default:
 			return expr
 		}
@@ -460,7 +448,7 @@ func (ctx *context) expression() (expr Expression) {
 		default:
 			if namedAccess, ok := expr.(*NamedAccessExpression); ok {
 				// Transform into method calls
-				expr = ctx.convertLhsToCall(namedAccess)
+				expr = ctx.convertLhsToCall(namedAccess, []Expression{}, nil, expr.ByteOffset(), expr.ByteLength())
 			}
 		}
 		break
@@ -468,12 +456,13 @@ func (ctx *context) expression() (expr Expression) {
 	return
 }
 
-func (ctx *context) convertLhsToCall(ne *NamedAccessExpression) Expression {
+func (ctx *context) convertLhsToCall(ne *NamedAccessExpression, args[]Expression, lambda Expression, start, len int) Expression {
 	f := ctx.factory
 	if nal, ok := ne.lhs.(*NamedAccessExpression); ok {
-		ne = f.NamedAccess(ctx.convertLhsToCall(nal), ne.rhs, ctx.locator, ne.ByteOffset(), ne.ByteLength()).(*NamedAccessExpression)
+		ne = f.NamedAccess(ctx.convertLhsToCall(nal, []Expression{}, nil, nal.ByteOffset(), nal.ByteLength()),
+			ne.rhs, ctx.locator, ne.ByteOffset(), ne.ByteLength()).(*NamedAccessExpression)
 	}
-	return f.CallMethod(ne, make([]Expression, 0), nil, ctx.locator, ne.ByteOffset(), ne.ByteLength())
+	return f.CallMethod(ne, args, lambda, ctx.locator, start, len)
 }
 
 func (ctx *context) selectExpression() (expr Expression) {
@@ -699,7 +688,7 @@ func (ctx *context) primaryExpression() (expr Expression) {
 	expr = ctx.atomExpression()
 	for {
 		switch ctx.currentToken {
-		case TOKEN_LP:
+		case TOKEN_LP, TOKEN_PIPE:
 			expr = ctx.callFunctionExpression(expr)
 		case TOKEN_LCOLLECT, TOKEN_LLCOLLECT:
 			expr = ctx.collectExpression(expr)
@@ -1210,7 +1199,7 @@ func (ctx *context) callFunctionExpression(functorExpr Expression) Expression {
 	}
 	start := functorExpr.ByteOffset()
 	if namedAccess, ok := functorExpr.(*NamedAccessExpression); ok {
-		return ctx.factory.CallMethod(namedAccess, args, block, ctx.locator, start, ctx.Pos()-start)
+		return ctx.convertLhsToCall(namedAccess, args, block, start, ctx.Pos() - start)
 	}
 	return ctx.factory.CallNamed(functorExpr, true, args, block, ctx.locator, start, ctx.Pos()-start)
 }
@@ -1429,7 +1418,7 @@ func (ctx *context) parameterList() (result []Expression) {
 
 func (ctx *context) lambdaParameterList() (result []Expression) {
 	ctx.nextToken()
-	return ctx.expressions(TOKEN_PIPE, ctx.parameter)
+	return ctx.expressions(TOKEN_PIPE_END, ctx.parameter)
 }
 
 func (ctx *context) parameter() Expression {

@@ -99,6 +99,7 @@ const (
 
 	// | |
 	TOKEN_PIPE = 120
+	TOKEN_PIPE_END = 121
 
 	// EPP
 	TOKEN_EPP_END       = 130
@@ -220,6 +221,7 @@ var tokenMap = map[int]string{
 
 	// | |
 	TOKEN_PIPE: `|`,
+	TOKEN_PIPE_END: `|`,
 
 	// EPP
 	TOKEN_EPP_END:       `%>`,
@@ -623,7 +625,21 @@ func (ctx *context) nextToken() {
 					ctx.setToken(TOKEN_RCOLLECT)
 				}
 			default:
-				ctx.setToken(TOKEN_PIPE)
+				if ctx.currentToken == TOKEN_PIPE {
+					// Empty parameter list
+					ctx.setToken(TOKEN_PIPE_END)
+				} else {
+					pos := ctx.Pos()
+					n, _ := ctx.skipWhite(false)
+					ctx.SetPos(pos)
+					if n == '{' || n == '>' || ctx.eppMode && (n == '%' || n == '-') {
+						// A lambda parameter list cannot start with either of these tokens so
+						// this must be the end (next is either block body or block return type declaration)
+						ctx.setToken(TOKEN_PIPE_END)
+					} else {
+						ctx.setToken(TOKEN_PIPE)
+					}
+				}
 			}
 
 		case '"':

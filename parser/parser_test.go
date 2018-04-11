@@ -1147,6 +1147,11 @@ func TestCallMethodNoArgsLambda(t *testing.T) {
 		`(= (var "x") (call-method {:functor (. (var "y") (qn "max")) :args [] :block (lambda {:params {:x {}} :body [(var "x")]})}))`)
 }
 
+func TestCallFuncNoArgsLambdaThenCall(t *testing.T) {
+	expectDump(t, `func |$x| { $x }.newfunc`,
+		`(call-method {:functor (. (call {:functor (qn "func") :args [] :block (lambda {:params {:x {}} :body [(var "x")]})}) (qn "newfunc")) :args []})`)
+}
+
 func TestCallType(t *testing.T) {
 	expectDump(t,
 		Unindent(`
@@ -1168,9 +1173,7 @@ func TestCallType(t *testing.T) {
       $x = {'v' => type(3)}`),
 		`(= (var "x") (hash (=> "v" (call {:functor (qn "type") :args [3]}))))`)
 
-	expectDump(t,
-		Unindent(`
-      with |$x,$y=type| {}`),
+	expectDump(t, `with |$x,$y=type| {}`,
 		`(invoke {:functor (qn "with") :args [] :block (lambda {:params {:x {} :y {:value (qn "type")}} :body []})})`)
 }
 
