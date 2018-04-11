@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/puppetlabs/go-parser/issue"
+	"github.com/puppetlabs/go-issues/issue"
 	"github.com/puppetlabs/go-parser/pn"
 )
 
@@ -25,7 +25,7 @@ type (
 	PathVisitor func(path []Expression, e Expression)
 
 	Expression interface {
-		Labeled
+		issue.Labeled
 
 		// Return the location in source for this expression.
 		issue.Location

@@ -1,6 +1,6 @@
 package parser
 
-import "github.com/puppetlabs/go-parser/issue"
+import "github.com/puppetlabs/go-issues/issue"
 
 const (
 	// Lexer issues

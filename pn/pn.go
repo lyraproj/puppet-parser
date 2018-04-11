@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+	"github.com/puppetlabs/go-issues/issue"
 )
 
 type (
@@ -75,6 +76,14 @@ type (
 )
 
 var keyPattern = regexp.MustCompile(`^[A-Za-z_-][0-9A-Za-z_-]*$`)
+
+// Represent the Reported using Puppet Extended S-Expresssion Notation (PN)
+func ReportedToPN(ri issue.Reported) PN {
+	return Map([]Entry{
+		Literal(ri.Code()).WithName(`code`),
+		Literal(ri.Severity().String()).WithName(`severity`),
+		Literal(ri.Error()).WithName(`message`)})
+}
 
 func (e *pnError) Error() string {
 	return e.message

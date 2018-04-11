@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/puppetlabs/go-parser/issue"
+	"github.com/puppetlabs/go-issues/issue"
 	"github.com/puppetlabs/go-parser/parser"
 )
 
@@ -22,7 +22,7 @@ type (
 		Validate(e parser.Expression)
 
 		// Return all reported issues (should be called after validation)
-		Issues() []*issue.Reported
+		Issues() []issue.Reported
 
 		setPathAndSubject(path []parser.Expression, expr parser.Expression)
 	}
@@ -37,7 +37,7 @@ type (
 	AbstractValidator struct {
 		path       []parser.Expression
 		subject    parser.Expression
-		issues     []*issue.Reported
+		issues     []issue.Reported
 		severities map[issue.Code]issue.Severity
 	}
 
@@ -118,12 +118,12 @@ func (v *AbstractValidator) ContainerOf(e parser.Expression) parser.Expression {
 	return nil
 }
 
-func (v *AbstractValidator) Issues() []*issue.Reported {
+func (v *AbstractValidator) Issues() []issue.Reported {
 	return v.issues
 }
 
 func (v *AbstractValidator) Clear() {
-	v.issues = make([]*issue.Reported, 0, 5)
+	v.issues = make([]issue.Reported, 0, 5)
 }
 
 func (v *AbstractValidator) setPathAndSubject(path []parser.Expression, subject parser.Expression) {
@@ -166,8 +166,8 @@ func NewParserValidator(parser parser.ExpressionParser, validator Validator) Par
 func (pv *parserValidator) Parse(filename string, source string) (parser.Expression, issue.Result) {
 	expr, err := pv.parser.Parse(filename, source, false)
 	if err != nil {
-		if i, ok := err.(*issue.Reported); ok {
-			return nil, issue.NewResult([]*issue.Reported{i})
+		if i, ok := err.(issue.Reported); ok {
+			return nil, issue.NewResult([]issue.Reported{i})
 		}
 		panic(err.Error())
 	}

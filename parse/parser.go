@@ -10,10 +10,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/puppetlabs/go-parser/issue"
+	"github.com/puppetlabs/go-issues/issue"
 	"github.com/puppetlabs/go-parser/json"
 	"github.com/puppetlabs/go-parser/parser"
 	"github.com/puppetlabs/go-parser/validator"
+	"github.com/puppetlabs/go-parser/pn"
 )
 
 // Program to parse and validate a .pp or .epp file
@@ -56,8 +57,8 @@ func main() {
 	expr, err := parser.CreateParser(parseOpts...).Parse(args[0], string(content), false)
 	if *jsonOuput {
 		if err != nil {
-			if issue, ok := err.(*issue.Reported); ok {
-				result[`issues`] = []interface{}{issue.ToPN().ToData()}
+			if issue, ok := err.(issue.Reported); ok {
+				result[`issues`] = []interface{}{pn.ReportedToPN(issue).ToData()}
 			} else {
 				result[`error`] = err.Error()
 			}
@@ -74,7 +75,7 @@ func main() {
 				if issue.Severity() > severity {
 					severity = issue.Severity()
 				}
-				issues[idx] = issue.ToPN().ToData()
+				issues[idx] = pn.ReportedToPN(issue).ToData()
 			}
 			result[`issues`] = issues
 			if severity == issue.SEVERITY_ERROR {

@@ -1,8 +1,7 @@
 package validator
 
 import (
-	"github.com/puppetlabs/go-parser/issue"
-	"github.com/puppetlabs/go-parser/parser"
+	"github.com/puppetlabs/go-issues/issue"
 )
 
 const (
@@ -50,7 +49,7 @@ func init() {
 
 	issue.Hard2(VALIDATE_CAPTURES_REST_NOT_SUPPORTED,
 		`Parameter $%{param} has 'captures rest' - not supported in %{container}`,
-		issue.HF{`container`: parser.A_an})
+		issue.HF{`container`: issue.A_an})
 
 	issue.Hard(VALIDATE_CATALOG_OPERATION_NOT_SUPPORTED_WHEN_SCRIPTING, `The catalog operation '%{operation}' is only available when compiling a catalog`)
 
@@ -58,7 +57,7 @@ func init() {
 
 	issue.Hard2(VALIDATE_DUPLICATE_DEFAULT,
 		`This %{container} already has a 'default' entry - this is a duplicate`,
-		issue.HF{`container`: parser.Label})
+		issue.HF{`container`: issue.Label})
 
 	issue.SoftIssue(VALIDATE_DUPLICATE_KEY, `The key '%{key}' is declared more than once`)
 
@@ -68,11 +67,11 @@ func init() {
 
 	issue.SoftIssue2(VALIDATE_IDEM_EXPRESSION_NOT_LAST,
 		`This %{expression} has no effect. A value was produced and then forgotten (one or more preceding expressions may have the wrong form)`,
-		issue.HF{`expression`: parser.Label})
+		issue.HF{`expression`: issue.Label})
 
 	issue.Hard2(VALIDATE_IDEM_NOT_ALLOWED_LAST,
 		`This %{expression} has no effect. %{container} can not end with a value-producing expression without other effect`,
-		issue.HF{`expression`: parser.Label, `container`: parser.A_anUc})
+		issue.HF{`expression`: issue.Label, `container`: issue.A_anUc})
 
 	issue.Hard(VALIDATE_ILLEGAL_ASSIGNMENT_CONTEXT, `Assignment not allowed here`)
 
@@ -80,18 +79,18 @@ func init() {
 
 	issue.Hard2(VALIDATE_ILLEGAL_ATTRIBUTE_APPEND,
 		`Illegal +> operation on attribute %{attr}. This operator can not be used in %{expression}`,
-		issue.HF{`expression`: parser.A_an})
+		issue.HF{`expression`: issue.A_an})
 
 	issue.Hard(VALIDATE_ILLEGAL_CLASSREF, `Illegal type reference. The given name '%{name}' does not conform to the naming rule`)
 
 	issue.Hard2(VALIDATE_ILLEGAL_DEFINITION_NAME,
 		`Unacceptable name. The name '%{name}' is unacceptable as the name of %{value}`,
-		issue.HF{`value`: parser.A_an})
+		issue.HF{`value`: issue.A_an})
 
 	issue.Hard2(
 		VALIDATE_ILLEGAL_EXPRESSION,
 		`Illegal expression. %{expression} is unacceptable as %{feature} in %{container}`,
-		issue.HF{`expression`: parser.A_anUc, `container`: parser.A_an})
+		issue.HF{`expression`: issue.A_anUc, `container`: issue.A_an})
 
 	issue.Hard(VALIDATE_ILLEGAL_HOSTNAME_CHARS, `The hostname '%{hostname}' contains illegal characters (only letters, digits, '_', '-', and '.' are allowed)`)
 
@@ -105,45 +104,45 @@ func init() {
 
 	issue.Hard2(VALIDATE_ILLEGAL_QUERY_EXPRESSION,
 		`Illegal query expression. %{expression} cannot be used in a query`,
-		issue.HF{`expression`: parser.A_anUc})
+		issue.HF{`expression`: issue.A_anUc})
 
 	issue.Hard2(VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING,
 		`Illegal type mapping. Expected a Tuple[Regexp,String] on the left side, got %{expression}`,
-		issue.HF{`expression`: parser.A_an})
+		issue.HF{`expression`: issue.A_an})
 
 	issue.Hard2(VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING,
 		`Illegal type mapping. Expected a Type on the left side, got %{expression}`,
-		issue.HF{`expression`: parser.A_an})
+		issue.HF{`expression`: issue.A_an})
 
 	issue.Hard(VALIDATE_MULTIPLE_ATTRIBUTES_UNFOLD, `Unfolding of attributes from Hash can only be used once per resource body`)
 
 	issue.Hard2(VALIDATE_NOT_ABSOLUTE_TOP_LEVEL,
 		`%{value} may only appear at top level`,
-		issue.HF{`value`: parser.A_anUc})
+		issue.HF{`value`: issue.A_anUc})
 
 	issue.Hard(VALIDATE_NOT_TOP_LEVEL, `Classes, definitions, and nodes may only appear at top level or inside other classes`)
 
 	issue.Hard2(VALIDATE_NOT_RVALUE,
 		`Invalid use of expression. %{value} does not produce a value`,
-		issue.HF{`value`: parser.A_anUc})
+		issue.HF{`value`: issue.A_anUc})
 
 	issue.Hard(VALIDATE_NOT_VIRTUALIZABLE, `Resource Defaults/Overrides are not virtualizable`)
 
 	issue.Hard2(VALIDATE_RESERVED_PARAMETER,
 		`The parameter $%{param} redefines a built in parameter in %{container}`,
-		issue.HF{`container`: parser.A_an})
+		issue.HF{`container`: issue.A_an})
 
 	issue.Hard2(VALIDATE_RESERVED_TYPE_NAME,
 		`The name: '%{name}' is already defined by Puppet and can not be used as the name of %{expression}`,
-		issue.HF{`expression`: parser.A_an})
+		issue.HF{`expression`: issue.A_an})
 
 	issue.Hard(VALIDATE_RESERVED_WORD, `Use of reserved word: %{word}, must be quoted if intended to be a String value`)
 
 	issue.Hard2(VALIDATE_UNSUPPORTED_EXPRESSION,
 		`Expressions of type %{expression} are not supported in this version of Puppet`,
-		issue.HF{`expression`: parser.A_an})
+		issue.HF{`expression`: issue.A_an})
 
 	issue.Hard2(VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT,
 		`The operator '%{operator}' in %{value} is not supported`,
-		issue.HF{`value`: parser.A_an})
+		issue.HF{`value`: issue.A_an})
 }

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/puppetlabs/go-parser/issue"
+	"github.com/puppetlabs/go-issues/issue"
 )
 
 // Recursive descent context for the Puppet language.
@@ -165,7 +165,7 @@ func (ctx *context) parseTopExpression(filename string, source string, singleExp
 	defer func() {
 		if r := recover(); r != nil {
 			var ok bool
-			if err, ok = r.(*issue.Reported); !ok {
+			if err, ok = r.(issue.Reported); !ok {
 				if err, ok = r.(*ParseError); !ok {
 					panic(r)
 				}

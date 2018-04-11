@@ -6,7 +6,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/puppetlabs/go-parser/issue"
+	"github.com/puppetlabs/go-issues/issue"
 )
 
 // Recursive descent lexer for the Puppet language.
@@ -28,11 +28,11 @@ func (l *location) Pos() int {
 	return l.locator.PosOnLine(l.byteOffset)
 }
 
-func (ctx *context) parseIssue(issueCode issue.Code) *issue.Reported {
+func (ctx *context) parseIssue(issueCode issue.Code) issue.Reported {
 	return issue.NewReported(issueCode, issue.SEVERITY_ERROR, issue.NO_ARGS, &location{ctx.locator, ctx.Pos()})
 }
 
-func (ctx *context) parseIssue2(issueCode issue.Code, args issue.H) *issue.Reported {
+func (ctx *context) parseIssue2(issueCode issue.Code, args issue.H) issue.Reported {
 	return issue.NewReported(issueCode, issue.SEVERITY_ERROR, args, &location{ctx.locator, ctx.Pos()})
 }
 
@@ -333,7 +333,7 @@ func (ctx *context) setTokenValue(token int, value interface{}) {
 	ctx.tokenValue = value
 }
 
-func (ctx *context) unterminatedQuote(start int, delimiter rune) *issue.Reported {
+func (ctx *context) unterminatedQuote(start int, delimiter rune) issue.Reported {
 	ctx.SetPos(start)
 	var stringType string
 	if delimiter == '"' {

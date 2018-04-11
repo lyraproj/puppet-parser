@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/puppetlabs/go-parser/issue"
+	"github.com/puppetlabs/go-issues/issue"
 	"github.com/puppetlabs/go-parser/literal"
 	"github.com/puppetlabs/go-parser/parser"
 )

@@ -3,7 +3,7 @@ package validator
 import (
 	"testing"
 
-	"github.com/puppetlabs/go-parser/issue"
+	"github.com/puppetlabs/go-issues/issue"
 	"github.com/puppetlabs/go-parser/parser"
 	"github.com/puppetlabs/go-pspec/testutils"
 )
@@ -764,7 +764,7 @@ nextIssue:
 	}
 }
 
-func parseAndValidate(t *testing.T, str string, parserOptions ...parser.Option) []*issue.Reported {
+func parseAndValidate(t *testing.T, str string, parserOptions ...parser.Option) []issue.Reported {
 	if PuppetTasks {
 		if expr := parse(t, str, append([]parser.Option{parser.PARSER_TASKS_ENABLED}, parserOptions...)...); expr != nil {
 			v := ValidateTasks(expr)

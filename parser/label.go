@@ -4,17 +4,6 @@ import (
 	"fmt"
 )
 
-type (
-	Labeled interface {
-		// Returns a very brief description of this expression suitable to use in error messages
-		Label() string
-	}
-
-	Named interface {
-		Name() string
-	}
-)
-
 // Abstract, should not get called but needed to cast abstract struct to Expression
 func (e *positioned) Label() string { return "positioned" }
 
@@ -84,50 +73,3 @@ func (e *UnfoldExpression) Label() string            { return "Unfold" }
 func (e *UnlessExpression) Label() string            { return "'unless' statement" }
 func (e *VariableExpression) Label() string          { return "Variable" }
 func (e *VirtualQuery) Label() string                { return "Virtual Query" }
-
-func Label(e interface{}) string {
-	if l, ok := e.(Labeled); ok {
-		return l.Label()
-	}
-	if n, ok := e.(Named); ok {
-		return n.Name()
-	}
-	if s, ok := e.(string); ok {
-		return s
-	}
-	return fmt.Sprintf(`value of type %T`, e)
-}
-
-func A_an(e interface{}) string {
-	label := Label(e)
-	return fmt.Sprintf(`%s %s`, Article(label), label)
-}
-
-func A_anUc(e interface{}) string {
-	label := Label(e)
-	return fmt.Sprintf(`%s %s`, ArticleUc(label), label)
-}
-
-func Article(s string) string {
-	if s == `` {
-		return `a`
-	}
-	switch s[0] {
-	case 'A', 'E', 'I', 'O', 'U', 'Y', 'a', 'e', 'i', 'o', 'u', 'y':
-		return `an`
-	default:
-		return `a`
-	}
-}
-
-func ArticleUc(s string) string {
-	if s == `` {
-		return `A`
-	}
-	switch s[0] {
-	case 'A', 'E', 'I', 'O', 'U', 'Y', 'a', 'e', 'i', 'o', 'u', 'y':
-		return `An`
-	default:
-		return `A`
-	}
-}
