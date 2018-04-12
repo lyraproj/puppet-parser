@@ -59,13 +59,13 @@ func init() {
 		`This %{container} already has a 'default' entry - this is a duplicate`,
 		issue.HF{`container`: issue.Label})
 
-	issue.SoftIssue(VALIDATE_DUPLICATE_KEY, `The key '%{key}' is declared more than once`)
+	issue.Soft(VALIDATE_DUPLICATE_KEY, `The key '%{key}' is declared more than once`)
 
 	issue.Hard(VALIDATE_DUPLICATE_PARAMETER, `The parameter '%{param}' is declared more than once in the parameter list`)
 
-	issue.SoftIssue(VALIDATE_FUTURE_RESERVED_WORD, `Use of future reserved word: '%{word}'`)
+	issue.Soft(VALIDATE_FUTURE_RESERVED_WORD, `Use of future reserved word: '%{word}'`)
 
-	issue.SoftIssue2(VALIDATE_IDEM_EXPRESSION_NOT_LAST,
+	issue.Soft2(VALIDATE_IDEM_EXPRESSION_NOT_LAST,
 		`This %{expression} has no effect. A value was produced and then forgotten (one or more preceding expressions may have the wrong form)`,
 		issue.HF{`expression`: issue.Label})
 
