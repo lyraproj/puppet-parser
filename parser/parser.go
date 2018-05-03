@@ -445,11 +445,6 @@ func (ctx *context) expression() (expr Expression) {
 			case *QualifiedName, *QualifiedReference, *ReservedWord, *AccessExpression:
 				expr = ctx.capabilityMapping(expr, capToken)
 			}
-		default:
-			if namedAccess, ok := expr.(*NamedAccessExpression); ok {
-				// Transform into method calls
-				expr = ctx.convertLhsToCall(namedAccess, []Expression{}, nil, expr.ByteOffset(), expr.ByteLength())
-			}
 		}
 		break
 	}
@@ -707,6 +702,10 @@ func (ctx *context) primaryExpression() (expr Expression) {
 			}
 			expr = ctx.factory.NamedAccess(expr, rhs, ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 		default:
+			if namedAccess, ok := expr.(*NamedAccessExpression); ok {
+				// Transform into method calls
+				expr = ctx.convertLhsToCall(namedAccess, []Expression{}, nil, expr.ByteOffset(), expr.ByteLength())
+			}
 			return
 		}
 	}
