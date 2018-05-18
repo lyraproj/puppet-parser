@@ -312,7 +312,7 @@ $text"`)),
 
       Example('name in CallMethodExpression with nested NamedAccess becomes a Variable',
         Given(`"hello ${var.foo.type}"`),
-        Parses_to(`(concat "hello " (str (call-method {:functor (. (call-method {:functor (. (qn "var") (qn "foo")) :args []}) (qn "type")) :args []})))`)),
+        Parses_to(`(concat "hello " (str (call-method {:functor (. (call-method {:functor (. (var "var") (qn "foo")) :args []}) (qn "type")) :args []})))`)),
 
       Example('name in CallMethodExpression with nested AccessExpression becomes a Variable',
         Given(`"hello ${var['one'].type}"`),
@@ -320,7 +320,7 @@ $text"`)),
 
       Example('name in CallMethodExpression with nested AccessExpression becomes a Variable',
         Given(`"hello ${var['one'].foo.type}"`),
-        Parses_to(`(concat "hello " (str (call-method {:functor (. (call-method {:functor (. (access (qn "var") "one") (qn "foo")) :args []}) (qn "type")) :args []})))`)),
+        Parses_to(`(concat "hello " (str (call-method {:functor (. (call-method {:functor (. (access (var "var") "one") (qn "foo")) :args []}) (qn "type")) :args []})))`)),
     ),
   ),
   Example('handles unicode escapes consisting of 4 hexadecimal digits',

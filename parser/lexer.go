@@ -1177,11 +1177,7 @@ func (ctx *context) interpolate(start int) Expression {
 			}
 		case *CallMethodExpression:
 			call := expr.(*CallMethodExpression)
-			if identifier, ok := call.functor.(*QualifiedName); ok {
-				expr = ctx.factory.CallMethod(
-					ctx.factory.Variable(identifier, ctx.locator, start, identifier.ByteLength()+1),
-					call.arguments, call.lambda, ctx.locator, start, call.ByteLength()+1)
-			} else if ne, ok := call.functor.(*NamedAccessExpression); ok {
+			if ne, ok := call.functor.(*NamedAccessExpression); ok {
 				modNe := ctx.convertNamedAccessLHS(ne, start)
 				if modNe != ne {
 					expr = ctx.factory.CallMethod(modNe, call.arguments, call.lambda, ctx.locator, start, call.ByteLength()+1)
@@ -1223,11 +1219,12 @@ func (ctx *context) convertNamedAccessLHS(expr *NamedAccessExpression, start int
 		return ctx.factory.NamedAccess(
 			ctx.convertNamedAccessLHS(lhs.(*NamedAccessExpression), start),
 			expr.rhs, ctx.locator, start, expr.ByteLength()+1)
-	}
-	if identifier, ok := lhs.(*QualifiedName); ok {
-		return ctx.factory.NamedAccess(
-			ctx.factory.Variable(identifier, ctx.locator, start, identifier.ByteLength()+1),
-			expr.rhs, ctx.locator, start, expr.ByteLength()+1)
+	case *CallMethodExpression:
+		call := lhs.(*CallMethodExpression)
+		lhs = ctx.factory.CallMethod(
+			ctx.convertNamedAccessLHS(call.functor.(*NamedAccessExpression), start),
+			call.arguments, call.lambda, ctx.locator, start, call.ByteLength()+1)
+		return ctx.factory.NamedAccess(lhs, expr.rhs, ctx.locator, start, expr.ByteLength()+1)
 	}
 	return expr
 }

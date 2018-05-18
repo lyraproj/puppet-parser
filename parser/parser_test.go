@@ -1143,6 +1143,16 @@ func TestCallMethodNoArgs(t *testing.T) {
 		Unindent(`
       $x == $y.max`),
 		`(== (var "x") (call-method {:functor (. (var "y") (qn "max")) :args []}))`)
+
+	expectDump(t,
+		Unindent(`
+      "${x[3].y}"`),
+		`(concat (str (call-method {:functor (. (access (var "x") 3) (qn "y")) :args []})))`)
+
+	expectDump(t,
+		Unindent(`
+      "${x[3].y.z}"`),
+		`(concat (str (call-method {:functor (. (call-method {:functor (. (access (var "x") 3) (qn "y")) :args []}) (qn "z")) :args []})))`)
 }
 
 func TestCallMethodNoArgsLambda(t *testing.T) {

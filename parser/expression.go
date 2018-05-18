@@ -559,6 +559,10 @@ const(
 	REGULAR = ResourceForm(`regular`)
 )
 
+func NewLocator(file, content string) *Locator {
+	return &Locator{string: content, file: file}
+}
+
 func (e *Locator) String() string {
 	return e.string
 }
@@ -597,6 +601,9 @@ func (e *Locator) offsetOnLine(offset int) int {
 	lineStart := li[line-1]
 	if offset == lineStart {
 		return 0
+	}
+	if offset > len(e.string) {
+		offset = len(e.string)
 	}
 	return utf8.RuneCountInString(e.string[lineStart:offset])
 }
