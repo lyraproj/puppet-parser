@@ -1290,8 +1290,20 @@ func (e *LiteralHash) Entries() []Expression {
 func (e *LiteralHash) Get(key string) Expression {
 	for _, entry := range e.entries {
 		ex, _ := entry.(*KeyedEntry)
-		if str, ok := ex.Key().(*LiteralString); ok && key == str.String() {
-			return ex.Value()
+		ek := ex.Key()
+		switch ek.(type) {
+		case *LiteralString:
+			if ek.(*LiteralString).value == key {
+				return ex.Value()
+			}
+		case *QualifiedName:
+			if ek.(*QualifiedName).name == key {
+				return ex.Value()
+			}
+		case *QualifiedReference:
+			if ek.(*QualifiedReference).name == key {
+				return ex.Value()
+			}
 		}
 	}
 	return nil
