@@ -80,269 +80,269 @@ func DefaultFactory() ExpressionFactory {
 }
 
 func (f *defaultExpressionFactory) And(lhs Expression, rhs Expression, locator *Locator, offset int, length int) Expression {
-	return &AndExpression{binaryExpression{positioned{locator, offset, length}, lhs, rhs}}
+	return &AndExpression{binaryExpression{Positioned{locator, offset, length}, lhs, rhs}}
 }
 
 func (f *defaultExpressionFactory) Access(operand Expression, keys []Expression, locator *Locator, offset int, length int) Expression {
-	return &AccessExpression{positioned{locator, offset, length}, operand, keys}
+	return &AccessExpression{Positioned{locator, offset, length}, operand, keys}
 }
 
 func (f *defaultExpressionFactory) Application(name string, params []Expression, body Expression, locator *Locator, offset int, length int) Expression {
-	return &Application{namedDefinition{positioned{locator, offset, length}, name, params, body}}
+	return &Application{namedDefinition{Positioned{locator, offset, length}, name, params, body}}
 }
 
 func (f *defaultExpressionFactory) Arithmetic(op string, lhs Expression, rhs Expression, locator *Locator, offset int, length int) Expression {
-	return &ArithmeticExpression{binaryExpression{positioned{locator, offset, length}, lhs, rhs}, op}
+	return &ArithmeticExpression{binaryExpression{Positioned{locator, offset, length}, lhs, rhs}, op}
 }
 
 func (f *defaultExpressionFactory) Array(expressions []Expression, locator *Locator, offset int, length int) Expression {
-	return &LiteralList{positioned{locator, offset, length}, expressions}
+	return &LiteralList{Positioned{locator, offset, length}, expressions}
 }
 
 func (f *defaultExpressionFactory) Assignment(op string, lhs Expression, rhs Expression, locator *Locator, offset int, length int) Expression {
-	return &AssignmentExpression{binaryExpression{positioned{locator, offset, length}, lhs, rhs}, op}
+	return &AssignmentExpression{binaryExpression{Positioned{locator, offset, length}, lhs, rhs}, op}
 }
 
 func (f *defaultExpressionFactory) AttributeOp(op string, name string, value Expression, locator *Locator, offset int, length int) Expression {
-	return &AttributeOperation{positioned{locator, offset, length}, op, name, value}
+	return &AttributeOperation{Positioned{locator, offset, length}, op, name, value}
 }
 
 func (f *defaultExpressionFactory) AttributesOp(valueExpr Expression, locator *Locator, offset int, length int) Expression {
-	return &AttributesOperation{positioned{locator, offset, length}, valueExpr}
+	return &AttributesOperation{Positioned{locator, offset, length}, valueExpr}
 }
 
 func (f *defaultExpressionFactory) Block(expressions []Expression, locator *Locator, offset int, length int) Expression {
-	return &BlockExpression{positioned{locator, offset, length}, expressions}
+	return &BlockExpression{Positioned{locator, offset, length}, expressions}
 }
 
 func (f *defaultExpressionFactory) Boolean(value bool, locator *Locator, offset int, length int) Expression {
-	return &LiteralBoolean{positioned{locator, offset, length}, value}
+	return &LiteralBoolean{Positioned{locator, offset, length}, value}
 }
 
 func (f *defaultExpressionFactory) CallMethod(functorExpr Expression, args []Expression, lambda Expression, locator *Locator, offset int, length int) Expression {
-	return &CallMethodExpression{callExpression{positioned{locator, offset, length}, true, functorExpr, args, lambda}}
+	return &CallMethodExpression{callExpression{Positioned{locator, offset, length}, true, functorExpr, args, lambda}}
 }
 
 func (f *defaultExpressionFactory) CallNamed(functorExpr Expression, rvalRequired bool, args []Expression, lambda Expression, locator *Locator, offset int, length int) Expression {
-	return &CallNamedFunctionExpression{callExpression{positioned{locator, offset, length}, rvalRequired, functorExpr, args, lambda}}
+	return &CallNamedFunctionExpression{callExpression{Positioned{locator, offset, length}, rvalRequired, functorExpr, args, lambda}}
 }
 
 func (f *defaultExpressionFactory) CapabilityMapping(kind string, component Expression, capability string, mappings []Expression, locator *Locator, offset int, length int) Expression {
-	return &CapabilityMapping{positioned{locator, offset, length}, kind, capability, component, mappings}
+	return &CapabilityMapping{Positioned{locator, offset, length}, kind, capability, component, mappings}
 }
 
 func (f *defaultExpressionFactory) Case(test Expression, options []Expression, locator *Locator, offset int, length int) Expression {
-	return &CaseExpression{positioned{locator, offset, length}, test, options}
+	return &CaseExpression{Positioned{locator, offset, length}, test, options}
 }
 
 func (f *defaultExpressionFactory) Class(name string, parameters []Expression, parent string, body Expression, locator *Locator, offset int, length int) Expression {
-	return &HostClassDefinition{namedDefinition{positioned{locator, offset, length}, name, parameters, body}, parent}
+	return &HostClassDefinition{namedDefinition{Positioned{locator, offset, length}, name, parameters, body}, parent}
 }
 
 func (f *defaultExpressionFactory) Collect(resourceType Expression, query Expression, operations []Expression, locator *Locator, offset int, length int) Expression {
-	return &CollectExpression{positioned{locator, offset, length}, resourceType, query, operations}
+	return &CollectExpression{Positioned{locator, offset, length}, resourceType, query, operations}
 }
 
 func (f *defaultExpressionFactory) Comparison(op string, lhs Expression, rhs Expression, locator *Locator, offset int, length int) Expression {
-	return &ComparisonExpression{binaryExpression{positioned{locator, offset, length}, lhs, rhs}, op}
+	return &ComparisonExpression{binaryExpression{Positioned{locator, offset, length}, lhs, rhs}, op}
 }
 
 func (f *defaultExpressionFactory) ConcatenatedString(segments []Expression, locator *Locator, offset int, length int) Expression {
-	return &ConcatenatedString{positioned{locator, offset, length}, segments}
+	return &ConcatenatedString{Positioned{locator, offset, length}, segments}
 }
 
 func (f *defaultExpressionFactory) Default(locator *Locator, offset int, length int) Expression {
-	return &LiteralDefault{positioned{locator, offset, length}}
+	return &LiteralDefault{Positioned{locator, offset, length}}
 }
 
 func (f *defaultExpressionFactory) Definition(name string, params []Expression, body Expression, locator *Locator, offset int, length int) Expression {
-	return &ResourceTypeDefinition{namedDefinition{positioned{locator, offset, length}, name, params, body}}
+	return &ResourceTypeDefinition{namedDefinition{Positioned{locator, offset, length}, name, params, body}}
 }
 
 func (f *defaultExpressionFactory) EppExpression(params []Expression, body Expression, locator *Locator, offset int, length int) Expression {
-	return f.Lambda(params, &EppExpression{positioned{locator, offset, length}, params != nil, body}, nil, locator, offset, length)
+	return f.Lambda(params, &EppExpression{Positioned{locator, offset, length}, params != nil, body}, nil, locator, offset, length)
 }
 
 func (f *defaultExpressionFactory) ExportedQuery(queryExpr Expression, locator *Locator, offset int, length int) Expression {
-	return &ExportedQuery{queryExpression{positioned{locator, offset, length}, queryExpr}}
+	return &ExportedQuery{queryExpression{Positioned{locator, offset, length}, queryExpr}}
 }
 
 func (f *defaultExpressionFactory) Float(value float64, locator *Locator, offset int, length int) Expression {
-	return &LiteralFloat{positioned{locator, offset, length}, value}
+	return &LiteralFloat{Positioned{locator, offset, length}, value}
 }
 
 func (f *defaultExpressionFactory) Function(name string, parameters []Expression, body Expression, returnType Expression, locator *Locator, offset int, length int) Expression {
-	return &FunctionDefinition{namedDefinition{positioned{locator, offset, length}, name, parameters, body}, returnType}
+	return &FunctionDefinition{namedDefinition{Positioned{locator, offset, length}, name, parameters, body}, returnType}
 }
 
 func (f *defaultExpressionFactory) Heredoc(text Expression, syntax string, locator *Locator, offset int, length int) Expression {
-	return &HeredocExpression{positioned{locator, offset, length}, syntax, text}
+	return &HeredocExpression{Positioned{locator, offset, length}, syntax, text}
 }
 
 func (f *defaultExpressionFactory) Hash(entries []Expression, locator *Locator, offset int, length int) Expression {
-	return &LiteralHash{positioned{locator, offset, length}, entries}
+	return &LiteralHash{Positioned{locator, offset, length}, entries}
 }
 
 func (f *defaultExpressionFactory) If(test Expression, thenExpr Expression, elseExpr Expression, locator *Locator, offset int, length int) Expression {
-	return &IfExpression{positioned{locator, offset, length}, test, thenExpr, elseExpr}
+	return &IfExpression{Positioned{locator, offset, length}, test, thenExpr, elseExpr}
 }
 
 func (f *defaultExpressionFactory) In(lhs Expression, rhs Expression, locator *Locator, offset int, length int) Expression {
-	return &InExpression{binaryExpression{positioned{locator, offset, length}, lhs, rhs}}
+	return &InExpression{binaryExpression{Positioned{locator, offset, length}, lhs, rhs}}
 }
 
 func (f *defaultExpressionFactory) Integer(value int64, radix int, locator *Locator, offset int, length int) Expression {
-	return &LiteralInteger{positioned{locator, offset, length}, radix, value}
+	return &LiteralInteger{Positioned{locator, offset, length}, radix, value}
 }
 
 func (f *defaultExpressionFactory) KeyedEntry(key Expression, value Expression, locator *Locator, offset int, length int) Expression {
-	return &KeyedEntry{positioned{locator, offset, length}, key, value}
+	return &KeyedEntry{Positioned{locator, offset, length}, key, value}
 }
 
 func (f *defaultExpressionFactory) Lambda(parameters []Expression, body Expression, returnType Expression, locator *Locator, offset int, length int) Expression {
-	return &LambdaExpression{positioned{locator, offset, length}, parameters, body, returnType}
+	return &LambdaExpression{Positioned{locator, offset, length}, parameters, body, returnType}
 }
 
 func (f *defaultExpressionFactory) Match(op string, lhs Expression, rhs Expression, locator *Locator, offset int, length int) Expression {
-	return &MatchExpression{binaryExpression{positioned{locator, offset, length}, lhs, rhs}, op}
+	return &MatchExpression{binaryExpression{Positioned{locator, offset, length}, lhs, rhs}, op}
 }
 
 func (f *defaultExpressionFactory) NamedAccess(lhs Expression, rhs Expression, locator *Locator, offset int, length int) Expression {
-	return &NamedAccessExpression{binaryExpression{positioned{locator, offset, length}, lhs, rhs}}
+	return &NamedAccessExpression{binaryExpression{Positioned{locator, offset, length}, lhs, rhs}}
 }
 
 func (f *defaultExpressionFactory) Negate(expr Expression, locator *Locator, offset int, length int) Expression {
-	return &UnaryMinusExpression{unaryExpression{positioned{locator, offset, length}, expr}}
+	return &UnaryMinusExpression{unaryExpression{Positioned{locator, offset, length}, expr}}
 }
 
 func (f *defaultExpressionFactory) Node(hostMatches []Expression, parent Expression, statements Expression, locator *Locator, offset int, length int) Expression {
-	return &NodeDefinition{positioned{locator, offset, length}, parent, hostMatches, statements}
+	return &NodeDefinition{Positioned{locator, offset, length}, parent, hostMatches, statements}
 }
 
 func (f *defaultExpressionFactory) Nop(locator *Locator, offset int, length int) Expression {
-	return &Nop{positioned{locator, offset, length}}
+	return &Nop{Positioned{locator, offset, length}}
 }
 
 func (f *defaultExpressionFactory) Not(expr Expression, locator *Locator, offset int, length int) Expression {
-	return &NotExpression{unaryExpression{positioned{locator, offset, length}, expr}}
+	return &NotExpression{unaryExpression{Positioned{locator, offset, length}, expr}}
 }
 
 func (f *defaultExpressionFactory) Or(lhs Expression, rhs Expression, locator *Locator, offset int, length int) Expression {
-	return &OrExpression{binaryExpression{positioned{locator, offset, length}, lhs, rhs}}
+	return &OrExpression{binaryExpression{Positioned{locator, offset, length}, lhs, rhs}}
 }
 
 func (f *defaultExpressionFactory) Parameter(name string, expr Expression, typeExpr Expression, capturesRest bool, locator *Locator, offset int, length int) Expression {
-	return &Parameter{positioned{locator, offset, length}, name, expr, typeExpr, capturesRest}
+	return &Parameter{Positioned{locator, offset, length}, name, expr, typeExpr, capturesRest}
 }
 
 func (f *defaultExpressionFactory) Parenthesized(expr Expression, locator *Locator, offset int, length int) Expression {
-	return &ParenthesizedExpression{unaryExpression{positioned{locator, offset, length}, expr}}
+	return &ParenthesizedExpression{unaryExpression{Positioned{locator, offset, length}, expr}}
 }
 
 func (f *defaultExpressionFactory) Plan(name string, parameters []Expression, body Expression, returnType Expression, locator *Locator, offset int, length int) Expression {
-	return &PlanDefinition{FunctionDefinition{namedDefinition{positioned{locator, offset, length}, name, parameters, body}, returnType}}
+	return &PlanDefinition{FunctionDefinition{namedDefinition{Positioned{locator, offset, length}, name, parameters, body}, returnType}}
 }
 
 func (f *defaultExpressionFactory) Program(body Expression, definitions []Definition, locator *Locator, offset int, length int) Expression {
-	return &Program{positioned{locator, offset, length}, body, definitions}
+	return &Program{Positioned{locator, offset, length}, body, definitions}
 }
 
 func (f *defaultExpressionFactory) QualifiedName(name string, locator *Locator, offset int, length int) Expression {
-	return &QualifiedName{positioned{locator, offset, length}, name}
+	return &QualifiedName{Positioned{locator, offset, length}, name}
 }
 
 func (f *defaultExpressionFactory) QualifiedReference(name string, locator *Locator, offset int, length int) Expression {
-	return &QualifiedReference{QualifiedName{positioned{locator, offset, length}, name}, strings.ToLower(name)}
+	return &QualifiedReference{QualifiedName{Positioned{locator, offset, length}, name}, strings.ToLower(name)}
 }
 
 func (f *defaultExpressionFactory) Regexp(value string, locator *Locator, offset int, length int) Expression {
-	return &RegexpExpression{positioned{locator, offset, length}, value}
+	return &RegexpExpression{Positioned{locator, offset, length}, value}
 }
 
 func (f *defaultExpressionFactory) RelOp(op string, lhs Expression, rhs Expression, locator *Locator, offset int, length int) Expression {
-	return &RelationshipExpression{binaryExpression{positioned{locator, offset, length}, lhs, rhs}, op}
+	return &RelationshipExpression{binaryExpression{Positioned{locator, offset, length}, lhs, rhs}, op}
 }
 
 func (f *defaultExpressionFactory) RenderExpression(expr Expression, locator *Locator, offset int, length int) Expression {
-	return &RenderExpression{unaryExpression{positioned{locator, offset, length}, expr}}
+	return &RenderExpression{unaryExpression{Positioned{locator, offset, length}, expr}}
 }
 
 func (f *defaultExpressionFactory) RenderString(text string, locator *Locator, offset int, length int) Expression {
-	return &RenderStringExpression{LiteralString{positioned{locator, offset, length}, text}}
+	return &RenderStringExpression{LiteralString{Positioned{locator, offset, length}, text}}
 }
 
 func (f *defaultExpressionFactory) ReservedWord(value string, future bool, locator *Locator, offset int, length int) Expression {
-	return &ReservedWord{positioned{locator, offset, length}, value, future}
+	return &ReservedWord{Positioned{locator, offset, length}, value, future}
 }
 
 func (f *defaultExpressionFactory) Resource(form ResourceForm, typeName Expression, bodies []Expression, locator *Locator, offset int, length int) Expression {
-	return &ResourceExpression{abstractResource{positioned{locator, offset, length}, form}, typeName, bodies}
+	return &ResourceExpression{abstractResource{Positioned{locator, offset, length}, form}, typeName, bodies}
 }
 
 func (f *defaultExpressionFactory) ResourceBody(title Expression, operations []Expression, locator *Locator, offset int, length int) Expression {
-	return &ResourceBody{positioned{locator, offset, length}, title, operations}
+	return &ResourceBody{Positioned{locator, offset, length}, title, operations}
 }
 
 func (f *defaultExpressionFactory) ResourceDefaults(form ResourceForm, typeRef Expression, operations []Expression, locator *Locator, offset int, length int) Expression {
-	return &ResourceDefaultsExpression{abstractResource{positioned{locator, offset, length}, form}, typeRef, operations}
+	return &ResourceDefaultsExpression{abstractResource{Positioned{locator, offset, length}, form}, typeRef, operations}
 }
 
 func (f *defaultExpressionFactory) ResourceOverride(form ResourceForm, resources Expression, operations []Expression, locator *Locator, offset int, length int) Expression {
-	return &ResourceOverrideExpression{abstractResource{positioned{locator, offset, length}, form}, resources, operations}
+	return &ResourceOverrideExpression{abstractResource{Positioned{locator, offset, length}, form}, resources, operations}
 }
 
 func (f *defaultExpressionFactory) Select(lhs Expression, entries []Expression, locator *Locator, offset int, length int) Expression {
-	return &SelectorExpression{positioned{locator, offset, length}, lhs, entries}
+	return &SelectorExpression{Positioned{locator, offset, length}, lhs, entries}
 }
 
 func (f *defaultExpressionFactory) Selector(key Expression, value Expression, locator *Locator, offset int, length int) Expression {
-	return &SelectorEntry{positioned{locator, offset, length}, key, value}
+	return &SelectorEntry{Positioned{locator, offset, length}, key, value}
 }
 
 func (f *defaultExpressionFactory) Site(statements Expression, locator *Locator, offset int, length int) Expression {
-	return &SiteDefinition{positioned{locator, offset, length}, statements}
+	return &SiteDefinition{Positioned{locator, offset, length}, statements}
 }
 
 func (f *defaultExpressionFactory) String(value string, locator *Locator, offset int, length int) Expression {
-	return &LiteralString{positioned{locator, offset, length}, value}
+	return &LiteralString{Positioned{locator, offset, length}, value}
 }
 
 func (f *defaultExpressionFactory) Text(expr Expression, locator *Locator, offset int, length int) Expression {
-	return &TextExpression{unaryExpression{positioned{locator, offset, length}, expr}}
+	return &TextExpression{unaryExpression{Positioned{locator, offset, length}, expr}}
 }
 
 func (f *defaultExpressionFactory) TypeAlias(name string, typeExpr Expression, locator *Locator, offset int, length int) Expression {
-	return &TypeAlias{qRefDefinition{positioned{locator, offset, length}, name}, typeExpr}
+	return &TypeAlias{qRefDefinition{Positioned{locator, offset, length}, name}, typeExpr}
 }
 
 func (f *defaultExpressionFactory) TypeDefinition(name string, parent string, body Expression, locator *Locator, offset int, length int) Expression {
-	return &TypeDefinition{qRefDefinition{positioned{locator, offset, length}, name}, parent, body}
+	return &TypeDefinition{qRefDefinition{Positioned{locator, offset, length}, name}, parent, body}
 }
 
 func (f *defaultExpressionFactory) TypeMapping(typeExpr Expression, mapping Expression, locator *Locator, offset int, length int) Expression {
-	return &TypeMapping{positioned{locator, offset, length}, typeExpr, mapping}
+	return &TypeMapping{Positioned{locator, offset, length}, typeExpr, mapping}
 }
 
 func (f *defaultExpressionFactory) Undef(locator *Locator, offset int, length int) Expression {
-	return &LiteralUndef{positioned{locator, offset, length}}
+	return &LiteralUndef{Positioned{locator, offset, length}}
 }
 
 func (f *defaultExpressionFactory) Unfold(expr Expression, locator *Locator, offset int, length int) Expression {
-	return &UnfoldExpression{unaryExpression{positioned{locator, offset, length}, expr}}
+	return &UnfoldExpression{unaryExpression{Positioned{locator, offset, length}, expr}}
 }
 
 func (f *defaultExpressionFactory) Unless(test Expression, thenExpr Expression, elseExpr Expression, locator *Locator, offset int, length int) Expression {
-	return &UnlessExpression{IfExpression{positioned{locator, offset, length}, test, thenExpr, elseExpr}}
+	return &UnlessExpression{IfExpression{Positioned{locator, offset, length}, test, thenExpr, elseExpr}}
 }
 
 func (f *defaultExpressionFactory) Variable(expr Expression, locator *Locator, offset int, length int) Expression {
-	return &VariableExpression{unaryExpression{positioned{locator, offset, length}, expr}}
+	return &VariableExpression{unaryExpression{Positioned{locator, offset, length}, expr}}
 }
 
 func (f *defaultExpressionFactory) VirtualQuery(queryExpr Expression, locator *Locator, offset int, length int) Expression {
-	return &VirtualQuery{queryExpression{positioned{locator, offset, length}, queryExpr}}
+	return &VirtualQuery{queryExpression{Positioned{locator, offset, length}, queryExpr}}
 }
 
 func (f *defaultExpressionFactory) When(values []Expression, thenExpr Expression, locator *Locator, offset int, length int) Expression {
-	return &CaseOption{positioned{locator, offset, length}, values, thenExpr}
+	return &CaseOption{Positioned{locator, offset, length}, values, thenExpr}
 }

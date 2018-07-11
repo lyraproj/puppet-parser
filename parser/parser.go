@@ -361,7 +361,7 @@ func (ctx *context) syntacticStatement() (expr Expression) {
 		args = append(args, ctx.relationship())
 	}
 	if args != nil {
-		expr = &commaSeparatedList{LiteralList{positioned{ctx.locator, expr.ByteOffset(), ctx.Pos() - expr.ByteOffset()}, args}}
+		expr = &commaSeparatedList{LiteralList{Positioned{ctx.locator, expr.ByteOffset(), ctx.Pos() - expr.ByteOffset()}, args}}
 	}
 	return
 }

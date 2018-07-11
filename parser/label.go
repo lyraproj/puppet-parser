@@ -5,7 +5,7 @@ import (
 )
 
 // Abstract, should not get called but needed to cast abstract struct to Expression
-func (e *positioned) Label() string { return "positioned" }
+func (e *Positioned) Label() string { return "Positioned" }
 
 // Concrete
 func (e *AccessExpression) Label() string            { return "'[]' expression" }
