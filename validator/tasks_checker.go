@@ -20,7 +20,7 @@ func (v *tasksChecker) Validate(e parser.Expression) {
 }
 
 func (v *tasksChecker) illegalTasksExpression(e parser.Expression) {
-	v.Accept(VALIDATE_CATALOG_OPERATION_NOT_SUPPORTED_WHEN_SCRIPTING, e, issue.H{`operation`: e})
+	v.Accept(VALIDATE_CATALOG_OPERATION_NOT_SUPPORTED, e, issue.H{`operation`: e})
 }
 
 func (v *tasksChecker) check_Application(e *parser.Application) {

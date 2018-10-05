@@ -47,6 +47,12 @@ var statementCalls = map[string]bool{
 	`return`: true,
 }
 
+var workflowStyles = map[string]ActivityStyle {
+	`workflow`: ActivityStyleWorkflow,
+	`resource`: ActivityStyleResource,
+	`action`: ActivityStyleAction,
+}
+
 type Lexer interface {
 	CurrentToken() int
 
@@ -74,7 +80,8 @@ type Option int
 const PARSER_HANDLE_BACKTICK_STRINGS = Option(1)
 const PARSER_HANDLE_HEX_ESCAPES = Option(2)
 const PARSER_TASKS_ENABLED = Option(3)
-const PARSER_EPP_MODE = Option(4)
+const PARSER_WORKFLOW_ENABLED = Option(4)
+const PARSER_EPP_MODE = Option(5)
 
 func NewSimpleLexer(filename string, source string) Lexer {
 	// Essentially a lexer that has no knowledge of interpolations
@@ -84,7 +91,8 @@ func NewSimpleLexer(filename string, source string) Lexer {
 		locator:               &Locator{string: source, file: filename},
 		handleBacktickStrings: false,
 		handleHexEscapes:      false,
-		tasks:                 false}}
+		tasks:                 false,
+		workflow:              false}}
 }
 
 func (l *lexer) CurrentToken() int {
@@ -127,7 +135,7 @@ func CreatePspecParser() ExpressionParser {
 }
 
 func CreateParser(parserOptions ...Option) ExpressionParser {
-	ctx := &context{factory: DefaultFactory(), handleBacktickStrings: false, handleHexEscapes: false, tasks: false}
+	ctx := &context{factory: DefaultFactory(), handleBacktickStrings: false, handleHexEscapes: false, tasks: false, workflow: false}
 	for _, option := range parserOptions {
 		switch option {
 		case PARSER_EPP_MODE:
@@ -138,6 +146,8 @@ func CreateParser(parserOptions ...Option) ExpressionParser {
 			ctx.handleHexEscapes = true
 		case PARSER_TASKS_ENABLED:
 			ctx.tasks = true
+		case PARSER_WORKFLOW_ENABLED:
+			ctx.workflow = true
 		}
 	}
 	return ctx
@@ -413,7 +423,7 @@ func (ctx *context) relationship() (expr Expression) {
 }
 
 func (ctx *context) assignment() (expr Expression) {
-	expr = ctx.resource()
+	expr = ctx.activity()
 	for {
 		switch ctx.currentToken {
 		case TOKEN_ASSIGN, TOKEN_ADD_ASSIGN, TOKEN_SUBTRACT_ASSIGN:
@@ -425,6 +435,23 @@ func (ctx *context) assignment() (expr Expression) {
 		}
 	}
 }
+
+func (ctx *context) activity() (expr Expression) {
+	start := ctx.Pos()
+	expr = ctx.resource()
+	if ctx.workflow {
+		if qn, ok := expr.(*QualifiedName); ok {
+			s := qn.Name()
+			if style, ok := workflowStyles[s]; ok {
+				if name, ok := ctx.identifier(); ok {
+					expr = ctx.activityDeclaration(start, style, name, true)
+				}
+			}
+		}
+	}
+	return
+}
+
 
 func (ctx *context) resource() (expr Expression) {
 	expr = ctx.expression()
@@ -451,7 +478,7 @@ func (ctx *context) expression() (expr Expression) {
 	return
 }
 
-func (ctx *context) convertLhsToCall(ne *NamedAccessExpression, args[]Expression, lambda Expression, start, len int) Expression {
+func (ctx *context) convertLhsToCall(ne *NamedAccessExpression, args []Expression, lambda Expression, start, len int) Expression {
 	f := ctx.factory
 	if nal, ok := ne.lhs.(*NamedAccessExpression); ok {
 		ne = f.NamedAccess(ctx.convertLhsToCall(nal, []Expression{}, nil, nal.ByteOffset(), nal.ByteLength()),
@@ -946,12 +973,15 @@ func (ctx *context) resourceExpression(start int, first Expression, form Resourc
 		switch ctx.resourceShape(first) {
 		case `resource`:
 			// This is just LHS followed by a hash. It only makes sense when LHS is an identifier equal
-			// to one of the known "statement calls". For all other cases, this is an error
+			// to one of the known "statement calls" or, if workflow is enabled, to one of the keywords
+			// "workflow", "action", or "resource". For all other cases, this is an error
 			fqn, ok := first.(*QualifiedName)
 			name := ``
 			if ok {
 				name = fqn.name
 				if _, ok := statementCalls[name]; ok {
+					// Handle the call here and set lexer position to where the next expression (the one starting
+					// with a curly brace) starts.
 					args := make([]Expression, 1)
 					ctx.SetPos(bodiesStart)
 					ctx.nextToken()
@@ -1065,20 +1095,45 @@ func (ctx *context) attributeOperation() (op Expression) {
 	}
 }
 
-func (ctx *context) attributeName() (name string) {
+func (ctx *context) attributeName() string {
+	if name, ok := ctx.identifier(); ok {
+		return name
+	}
+	panic(ctx.parseIssue(PARSE_EXPECTED_ATTRIBUTE_NAME))
+}
+
+func (ctx *context) identifier() (string, bool) {
+	start := ctx.tokenStartPos
 	switch ctx.currentToken {
 	case TOKEN_IDENTIFIER:
-		name = ctx.tokenString()
+		name := ctx.tokenString()
 		ctx.nextToken()
-		return
+		return name, true
 	default:
 		if word, ok := ctx.keyword(); ok {
-			name = word
 			ctx.nextToken()
-			return
+			return word, ok
 		}
-		ctx.SetPos(ctx.tokenStartPos)
-		panic(ctx.parseIssue(PARSE_EXPECTED_ATTRIBUTE_NAME))
+		ctx.SetPos(start)
+		return ``, false
+	}
+}
+
+func (ctx *context) identifierExpr() (Expression, bool) {
+	start := ctx.tokenStartPos
+	switch ctx.currentToken {
+	case TOKEN_IDENTIFIER:
+		name := ctx.factory.QualifiedName(ctx.tokenString(), ctx.locator, start, start-ctx.Pos())
+		ctx.nextToken()
+		return name, true
+	default:
+		if word, ok := ctx.keyword(); ok {
+			name := ctx.factory.QualifiedName(word, ctx.locator, start, start-ctx.Pos())
+			ctx.nextToken()
+			return name, ok
+		}
+		ctx.SetPos(start)
+		return nil, false
 	}
 }
 
@@ -1151,7 +1206,7 @@ func (ctx *context) typeAliasOrDefinition() Expression {
 				} else {
 					pref := ctx.factory.String(`parent`, ctx.locator, pn.ByteOffset(), pn.ByteLength())
 					hash := ctx.factory.Hash(
-						append([]Expression{ ctx.factory.KeyedEntry(pref, pn, ctx.locator, pn.ByteOffset(), pn.ByteLength()) }, hash.entries...),
+						append([]Expression{ctx.factory.KeyedEntry(pref, pn, ctx.locator, pn.ByteOffset(), pn.ByteLength())}, hash.entries...),
 						ctx.locator, bodyStart, ctx.Pos()-bodyStart)
 					body = ctx.factory.Access(ctx.factory.QualifiedReference(`Object`, ctx.locator, bodyStart, 0), []Expression{hash}, ctx.locator, bodyStart, ctx.Pos()-bodyStart)
 				}
@@ -1162,7 +1217,7 @@ func (ctx *context) typeAliasOrDefinition() Expression {
 				body = ctx.factory.Access(ctx.factory.QualifiedReference(`Object`, ctx.locator, bodyStart, 0), lr.elements, ctx.locator, bodyStart, ctx.Pos()-bodyStart)
 			}
 		case *LiteralHash:
-			body = ctx.factory.Access(ctx.factory.QualifiedReference(`Object`, ctx.locator, bodyStart, 0), []Expression { body }, ctx.locator, bodyStart, ctx.Pos()-bodyStart)
+			body = ctx.factory.Access(ctx.factory.QualifiedReference(`Object`, ctx.locator, bodyStart, 0), []Expression{body}, ctx.locator, bodyStart, ctx.Pos()-bodyStart)
 		}
 		return ctx.addDefinition(ctx.factory.TypeAlias(fqr.name, body, ctx.locator, start, ctx.Pos()-start))
 	case TOKEN_INHERITS:
@@ -1198,9 +1253,251 @@ func (ctx *context) callFunctionExpression(functorExpr Expression) Expression {
 	}
 	start := functorExpr.ByteOffset()
 	if namedAccess, ok := functorExpr.(*NamedAccessExpression); ok {
-		return ctx.convertLhsToCall(namedAccess, args, block, start, ctx.Pos() - start)
+		return ctx.convertLhsToCall(namedAccess, args, block, start, ctx.Pos()-start)
 	}
 	return ctx.factory.CallNamed(functorExpr, true, args, block, ctx.locator, start, ctx.Pos()-start)
+}
+
+func (ctx *context) activityStyle() ActivityStyle {
+	switch ctx.currentToken {
+	case TOKEN_IDENTIFIER:
+		if style, ok := workflowStyles[ctx.tokenString()]; ok {
+			ctx.nextToken()
+			return style
+		}
+	}
+	panic(ctx.parseIssue(PARSE_EXPECTED_ACTIVITY_STYLE))
+}
+
+func (ctx *context) activityName(activity ActivityStyle) string {
+	if tn, ok := ctx.identifier(); ok {
+		return tn
+	}
+	panic(ctx.parseIssue2(PARSE_EXPECTED_ACTIVITY_NAME, issue.H{`activity`: activity}))
+}
+
+
+// activtyEntry is a hash entry with some specific constrants
+
+func (ctx *context) activityProperty() Expression {
+	start := ctx.Pos()
+	key, ok := ctx.identifierExpr()
+	if !ok {
+		panic(ctx.parseIssue(PARSE_EXPECTED_ATTRIBUTE_NAME))
+	}
+	if ctx.currentToken != TOKEN_FARROW {
+		panic(ctx.parseIssue(PARSE_EXPECTED_FARROW_AFTER_KEY))
+	}
+	ctx.nextToken()
+
+	vstart := ctx.Pos()
+	name := key.(*QualifiedName).name
+	var value Expression
+	switch name {
+	case `input`:
+		// TODO: Allow non condensed declaration using array of hashes where everything is
+		// spelled out (type and value expressed in hash)
+		value = ctx.factory.Array(ctx.parameterList(), ctx.locator, vstart, ctx.Pos() - vstart)
+	case `output`:
+		// TODO: Allow non condensed declaration using array of hashes where everything is
+		// spelled out (type and value expressed in hash)
+		params := ctx.outputParameters()
+		value = ctx.factory.Array(params, ctx.locator, vstart, ctx.Pos() - vstart)
+
+	default:
+		value = ctx.hashEntry()
+	}
+	return ctx.factory.KeyedEntry(key, value, ctx.locator, start, ctx.Pos()-start)
+}
+
+func (ctx *context) stateHash(start int) []Expression {
+	entries := ctx.expressions(TOKEN_RC, ctx.stateAttribute)
+
+	// All variable references in this hash must be converted to Deferred references to prevent that evaluation happens
+	// prematurely.
+	for i, e := range entries {
+		entries[i] = convertToDeferred(ctx.factory, e)
+	}
+	return entries
+}
+
+func convertSliceToDeferred(f ExpressionFactory, be []Expression) []Expression {
+	ae := make([]Expression, len(be))
+	for i, e := range be {
+		ae[i] = convertToDeferred(f, e)
+	}
+	return ae
+}
+
+func convertToDeferred(f ExpressionFactory, e Expression) Expression {
+	if e == nil {
+		return nil
+	}
+	l := e.Locator()
+	bo := e.ByteOffset()
+	bl := e.ByteLength()
+	switch e.(type) {
+	case *LiteralList:
+		e = f.Array(convertSliceToDeferred(f, e.(*LiteralList).elements), l, bo, bl)
+	case *LiteralHash:
+		e = f.Hash(convertSliceToDeferred(f, e.(*LiteralHash).entries), l, bo, bl)
+	case *KeyedEntry:
+		ke := e.(*KeyedEntry)
+		e = f.KeyedEntry(convertToDeferred(f, ke.key), convertToDeferred(f, ke.value), l, bo, bl)
+	case *CallNamedFunctionExpression:
+		cf := e.(*CallNamedFunctionExpression)
+		switch cf.functor.(type) {
+		case *QualifiedName:
+			n := cf.functor.(*QualifiedName).Name()
+			new := f.QualifiedName(`new`, l, bo, 0)
+			e = f.CallMethod(f.NamedAccess(f.QualifiedReference(`Deferred`, l, bo, 0), new, l, bo, 0),
+				[]Expression{f.String(n, l, e.ByteOffset(), e.ByteLength()), f.Array(convertSliceToDeferred(f, cf.arguments), l, bo, 0)}, nil, l, bo, bl)
+		case *QualifiedReference:
+			new := f.QualifiedName(`new`, l, bo, 0)
+			args := append([]Expression{cf.functor}, cf.arguments...)
+			e = f.CallMethod(f.NamedAccess(f.QualifiedReference(`Deferred`, l, bo, 0), new, l, bo, 0),
+				[]Expression{new, f.Array(convertSliceToDeferred(f, args), l, bo, 0)}, nil, l, bo, bl)
+		}
+	case *VariableExpression:
+		ve := e.(*VariableExpression)
+		n, _ := ve.Name()
+		e = f.CallMethod(f.NamedAccess(f.QualifiedReference(`Deferred`, l, bo, 0), f.QualifiedName(`new`, l, bo, 0), l, bo, 0),
+			[]Expression{f.String(`$`+n, l, bo, bl)}, nil, l, bo, bl)
+	}
+	return e
+}
+
+func (ctx *context) stateAttribute() (op Expression) {
+	start := ctx.tokenStartPos
+	name, ok := ctx.identifierExpr()
+	if !ok {
+		panic(ctx.parseIssue(PARSE_EXPECTED_ATTRIBUTE_NAME))
+	}
+
+	switch ctx.currentToken {
+	case TOKEN_FARROW:
+		ctx.nextToken()
+		return ctx.factory.KeyedEntry(name, ctx.expression(), ctx.locator, start, ctx.Pos()-start)
+	default:
+		panic(ctx.parseIssue(PARSE_INVALID_ATTRIBUTE))
+	}
+}
+
+func (ctx *context) activityExpression() Expression {
+	start := ctx.Pos()
+	if ctx.currentToken == TOKEN_FUNCTION {
+		return ctx.functionDefinition()
+	}
+	style := ctx.activityStyle()
+	name := ctx.activityName(style)
+	return ctx.activityDeclaration(start, style, name, false)
+}
+
+func (ctx *context) activities() []Expression {
+	activities := make([]Expression, 0)
+	for ctx.currentToken != TOKEN_RC {
+		activities = append(activities, ctx.activityExpression())
+	}
+	ctx.nextToken()
+	return activities
+}
+
+func (ctx *context) activityDeclaration(start int, style ActivityStyle, name string, atTop bool) Expression {
+	if style == ActivityStyleWorkflow {
+		// Push to name stack
+		ctx.nameStack = append(ctx.nameStack, name)
+	}
+	hstart := ctx.tokenStartPos
+	ctx.assertToken(TOKEN_LC)
+	ctx.nextToken()
+	propEntries := ctx.expressions(TOKEN_RC, ctx.activityProperty)
+
+	f := ctx.factory
+	l := ctx.locator
+
+	iterName := name
+	if ctx.currentToken == TOKEN_VARIABLE {
+		iterName = ctx.tokenString()
+		ctx.nextToken()
+		ctx.assertToken(TOKEN_ASSIGN)
+		ctx.nextToken()
+		ctx.assertToken(TOKEN_IDENTIFIER)
+	}
+
+	if ctx.currentToken == TOKEN_IDENTIFIER {
+		switch ctx.tokenString() {
+		case `times`, `range`, `each`:
+			iterFunc := ctx.tokenString()
+			nl := len(iterFunc)
+			fs := ctx.tokenStartPos
+			ps := ctx.Pos()
+			ctx.nextToken()
+			iterParams := ctx.parameterList()
+			vs := ctx.Pos()
+			pl := ps - vs
+			iterVars := ctx.lambdaParameterList()
+      vl := ctx.Pos() - vs
+      fn := ctx.Pos() - fs
+			iter := f.Hash(
+				[]Expression{
+					f.KeyedEntry(
+						f.QualifiedName(`name`, l, fs, 0),
+						f.QualifiedName(iterName, l, fs, nl), l, fs, nl),
+					f.KeyedEntry(
+						f.QualifiedName(`function`, l, fs, 0),
+						f.QualifiedName(iterFunc, l, fs, nl), l, fs, nl),
+					f.KeyedEntry(
+						f.QualifiedName(`params`, l, ps, 0),
+						f.Array(iterParams, l, ps, pl), l, ps, pl),
+					f.KeyedEntry(
+						f.QualifiedName(`vars`, l, vs, 0),
+						f.Array(iterVars, l, vs, vl), l, vs, vl),
+				}, l, fs, fn)
+			propEntries = append(propEntries, f.KeyedEntry(f.QualifiedName(`iteration`, l, fs, 0), iter, l, fs, fn))
+		default:
+			panic(ctx.parseIssue2(PARSE_EXPECTED_ITERATOR_STYLE, issue.H{`style`: ctx.tokenString()}))
+		}
+	}
+	var properties Expression
+	if len(propEntries) > 0 {
+		properties = f.Hash(propEntries, l, hstart, ctx.Pos() - hstart)
+	}
+
+	var block Expression
+
+	switch style {
+	case ActivityStyleWorkflow:
+		if ctx.currentToken == TOKEN_LC {
+			hstart := ctx.tokenStartPos
+			ctx.nextToken()
+			activities := ctx.activities()
+			if len(activities) > 0 {
+				block = ctx.factory.Block(activities, ctx.locator, hstart, ctx.Pos()-hstart)
+			}
+		}
+
+		// Pop name stack
+		ctx.nameStack = ctx.nameStack[:len(ctx.nameStack)-1]
+	case ActivityStyleResource:
+		if ctx.currentToken == TOKEN_LC {
+			hstart := ctx.tokenStartPos
+			ctx.nextToken()
+			entries := ctx.stateHash(hstart)
+			if len(entries) > 0 {
+				block = ctx.factory.Hash(entries, ctx.locator, start, ctx.Pos()-start).(*LiteralHash)
+			}
+		}
+	default: // ActivityStyleAction
+		ctx.assertToken(TOKEN_LC)
+		ctx.nextToken()
+		block = ctx.parse(TOKEN_RC, false)
+		ctx.nextToken()
+	}
+	activity := f.Activity(ctx.qualifiedName(name), style, properties, block, l, start, ctx.Pos()-start)
+	if atTop {
+		ctx.addDefinition(activity)
+	}
+	return activity
 }
 
 func (ctx *context) lambda() (result Expression) {
@@ -1449,6 +1746,57 @@ func (ctx *context) parameter() Expression {
 	return ctx.factory.Parameter(
 		variable,
 		defaultExpression, typeExpr, capturesRest, ctx.locator, start, ctx.Pos()-start)
+}
+
+func (ctx *context) outputParameters() (result []Expression) {
+	switch ctx.currentToken {
+	case TOKEN_LP, TOKEN_WSLP:
+		ctx.nextToken()
+		return ctx.expressions(TOKEN_RP, ctx.outputParameter)
+	default:
+		return []Expression{}
+	}
+}
+
+func (ctx *context) attributeAlias() Expression {
+	s := ctx.tokenStartPos
+	if i, ok := ctx.identifier(); ok {
+		return ctx.factory.String(i, ctx.locator, s, len(i))
+	}
+	panic(ctx.parseIssue(PARSE_EXPECTED_ATTRIBUTE_NAME))
+}
+
+func (ctx *context) outputParameter() Expression {
+	var typeExpr, defaultExpression Expression
+
+	start := ctx.tokenStartPos
+
+	if ctx.currentToken == TOKEN_TYPE_NAME {
+		typeExpr = ctx.parameterType()
+	}
+	if ctx.currentToken != TOKEN_VARIABLE {
+		panic(ctx.parseIssue(PARSE_EXPECTED_VARIABLE))
+	}
+	variable, ok := ctx.tokenValue.(string)
+	if !ok {
+		panic(ctx.parseIssue(PARSE_EXPECTED_VARIABLE))
+	}
+	ctx.nextToken()
+
+	if ctx.currentToken == TOKEN_ASSIGN {
+		ctx.nextToken()
+		switch ctx.currentToken {
+		case TOKEN_LP, TOKEN_WSLP:
+			ps := ctx.tokenStartPos
+			ctx.nextToken()
+			defaultExpression = ctx.factory.Array(ctx.expressions(TOKEN_RP, ctx.attributeAlias), ctx.locator, ps, ps - ctx.Pos())
+		default:
+			defaultExpression = ctx.attributeAlias()
+		}
+	}
+	return ctx.factory.Parameter(
+		variable,
+		defaultExpression, typeExpr, false, ctx.locator, start, ctx.Pos()-start)
 }
 
 func (ctx *context) parameterType() Expression {

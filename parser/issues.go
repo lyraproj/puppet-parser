@@ -29,7 +29,11 @@ const (
 
 	PARSE_CLASS_NOT_VALID_HERE              = `PARSE_CLASS_NOT_VALID_HERE`
 	PARSE_ELSIF_IN_UNLESS                   = `PARSE_ELSIF_IN_UNLESS`
+	PARSE_EXPECTED_ACTIVITY_NAME            = `PARSE_EXPECTED_ACTIVITY_NAME`
+	PARSE_EXPECTED_ACTIVITY_STYLE           = `PARSE_EXPECTED_ACTIVITY_STYLE`
 	PARSE_EXPECTED_ATTRIBUTE_NAME           = `PARSE_EXPECTED_ATTRIBUTE_NAME`
+	PARSE_EXPECTED_ACTIVITY_OPERATION       = `PARSE_EXPECTED_ACTIVITY_OPERATION`
+	PARSE_EXPECTED_ITERATOR_STYLE           = `PARSE_EXPECTED_ITERATOR_STYLE`
 	PARSE_EXPECTED_CLASS_NAME               = `PARSE_EXPECTED_CLASS_NAME`
 	PARSE_EXPECTED_FARROW_AFTER_KEY         = `PARSE_EXPECTED_FARROW_AFTER_KEY`
 	PARSE_EXPECTED_NAME_OR_NUMBER_AFTER_DOT = `PARSE_EXPECTED_NAME_OR_NUMBER_AFTER_DOT`
@@ -44,8 +48,9 @@ const (
 	PARSE_EXPECTED_VARIABLE                 = `PARSE_EXPECTED_VARIABLE`
 	PARSE_EXTRANEOUS_COMMA                  = `PARSE_EXTRANEOUS_COMMA`
 	PARSE_ILLEGAL_EPP_PARAMETERS            = `PARSE_ILLEGAL_EPP_PARAMETERS`
-	PARSE_INVALID_RESOURCE                  = `PARSE_INVALID_RESOURCE`
+	PARSE_INVALID_ACTIVITY_ATTRIBUTE        = `PARSE_INVALID_ACTIVITY_ATTRIBUTE`
 	PARSE_INVALID_ATTRIBUTE                 = `PARSE_INVALID_ATTRIBUTE`
+	PARSE_INVALID_RESOURCE                  = `PARSE_INVALID_RESOURCE`
 	PARSE_INHERITS_MUST_BE_TYPE_NAME        = `PARSE_INHERITS_MUST_BE_TYPE_NAME`
 	PARSE_RESOURCE_WITHOUT_TITLE            = `PARSE_RESOURCE_WITHOUT_TITLE`
 	PARSE_QUOTED_NOT_VALID_NAME             = `PARSE_QUOTED_NOT_VALID_NAME`
@@ -77,6 +82,10 @@ func init() {
 
 	issue.Hard(PARSE_CLASS_NOT_VALID_HERE, `'class' keyword not allowed at this location`)
 	issue.Hard(PARSE_ELSIF_IN_UNLESS, `elsif not supported in unless expression`)
+	issue.Hard(PARSE_EXPECTED_ACTIVITY_NAME, `expected %{activity} name`)
+	issue.Hard(PARSE_EXPECTED_ACTIVITY_OPERATION, `expected one of 'delete', 'read', or 'upsert'. Got '%{operation}'`)
+	issue.Hard(PARSE_EXPECTED_ITERATOR_STYLE, `expected one of 'each', 'range', or 'times'. Got '%{style}`)
+	issue.Hard(PARSE_EXPECTED_ACTIVITY_STYLE, `expected one of 'action', 'resource', or 'workflow'`)
 	issue.Hard(PARSE_EXPECTED_ATTRIBUTE_NAME, `expected attribute name`)
 	issue.Hard(PARSE_EXPECTED_CLASS_NAME, `expected name of class`)
 	issue.Hard(PARSE_EXPECTED_FARROW_AFTER_KEY, `expected '=>' to follow hash key`)
@@ -92,6 +101,7 @@ func init() {
 	issue.Hard(PARSE_EXPECTED_VARIABLE, `expected variable declaration`)
 	issue.Hard(PARSE_EXTRANEOUS_COMMA, `Extraneous comma between statements`)
 	issue.Hard(PARSE_ILLEGAL_EPP_PARAMETERS, `Ambiguous EPP parameter expression. Probably missing '<%%-' before parameters to remove leading whitespace`)
+	issue.Hard(PARSE_INVALID_ACTIVITY_ATTRIBUTE, `Attribute '%{name}' is not valid in a '%{style}' definition`)
 	issue.Hard(PARSE_INVALID_ATTRIBUTE, `invalid attribute operation`)
 	issue.Hard(PARSE_INVALID_RESOURCE, `invalid resource expression`)
 	issue.Hard(PARSE_INHERITS_MUST_BE_TYPE_NAME, `expected type name to follow 'inherits'`)

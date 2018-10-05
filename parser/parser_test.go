@@ -740,6 +740,94 @@ func TestPlanDefintion(t *testing.T) {
 		`(= (var "a") (qn "plan"))`)
 }
 
+func TestWorkflowDefintion(t *testing.T) {
+	expectDump(t, `workflow foo { }`,
+		`(activity {:name "foo" :style "workflow"})`, PARSER_WORKFLOW_ENABLED)
+
+	expectDump(t,
+		Unindent(`
+      workflow foo {} {
+        resource bar {}
+      }`),
+		`(activity {:name "foo" :style "workflow" :definition (block ` +
+		  `(activity {:name "foo::bar" :style "resource"}))})`,
+		PARSER_WORKFLOW_ENABLED)
+
+	expectDump(t,
+		Unindent(`
+      workflow foo {} {
+        resource bar {
+          type => Genesis::Aws::Instance
+        } {
+          x => 2,
+          y => {
+            a => 'a'
+          }
+        }
+      }`),
+		`(activity {:name "foo" :style "workflow" :definition (block ` +
+		  `(activity {:name "foo::bar" :style "resource" :properties (hash (=> (qn "type") (qr "Genesis::Aws::Instance"))) :definition (hash ` +
+		    `(=> (qn "x") 2) ` +
+		    `(=> (qn "y") (hash (=> (qn "a") "a"))))}))})`,
+		PARSER_WORKFLOW_ENABLED)
+
+	expectDump(t,
+		Unindent(`
+      workflow foo {} {
+        resource bar {
+          type => Genesis::Aws::Instance,
+        } each($y) |$x| {
+          x => $x,
+        }
+      }`),
+		`(activity {:name "foo" :style "workflow" :definition (block ` +
+		  `(activity {:name "foo::bar" :style "resource" ` +
+		    `:properties (hash (=> ` +
+		      `(qn "type") (qr "Genesis::Aws::Instance")) ` +
+		      `(=> (qn "iteration") (hash (=> ` +
+		        `(qn "function") (qn "each")) ` +
+		        `(=> (qn "params") (array (param {:name "y"}))) ` +
+            `(=> (qn "vars") (array (param {:name "x"})))))) ` +
+		    `:definition (hash (=> (qn "x") (call-method {:functor (. (qr "Deferred") (qn "new")) :args ["$x"]})))}))})`,
+		PARSER_WORKFLOW_ENABLED)
+
+	expectDump(t,
+		Unindent(`
+      workflow foo {} {
+        action bar { guard => true } {
+          function read {
+            true
+          }
+        }
+      }`),
+		`(activity {:name "foo" :style "workflow" :definition (block ` +
+		  `(activity {:name "foo::bar" :style "action" :properties (hash (=> (qn "guard") true)) ` +
+		   `:definition (block (function {:name "read" :body [true]}))}))})`,
+		PARSER_WORKFLOW_ENABLED)
+
+	expectDump(t,
+		Unindent(`
+      workflow foo {} {
+        action bar {} {
+          function delete {
+            notice('hello from delete')
+          }
+          function read {
+            notice('hello from read')
+          }
+          function upsert {
+            notice('hello from upsert')
+          }
+        }
+      }`),
+		`(activity {:name "foo" :style "workflow" :definition (block ` +
+		  `(activity {:name "foo::bar" :style "action" :definition (block ` +
+		    `(function {:name "delete" :body [(invoke {:functor (qn "notice") :args ["hello from delete"]})]}) ` +
+		    `(function {:name "read" :body [(invoke {:functor (qn "notice") :args ["hello from read"]})]}) ` +
+		    `(function {:name "upsert" :body [(invoke {:functor (qn "notice") :args ["hello from upsert"]})]}))}))})`,
+		PARSER_WORKFLOW_ENABLED)
+}
+
 func TestNodeDefinition(t *testing.T) {
 	expectDump(t,
 		Unindent(`

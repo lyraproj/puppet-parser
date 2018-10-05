@@ -1,0 +1,46 @@
+package validator
+
+import (
+	"github.com/puppetlabs/go-parser/parser"
+	"github.com/puppetlabs/go-issues/issue"
+)
+
+type workflowChecker struct {
+	tasksChecker
+}
+
+func NewWorkflowChecker() Checker {
+	wfChecker := &workflowChecker{}
+	wfChecker.initialize(STRICT_ERROR)
+	return wfChecker
+}
+
+func (v *workflowChecker) Validate(e parser.Expression) {
+	Check(v, e)
+}
+
+func (v *workflowChecker) check_ActivityExpression(e *parser.ActivityExpression) {
+	switch e.Style() {
+	case parser.ActivityStyleWorkflow:
+		v.checkWorkflow(e)
+	case parser.ActivityStyleAction:
+		v.checkAction(e)
+	case parser.ActivityStyleResource:
+		v.checkResource(e)
+	default:
+		v.Accept(VALIDATE_INVALID_ACTIVITY_STYLE, e, issue.H{`style`: e.Style()})
+	}
+}
+
+func (v *workflowChecker) checkAction(e *parser.ActivityExpression) {
+}
+
+func (v *workflowChecker) checkWorkflow(e *parser.ActivityExpression) {
+}
+
+func (v *workflowChecker) checkResource(e *parser.ActivityExpression) {
+}
+
+func (v *workflowChecker) assertValidEntries(e *parser.ActivityExpression, entryNames ...string) {
+}
+
