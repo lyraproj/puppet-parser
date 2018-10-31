@@ -214,9 +214,11 @@ func (ctx *context) parseTopExpression(filename string, source string, singleExp
 			if text != `` {
 				panic(ctx.parseIssue(PARSE_ILLEGAL_EPP_PARAMETERS))
 			}
+			params := ctx.lambdaParameterList()
+			ctx.nextToken()
 			expr = asEppLambda(
 				ctx.factory.EppExpression(
-					ctx.lambdaParameterList(), ctx.parse(TOKEN_END, false), ctx.locator, 0, ctx.Pos()))
+					params, ctx.parse(TOKEN_END, false), ctx.locator, 0, ctx.Pos()))
 			return
 		}
 
@@ -341,7 +343,6 @@ func (ctx *context) expressions(endToken int, producerFunc func() Expression) (e
 	exprs = make([]Expression, 0, 4)
 	for {
 		if ctx.currentToken == endToken {
-			ctx.nextToken()
 			return
 		}
 		exprs = append(exprs, producerFunc())
@@ -352,7 +353,6 @@ func (ctx *context) expressions(endToken int, producerFunc func() Expression) (e
 					`expected`: fmt.Sprintf(`'%s' or '%s'`, tokenMap[TOKEN_COMMA], tokenMap[endToken]),
 					`actual`:   tokenMap[ctx.currentToken]}))
 			}
-			ctx.nextToken()
 			return
 		}
 		ctx.nextToken()
@@ -718,6 +718,7 @@ func (ctx *context) primaryExpression() (expr Expression) {
 			ctx.nextToken()
 			params := ctx.arrayExpression()
 			expr = ctx.factory.Access(expr, params, ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
+			ctx.nextToken()
 		case TOKEN_DOT:
 			ctx.nextToken()
 			var rhs Expression
@@ -750,10 +751,12 @@ func (ctx *context) atomExpression() (expr Expression) {
 	case TOKEN_LB, TOKEN_LISTSTART:
 		ctx.nextToken()
 		expr = ctx.factory.Array(ctx.arrayExpression(), ctx.locator, atomStart, ctx.Pos()-atomStart)
+		ctx.nextToken()
 
 	case TOKEN_LC:
 		ctx.nextToken()
 		expr = ctx.factory.Hash(ctx.hashExpression(), ctx.locator, atomStart, ctx.Pos()-atomStart)
+		ctx.nextToken()
 
 	case TOKEN_BOOLEAN:
 		expr = ctx.factory.Boolean(ctx.tokenValue.(bool), ctx.locator, atomStart, ctx.Pos()-atomStart)
@@ -913,7 +916,9 @@ func (ctx *context) selectorsExpression(test Expression) (expr Expression) {
 	} else {
 		selectors = []Expression{ctx.selectorEntry()}
 	}
-	return ctx.factory.Select(test, selectors, ctx.locator, test.ByteOffset(), ctx.Pos()-test.ByteOffset())
+	expr = ctx.factory.Select(test, selectors, ctx.locator, test.ByteOffset(), ctx.Pos()-test.ByteOffset())
+	ctx.nextToken()
+	return
 }
 
 func (ctx *context) selectorEntry() (expr Expression) {
@@ -931,7 +936,9 @@ func (ctx *context) caseExpression() Expression {
 	ctx.assertToken(TOKEN_LC)
 	ctx.nextToken()
 	caseOptions := ctx.caseOptions()
-	return ctx.factory.Case(test, caseOptions, ctx.locator, start, ctx.Pos()-start)
+	expr := ctx.factory.Case(test, caseOptions, ctx.locator, start, ctx.Pos()-start)
+	ctx.nextToken()
+	return expr
 }
 
 func (ctx *context) caseOptions() (exprs []Expression) {
@@ -939,7 +946,6 @@ func (ctx *context) caseOptions() (exprs []Expression) {
 	for {
 		exprs = append(exprs, ctx.caseOption())
 		if ctx.currentToken == TOKEN_RC {
-			ctx.nextToken()
 			return
 		}
 	}
@@ -948,6 +954,7 @@ func (ctx *context) caseOptions() (exprs []Expression) {
 func (ctx *context) caseOption() Expression {
 	start := ctx.tokenStartPos
 	expressions := ctx.expressions(TOKEN_COLON, ctx.expression)
+	ctx.nextToken()
 	ctx.assertToken(TOKEN_LC)
 	ctx.nextToken()
 	block := ctx.parse(TOKEN_RC, false)
@@ -987,6 +994,7 @@ func (ctx *context) resourceExpression(start int, first Expression, form Resourc
 					ctx.nextToken()
 					args[0] = ctx.factory.Hash(ctx.hashExpression(), ctx.locator, bodiesStart, ctx.Pos()-bodiesStart)
 					expr = ctx.factory.CallNamed(first, true, args, nil, ctx.locator, start, ctx.Pos()-start)
+					ctx.nextToken()
 					return
 				}
 			}
@@ -1246,6 +1254,7 @@ func (ctx *context) callFunctionExpression(functorExpr Expression) Expression {
 	if ctx.currentToken != TOKEN_PIPE {
 		ctx.nextToken()
 		args = ctx.arguments()
+		ctx.nextToken()
 	}
 	var block Expression
 	if ctx.currentToken == TOKEN_PIPE {
@@ -1298,11 +1307,13 @@ func (ctx *context) activityProperty() Expression {
 		// TODO: Allow non condensed declaration using array of hashes where everything is
 		// spelled out (type and value expressed in hash)
 		value = ctx.factory.Array(ctx.parameterList(), ctx.locator, vstart, ctx.Pos() - vstart)
+		ctx.nextToken()
 	case `output`:
 		// TODO: Allow non condensed declaration using array of hashes where everything is
 		// spelled out (type and value expressed in hash)
 		params := ctx.outputParameters()
 		value = ctx.factory.Array(params, ctx.locator, vstart, ctx.Pos() - vstart)
+		ctx.nextToken()
 
 	default:
 		value = ctx.hashEntry()
@@ -1411,6 +1422,8 @@ func (ctx *context) activityDeclaration(start int, style ActivityStyle, name str
 	ctx.assertToken(TOKEN_LC)
 	ctx.nextToken()
 	propEntries := ctx.expressions(TOKEN_RC, ctx.activityProperty)
+	hEnd := ctx.Pos()
+	ctx.nextToken()
 
 	f := ctx.factory
 	l := ctx.locator
@@ -1433,9 +1446,11 @@ func (ctx *context) activityDeclaration(start int, style ActivityStyle, name str
 			ps := ctx.Pos()
 			ctx.nextToken()
 			iterParams := ctx.parameterList()
+			ctx.nextToken()
 			vs := ctx.Pos()
 			pl := ps - vs
 			iterVars := ctx.lambdaParameterList()
+			ctx.nextToken()
       vl := ctx.Pos() - vs
       fn := ctx.Pos() - fs
 			iter := f.Hash(
@@ -1460,7 +1475,7 @@ func (ctx *context) activityDeclaration(start int, style ActivityStyle, name str
 	}
 	var properties Expression
 	if len(propEntries) > 0 {
-		properties = f.Hash(propEntries, l, hstart, ctx.Pos() - hstart)
+		properties = f.Hash(propEntries, l, hstart, hEnd - hstart)
 	}
 
 	var block Expression
@@ -1486,6 +1501,7 @@ func (ctx *context) activityDeclaration(start int, style ActivityStyle, name str
 			if len(entries) > 0 {
 				block = ctx.factory.Hash(entries, ctx.locator, start, ctx.Pos()-start).(*LiteralHash)
 			}
+			ctx.nextToken()
 		}
 	default: // ActivityStyleAction
 		ctx.assertToken(TOKEN_LC)
@@ -1503,6 +1519,7 @@ func (ctx *context) activityDeclaration(start int, style ActivityStyle, name str
 func (ctx *context) lambda() (result Expression) {
 	start := ctx.tokenStartPos
 	parameterList := ctx.lambdaParameterList()
+	ctx.nextToken()
 	var returnType Expression
 	if ctx.currentToken == TOKEN_RSHIFT {
 		ctx.nextToken()
@@ -1512,8 +1529,9 @@ func (ctx *context) lambda() (result Expression) {
 	ctx.assertToken(TOKEN_LC)
 	ctx.nextToken()
 	block := ctx.parse(TOKEN_RC, false)
+	result = ctx.factory.Lambda(parameterList, block, returnType, ctx.locator, start, ctx.Pos()-start)
 	ctx.nextToken() // consume TOKEN_RC
-	return ctx.factory.Lambda(parameterList, block, returnType, ctx.locator, start, ctx.Pos()-start)
+	return
 }
 
 func (ctx *context) joinHashEntries(exprs []Expression) (result []Expression) {
@@ -1575,8 +1593,17 @@ func (ctx *context) functionDefinition() Expression {
 		ctx.SetPos(ctx.tokenStartPos)
 		panic(ctx.parseIssue(PARSE_EXPECTED_NAME_AFTER_FUNCTION))
 	}
+
 	ctx.nextToken()
-	parameterList := ctx.parameterList()
+
+	var parameterList []Expression
+	switch ctx.currentToken {
+	case TOKEN_LP, TOKEN_WSLP:
+		parameterList = ctx.parameterList()
+		ctx.nextToken()
+	default:
+		parameterList = []Expression{}
+	}
 
 	var returnType Expression
 	if ctx.currentToken == TOKEN_RSHIFT {
@@ -1607,7 +1634,14 @@ func (ctx *context) planDefinition() Expression {
 	// Push to namestack
 	ctx.nameStack = append(ctx.nameStack, name)
 
-	parameterList := ctx.parameterList()
+	var parameterList []Expression
+	switch ctx.currentToken {
+	case TOKEN_LP, TOKEN_WSLP:
+		parameterList = ctx.parameterList()
+		ctx.nextToken()
+	default:
+		parameterList = []Expression{}
+	}
 
 	var returnType Expression
 	if ctx.currentToken == TOKEN_RSHIFT {
@@ -1790,6 +1824,7 @@ func (ctx *context) outputParameter() Expression {
 			ps := ctx.tokenStartPos
 			ctx.nextToken()
 			defaultExpression = ctx.factory.Array(ctx.expressions(TOKEN_RP, ctx.attributeAlias), ctx.locator, ps, ps - ctx.Pos())
+			ctx.nextToken()
 		default:
 			defaultExpression = ctx.attributeAlias()
 		}
@@ -1809,7 +1844,9 @@ func (ctx *context) parameterType() Expression {
 	if ctx.currentToken == TOKEN_LB {
 		ctx.nextToken()
 		typeArgs := ctx.arrayExpression()
-		return ctx.factory.Access(typeName, typeArgs, ctx.locator, start, ctx.Pos()-start)
+		expr := ctx.factory.Access(typeName, typeArgs, ctx.locator, start, ctx.Pos()-start)
+		ctx.nextToken()
+		return expr
 	}
 	return typeName
 }
@@ -1832,7 +1869,15 @@ func (ctx *context) classExpression(start int) Expression {
 	// Push to namestack
 	ctx.nameStack = append(ctx.nameStack, name)
 
-	params := ctx.parameterList()
+	var parameterList []Expression
+	switch ctx.currentToken {
+	case TOKEN_LP, TOKEN_WSLP:
+		parameterList = ctx.parameterList()
+		ctx.nextToken()
+	default:
+		parameterList = []Expression{}
+	}
+
 	var parent string
 	if ctx.currentToken == TOKEN_INHERITS {
 		ctx.nextToken()
@@ -1850,7 +1895,7 @@ func (ctx *context) classExpression(start int) Expression {
 
 	// Pop namestack
 	ctx.nameStack = ctx.nameStack[:len(ctx.nameStack)-1]
-	return ctx.addDefinition(ctx.factory.Class(ctx.qualifiedName(name), params, parent, body, ctx.locator, start, ctx.Pos()-start))
+	return ctx.addDefinition(ctx.factory.Class(ctx.qualifiedName(name), parameterList, parent, body, ctx.locator, start, ctx.Pos()-start))
 }
 
 func (ctx *context) className() (name string) {
@@ -1919,16 +1964,25 @@ func (ctx *context) resourceDefinition(resourceToken int) Expression {
 	start := ctx.tokenStartPos
 	ctx.nextToken()
 	name := ctx.className()
-	params := ctx.parameterList()
+
+	var parameterList []Expression
+	switch ctx.currentToken {
+	case TOKEN_LP, TOKEN_WSLP:
+		parameterList = ctx.parameterList()
+		ctx.nextToken()
+	default:
+		parameterList = []Expression{}
+	}
+
 	ctx.assertToken(TOKEN_LC)
 	ctx.nextToken()
 	body := ctx.parse(TOKEN_RC, false)
 	ctx.nextToken()
 	var def Expression
 	if resourceToken == TOKEN_APPLICATION {
-		def = ctx.factory.Application(name, params, body, ctx.locator, start, ctx.Pos()-start)
+		def = ctx.factory.Application(name, parameterList, body, ctx.locator, start, ctx.Pos()-start)
 	} else {
-		def = ctx.factory.Definition(name, params, body, ctx.locator, start, ctx.Pos()-start)
+		def = ctx.factory.Definition(name, parameterList, body, ctx.locator, start, ctx.Pos()-start)
 	}
 	return ctx.addDefinition(def)
 }

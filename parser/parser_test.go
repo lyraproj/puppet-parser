@@ -781,14 +781,14 @@ func TestWorkflowDefintion(t *testing.T) {
         }
       }`),
 		`(activity {:name "foo" :style "workflow" :definition (block ` +
-		  `(activity {:name "foo::bar" :style "resource" ` +
-		    `:properties (hash (=> ` +
-		      `(qn "type") (qr "Genesis::Aws::Instance")) ` +
-		      `(=> (qn "iteration") (hash (=> ` +
-		        `(qn "function") (qn "each")) ` +
-		        `(=> (qn "params") (array (param {:name "y"}))) ` +
-            `(=> (qn "vars") (array (param {:name "x"})))))) ` +
-		    `:definition (hash (=> (qn "x") (call-method {:functor (. (qr "Deferred") (qn "new")) :args ["$x"]})))}))})`,
+			`(activity {:name "foo::bar" :style "resource" :properties (hash ` +
+			  `(=> (qn "type") (qr "Genesis::Aws::Instance")) ` +
+			  `(=> (qn "iteration") (hash ` +
+			    `(=> (qn "name") (qn "bar")) ` +
+			    `(=> (qn "function") (qn "each")) ` +
+			    `(=> (qn "params") (array (param {:name "y"}))) ` +
+			    `(=> (qn "vars") (array (param {:name "x"})))))) ` +
+			  `:definition (hash (=> (qn "x") (call-method {:functor (. (qr "Deferred") (qn "new")) :args ["$x"]})))}))})`,
 		PARSER_WORKFLOW_ENABLED)
 
 	expectDump(t,
