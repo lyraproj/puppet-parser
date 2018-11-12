@@ -312,6 +312,7 @@ type context struct {
 	handleBacktickStrings bool
 	handleHexEscapes      bool
 	tasks                 bool
+	workflow              bool
 	nextLineStart         int
 	currentToken          int
 	beginningOfLine       int

@@ -254,10 +254,6 @@ type (
 		returnType Expression
 	}
 
-	PlanDefinition struct {
-		FunctionDefinition
-	}
-
 	HeredocExpression struct {
 		Positioned
 		syntax string
@@ -360,6 +356,10 @@ type (
 
 	OrExpression struct {
 		binaryExpression
+	}
+
+	PlanDefinition struct {
+		FunctionDefinition
 	}
 
 	Parameter struct {
@@ -1085,11 +1085,11 @@ func (e *FunctionDefinition) ReturnType() Expression {
 }
 
 func (e *FunctionDefinition) AllContents(path []Expression, visitor PathVisitor) {
-	DeepVisit(e, path, visitor, e.parameters, e.body)
+	DeepVisit(e, path, visitor, e.parameters, e.returnType, e.body)
 }
 
 func (e *FunctionDefinition) Contents(path []Expression, visitor PathVisitor) {
-	ShallowVisit(e, path, visitor, e.parameters, e.body)
+	ShallowVisit(e, path, visitor, e.parameters, e.returnType, e.body)
 }
 
 func (e *FunctionDefinition) ToDefinition() Definition {

@@ -4,6 +4,7 @@ import "strings"
 
 type ExpressionFactory interface {
 	Access(operand Expression, keys []Expression, locator *Locator, offset int, length int) Expression
+	Activity(name string, style ActivityStyle, properties, definition Expression, locator *Locator, offset int, length int) Expression
 	And(lhs Expression, rhs Expression, locator *Locator, offset int, length int) Expression
 	Application(name string, params []Expression, body Expression, locator *Locator, offset int, length int) Expression
 	Array(expressions []Expression, locator *Locator, offset int, length int) Expression
@@ -85,6 +86,10 @@ func (f *defaultExpressionFactory) And(lhs Expression, rhs Expression, locator *
 
 func (f *defaultExpressionFactory) Access(operand Expression, keys []Expression, locator *Locator, offset int, length int) Expression {
 	return &AccessExpression{Positioned{locator, offset, length}, operand, keys}
+}
+
+func (f *defaultExpressionFactory) Activity(name string, style ActivityStyle, properties, definition Expression, locator *Locator, offset int, length int) Expression {
+	return &ActivityExpression{Positioned{locator, offset, length}, name, style, properties, definition}
 }
 
 func (f *defaultExpressionFactory) Application(name string, params []Expression, body Expression, locator *Locator, offset int, length int) Expression {

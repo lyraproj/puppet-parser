@@ -145,6 +145,13 @@ func ValidateTasks(e parser.Expression) Validator {
 	return v
 }
 
+// Validate the expression using the Workflow validator
+func ValidateWorkflow(e parser.Expression) Validator {
+	v := NewWorkflowChecker()
+	Validate(v, e)
+	return v
+}
+
 // Iterate over all expressions contained in the given expression (including the expression itself)
 // and validate each one.
 func Validate(v Validator, e parser.Expression) {

@@ -22,6 +22,7 @@ var validateOnly = flag.Bool("v", false, "validate only")
 var jsonOuput = flag.Bool("j", false, "json output")
 var strict = flag.String("s", `off`, "strict (off, warning, or error)")
 var tasks = flag.Bool("t", false, "tasks")
+var workflow = flag.Bool("w", false, "workflow")
 
 func main() {
 	flag.Parse()
@@ -52,6 +53,9 @@ func main() {
 	}
 	if *tasks {
 		parseOpts = append(parseOpts, parser.PARSER_TASKS_ENABLED)
+	}
+	if *workflow {
+		parseOpts = append(parseOpts, parser.PARSER_WORKFLOW_ENABLED)
 	}
 
 	expr, err := parser.CreateParser(parseOpts...).Parse(args[0], string(content), false)

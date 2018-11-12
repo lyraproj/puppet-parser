@@ -9,6 +9,7 @@ import (
 )
 
 var PuppetTasks = false
+var PuppetWorkflow = false
 
 func TestVariableAssignValidation(t *testing.T) {
 	expectNoIssues(t, `$x = 'y'`)
@@ -766,12 +767,24 @@ nextIssue:
 
 func parseAndValidate(t *testing.T, str string, parserOptions ...parser.Option) []issue.Reported {
 	if PuppetTasks {
-		if expr := parse(t, str, append([]parser.Option{parser.PARSER_TASKS_ENABLED}, parserOptions...)...); expr != nil {
-			v := ValidateTasks(expr)
+		parserOptions = append([]parser.Option{parser.PARSER_TASKS_ENABLED}, parserOptions...)
+	}
+	if PuppetWorkflow {
+		parserOptions = append([]parser.Option{parser.PARSER_WORKFLOW_ENABLED}, parserOptions...)
+	}
+
+	var v Validator
+	if PuppetTasks || PuppetWorkflow {
+		if expr := parse(t, str, parserOptions...); expr != nil {
+			if PuppetWorkflow {
+				v = ValidateWorkflow(expr)
+			} else {
+				v = ValidateTasks(expr)
+			}
 			return v.Issues()
 		}
 	} else if expr := parse(t, str, parserOptions...); expr != nil {
-		v := ValidatePuppet(expr, STRICT_ERROR)
+		v = ValidatePuppet(expr, STRICT_ERROR)
 		return v.Issues()
 	}
 	return nil

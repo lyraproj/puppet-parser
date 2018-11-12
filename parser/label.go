@@ -8,6 +8,7 @@ import (
 func (e *Positioned) Label() string { return "Positioned" }
 
 // Concrete
+func (e *ActivityExpression) Label() string          { return "Activity" }
 func (e *AccessExpression) Label() string            { return "'[]' expression" }
 func (e *AndExpression) Label() string               { return "'and' expression" }
 func (e *ArithmeticExpression) Label() string        { return fmt.Sprintf("'%s' expression", e.operator) }
