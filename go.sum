@@ -1,11 +1,2 @@
-github.com/puppetlabs/go-evaluator v0.0.0-20181112082732-98dadb515008 h1:1XLZx/WGGSZuNTe1WHl2y/DmziugSB5tVfNq5INM6DY=
-github.com/puppetlabs/go-evaluator v0.0.0-20181112082732-98dadb515008/go.mod h1:YLIO+H9GzHTOHjwKAjIDLT0HjDfNWvJNMcyc1Sb5NDk=
 github.com/puppetlabs/go-issues v0.0.0-20181112112915-c16bc8ecd50f h1:HKZK7Rk8LAmQqWagoWSBYvR8Oeu6mN7fTK1bMb24ZaE=
 github.com/puppetlabs/go-issues v0.0.0-20181112112915-c16bc8ecd50f/go.mod h1:UNpBgsvFV8ZBoNkXo2YOrkWHA4sXoBmrDGw572x257U=
-github.com/puppetlabs/go-pspec v0.0.0-20181112112850-4d987e304ed1 h1:eRvyfQhbpoXxuUrT5tUGkier7rEURUIJXuFogggYMfo=
-github.com/puppetlabs/go-pspec v0.0.0-20181112112850-4d987e304ed1/go.mod h1:ZL7pKW5w82iTlOF1frbx9iRG2fmqHFOvNk7KkxF6DwQ=
-github.com/puppetlabs/go-semver v0.0.0-20181112101422-34eb86658f1c h1:ZzqxVdjOl6/NZeKsgckQYO682n2xTj2JGnDr6kstlo4=
-github.com/puppetlabs/go-semver v0.0.0-20181112101422-34eb86658f1c/go.mod h1:mHMsrjAtYQ5mBpZ5z4RMRRkVzErA4fnTdrV/QH8UPdQ=
-gopkg.in/check.v1 v0.0.0-20161208181325-20d25e280405/go.mod h1:Co6ibVJAznAaIkqp8huTwlJQCZ016jof/cbN4VW5Yz0=
-gopkg.in/yaml.v2 v2.2.1 h1:mUhvW9EsL+naU5Q3cakzfE91YhliOondGd6ZrsDBHQE=
-gopkg.in/yaml.v2 v2.2.1/go.mod h1:hI93XBmqTisBFMUTm0b8Fm+jr3Dg1NNxqwp+5A1VGuI=
