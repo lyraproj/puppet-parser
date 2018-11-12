@@ -2,6 +2,7 @@ package parser
 
 import (
 	"bytes"
+	"github.com/puppetlabs/go-issues/issue"
 	"testing"
 )
 
@@ -106,13 +107,13 @@ func TestDoubleQuoted(t *testing.T) {
 		`malformed interpolation expression (line: 1, column: 2)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       $x = "y
       notice($x)`),
 		"unterminated double quoted string (line: 1, column: 6)")
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       $x = "y${var"`),
 		"unterminated double quoted string (line: 1, column: 13)")
 
@@ -129,7 +130,7 @@ func TestRegexp(t *testing.T) {
 	expectDump(t, `/escaped \t/`, `(regexp "escaped \\t")`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       /escaped #rx comment
       continues
       .*/`),
@@ -151,26 +152,26 @@ func TestReserved(t *testing.T) {
 }
 
 func TestHeredoc(t *testing.T) {
-	expectHeredoc(t, Unindent(`
+	expectHeredoc(t, issue.Unindent(`
       @(END)
       END`),
 		"")
 
-	expectHeredoc(t, Unindent(`
+	expectHeredoc(t, issue.Unindent(`
       @(END)
       This is
       heredoc text
       END`),
 		"This is\nheredoc text\n")
 
-	expectError(t, Unindent(`
+	expectError(t, issue.Unindent(`
       @(END)
       This is
       heredoc text`),
 		"unterminated heredoc (line: 1, column: 1)")
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       { a => @(ONE), b => @(TWO) }
       The first
       heredoc text
@@ -181,7 +182,7 @@ func TestHeredoc(t *testing.T) {
 		`(hash (=> (qn "a") (heredoc {:text "The first\nheredoc text"})) (=> (qn "b") (heredoc {:text "The second\nheredoc text"})))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       ['first', @(SECOND), 'third', @(FOURTH), 'fifth',
         This is the text of the
         second entry
@@ -193,7 +194,7 @@ func TestHeredoc(t *testing.T) {
 		`(array "first" (heredoc {:text "This is the text of the\nsecond entry"}) "third" (heredoc {:text "And here is the text of the\nfourth entry"}) "fifth" "sixth")`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       @(END
       /t)
       This\nis\nheredoc\ntext
@@ -201,7 +202,7 @@ func TestHeredoc(t *testing.T) {
 		`unterminated @( (line: 1, column: 1)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       @(END)
       This\nis\nheredoc\ntext
 
@@ -209,20 +210,20 @@ func TestHeredoc(t *testing.T) {
 		`unterminated heredoc (line: 1, column: 1)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       @(END)`),
 		`unterminated heredoc (line: 1, column: 1)`)
 }
 
 func TestHeredocSyntax(t *testing.T) {
-	expectDump(t, Unindent(`
+	expectDump(t, issue.Unindent(`
       @(END:syntax)
       This is
       heredoc text
       END`),
 		`(heredoc {:syntax "syntax" :text "This is\nheredoc text\n"})`)
 
-	expectError(t, Unindent(`
+	expectError(t, issue.Unindent(`
       @(END:json:yaml)
       This is
       heredoc text`),
@@ -231,7 +232,7 @@ func TestHeredocSyntax(t *testing.T) {
 
 func TestHeredocFlags(t *testing.T) {
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/t)
       This\tis\t
       heredoc text
@@ -239,42 +240,42 @@ func TestHeredocFlags(t *testing.T) {
 		"This\tis\t\nheredoc text")
 
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/s)
       This\sis\sheredoc\stext
       -END`),
 		`This is heredoc text`)
 
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/r)
       This\ris\rheredoc\rtext
       -END`),
 		"This\ris\rheredoc\rtext")
 
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/n)
       This\nis\nheredoc\ntext
       -END`),
 		"This\nis\nheredoc\ntext")
 
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END:syntax/n)
       This\nis\nheredoc\ntext
       -END`),
 		"This\nis\nheredoc\ntext", `syntax`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/k)
       This\nis\nheredoc\ntext
       -END`),
 		`illegal heredoc escape 'k' (line: 1, column: 7)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/t/s)
       This\nis\nheredoc\ntext
       -END`),
@@ -289,7 +290,7 @@ func TestHeredocStripNL(t *testing.T) {
 
 func TestHeredocMargin(t *testing.T) {
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/t)
         This\tis
         heredoc text
@@ -298,7 +299,7 @@ func TestHeredocMargin(t *testing.T) {
 		"This\tis\nheredoc text\n")
 
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END)
         | END
       `),
@@ -306,7 +307,7 @@ func TestHeredocMargin(t *testing.T) {
 
 	// Lines that have less margin than what's stripped are not stripped
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/t)
         This\tis
        heredoc text
@@ -317,7 +318,7 @@ func TestHeredocMargin(t *testing.T) {
 
 func TestHeredocMarginAndNewlineTrim(t *testing.T) {
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/t)
         This\tis
         heredoc text
@@ -325,7 +326,7 @@ func TestHeredocMarginAndNewlineTrim(t *testing.T) {
 		"This\tis\nheredoc text")
 
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END)
         |-END
       `),
@@ -334,7 +335,7 @@ func TestHeredocMarginAndNewlineTrim(t *testing.T) {
 
 func TestHeredocInterpolate(t *testing.T) {
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @("END")
         This is
         heredoc $text
@@ -342,7 +343,7 @@ func TestHeredocInterpolate(t *testing.T) {
 		`(heredoc {:text (concat "This is\nheredoc " (str (var "text")))})`)
 
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @("END")
         This is
         heredoc $a \$b
@@ -350,7 +351,7 @@ func TestHeredocInterpolate(t *testing.T) {
 		`(heredoc {:text (concat "This is\nheredoc " (str (var "a")) " \\" (str (var "b")))})`)
 
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @("END"/$)
         This is
         heredoc $a \$b
@@ -358,17 +359,17 @@ func TestHeredocInterpolate(t *testing.T) {
 		`(heredoc {:text (concat "This is\nheredoc " (str (var "a")) " $b")})`)
 
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END)
         This is
         heredoc $text
         |- END`),
-		Unindent(`
+		issue.Unindent(`
       This is
       heredoc $text`))
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       @("END""MORE")
         This is
         heredoc $text
@@ -376,7 +377,7 @@ func TestHeredocInterpolate(t *testing.T) {
 		`more than one tag declaration in heredoc (line: 1, column: 8)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       @("END
       ")
         This is
@@ -385,7 +386,7 @@ func TestHeredocInterpolate(t *testing.T) {
 		`unterminated @( (line: 1, column: 1)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       @("")
         This is
         heredoc $text
@@ -393,7 +394,7 @@ func TestHeredocInterpolate(t *testing.T) {
 		`empty heredoc tag (line: 1, column: 1)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       @()
         This is
         heredoc $text
@@ -403,89 +404,89 @@ func TestHeredocInterpolate(t *testing.T) {
 
 func TestHeredocNewlineEscape(t *testing.T) {
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/L)
         Do not break \
         this line
         |- END`),
-		Unindent(`
+		issue.Unindent(`
       Do not break this line`))
 
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/L)
         Do not break \
         this line\
         |- END`),
-		Unindent(`
+		issue.Unindent(`
       Do not break this line\`))
 
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/t)
         Do break \
         this line
         |- END`),
-		Unindent(`
+		issue.Unindent(`
       Do break \
       this line`))
 
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/u)
         A checkmark \u2713 symbol
         |- END`),
-		Unindent(`
+		issue.Unindent(`
       A checkmark ✓ symbol`))
 }
 
 func TestHeredocUnicodeEscape(t *testing.T) {
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/u)
         A hat \u{1f452} symbol
         |- END`),
-		Unindent(`
+		issue.Unindent(`
       A hat 👒 symbol`))
 
 	expectHeredoc(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/u)
         A checkmark \u2713 symbol
         |- END`),
-		Unindent(`
+		issue.Unindent(`
       A checkmark ✓ symbol`))
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/u)
         A hat \u{1f452 symbol
         |- END`),
 		`malformed unicode escape sequence (line: 2, column: 9)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/u)
         A hat \u{1f45234} symbol
         |- END`),
 		`malformed unicode escape sequence (line: 2, column: 9)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/u)
         A hat \u{1} symbol
         |- END`),
 		`malformed unicode escape sequence (line: 2, column: 9)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/u)
         A checkmark \u271 symbol
         |- END`),
 		`malformed unicode escape sequence (line: 2, column: 15)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       @(END/u)
         A checkmark \ux271 symbol
         |- END`),
@@ -493,7 +494,7 @@ func TestHeredocUnicodeEscape(t *testing.T) {
 }
 
 func TestMLCommentAfterHeredocTag(t *testing.T) {
-	expectHeredoc(t, Unindent(`
+	expectHeredoc(t, issue.Unindent(`
       @(END) /* comment after tag */
       This is
       heredoc text
@@ -502,7 +503,7 @@ func TestMLCommentAfterHeredocTag(t *testing.T) {
 }
 
 func TestCommentAfterHeredocTag(t *testing.T) {
-	expectHeredoc(t, Unindent(`
+	expectHeredoc(t, issue.Unindent(`
       @(END) # comment after tag
       This is
       heredoc text
@@ -622,7 +623,7 @@ func TestHash(t *testing.T) {
 
 func TestBlock(t *testing.T) {
 	expectBlock(t,
-		Unindent(`
+		issue.Unindent(`
       $t = 'the'
       $r = 'revealed'
       $map = {'ipl' => 'meaning', 42.0 => 'life'}
@@ -634,7 +635,7 @@ func TestBlock(t *testing.T) {
 			`(concat (str (var "t")) " " (str (access (var "map") "ipl")) " of " (str (access (var "map") 4.2e+01)) (str (access (array 3 (concat " is not " (str (var "r")))) 1)) " here"))`)
 
 	expectBlock(t,
-		Unindent(`
+		issue.Unindent(`
       $t = 'the';
       $r = 'revealed';
       $map = {'ipl' => 'meaning', 42.0 => 'life'};
@@ -646,7 +647,7 @@ func TestBlock(t *testing.T) {
 			`(concat (str (var "t")) " " (str (access (var "map") "ipl")) " of " (str (access (var "map") 4.2e+01)) (str (access (array 3 (concat " is not " (str (var "r")))) 1)) " here"))`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       $a = 'a',
       $b = 'b'`),
 		`Extraneous comma between statements (line: 1, column: 10)`)
@@ -654,7 +655,7 @@ func TestBlock(t *testing.T) {
 
 func TestFunctionDefintion(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       function myFunc(Integer[0,3] $first, $untyped, String $nxt = 'hello') >> Float {
          23.8
       }`),
@@ -668,7 +669,7 @@ func TestFunctionDefintion(t *testing.T) {
 			`:returns (qr "Float")})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       function myFunc(Integer *$numbers) >> Integer {
          $numbers.size
       }`),
@@ -681,38 +682,38 @@ func TestFunctionDefintion(t *testing.T) {
 			`:returns (qr "Integer")})`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       function foo($1) {}`),
 		`expected variable declaration (line: 1, column: 16)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       function myFunc(Integer *numbers) >> Integer {
          numbers.size
       }`),
 		`expected variable declaration (line: 1, column: 33)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       function myFunc(Integer *$numbers) >> $var {
          numbers.size
       }`),
 		`expected type name (line: 1, column: 43)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       function 'myFunc'() {
          true
       }`),
 		`expected a name to follow keyword 'function' (line: 1, column: 10)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       function myFunc() true`),
 		`expected token '{', got 'boolean literal' (line: 1, column: 19)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       function myFunc() >> Boolean true`),
 		`expected token '{', got 'boolean literal' (line: 1, column: 30)`)
 }
@@ -722,7 +723,7 @@ func TestPlanDefintion(t *testing.T) {
 		`(plan {:name "foo" :body []})`, PARSER_TASKS_ENABLED)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       plan foo {
         $a = 10
         $b = 20
@@ -745,7 +746,7 @@ func TestWorkflowDefintion(t *testing.T) {
 		`(activity {:name "foo" :style "workflow"})`, PARSER_WORKFLOW_ENABLED)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       workflow foo {} {
         resource bar {}
       }`),
@@ -754,7 +755,7 @@ func TestWorkflowDefintion(t *testing.T) {
 		PARSER_WORKFLOW_ENABLED)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       workflow foo {} {
         resource bar {
           type => Genesis::Aws::Instance
@@ -772,7 +773,7 @@ func TestWorkflowDefintion(t *testing.T) {
 		PARSER_WORKFLOW_ENABLED)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       workflow foo {} {
         resource bar {
           type => Genesis::Aws::Instance,
@@ -792,7 +793,7 @@ func TestWorkflowDefintion(t *testing.T) {
 		PARSER_WORKFLOW_ENABLED)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       workflow foo {} {
         action bar { guard => true } {
           function read {
@@ -806,7 +807,7 @@ func TestWorkflowDefintion(t *testing.T) {
 		PARSER_WORKFLOW_ENABLED)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       workflow foo {} {
         action bar {} {
           function delete {
@@ -830,76 +831,76 @@ func TestWorkflowDefintion(t *testing.T) {
 
 func TestNodeDefinition(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       node default {
       }`),
 		`(node {:matches [(default)] :body []})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       node /[a-f].*/ {
       }`),
 		`(node {:matches [(regexp "[a-f].*")] :body []})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       node /[a-f].*/, "example.com" {
       }`),
 		`(node {:matches [(regexp "[a-f].*") "example.com"] :body []})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       node /[a-f].*/, example.com {
       }`),
 		`(node {:matches [(regexp "[a-f].*") "example.com"] :body []})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       node /[a-f].*/, 192.168.0.1, 34, "$x.$y" {
       }`),
 		`(node {:matches [(regexp "[a-f].*") "192.168.0.1" "34" (concat (str (var "x")) "." (str (var "y")))] :body []})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       node /[a-f].*/, 192.168.0.1, 34, 'some.string', {
       }`),
 		`(node {:matches [(regexp "[a-f].*") "192.168.0.1" "34" "some.string"] :body []})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       node /[a-f].*/ inherits 192.168.0.1 {
       }`),
 		`(node {:matches [(regexp "[a-f].*")] :parent "192.168.0.1" :body []})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       node default {
         notify { x: message => 'node default' }
       }`),
 		`(node {:matches [(default)] :body [(resource {:type (qn "notify") :bodies [{:title (qn "x") :ops [(=> "message" "node default")]}]})]})`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       node [hosta.com, hostb.com] {
       }`),
-		Unindent(`hostname expected (line: 1, column: 7)`))
+		issue.Unindent(`hostname expected (line: 1, column: 7)`))
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       node example.* {
       }`),
-		Unindent(`expected name or number to follow '.' (line: 1, column: 15)`))
+		issue.Unindent(`expected name or number to follow '.' (line: 1, column: 15)`))
 }
 
 func TestSiteDefinition(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       site {
       }`),
 		`(site)`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       site {
         notify { x: message => 'node default' }
       }`),
@@ -908,42 +909,42 @@ func TestSiteDefinition(t *testing.T) {
 
 func TestTypeDefinition(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       type MyType {
         # What statements that can be included here is not yet speced
       }`),
 		`(type-definition "MyType" "" (block))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       type MyType inherits OtherType {
         # What statements that can be included here is not yet speced
       }`),
 		`(type-definition "MyType" "OtherType" (block))`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       type MyType inherits OtherType [{
         # What statements that can be included here is not yet speced
       }]`),
 		`expected token '{', got '[' (line: 1, column: 32)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       type MyType inherits $other {
         # What statements that can be included here is not yet speced
       }`),
 		`expected type name to follow 'inherits' (line: 1, column: 28)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       type MyType[a,b] {
         # What statements that can be included here is not yet speced
       }`),
 		`expected type name to follow 'type' (line: 1, column: 19)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       type MyType << {
         # What statements that can be included here is not yet speced
       }`),
@@ -952,7 +953,7 @@ func TestTypeDefinition(t *testing.T) {
 
 func TestTypeAlias(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       type MyType = Object[{
         attributes => {
         name => String,
@@ -978,13 +979,13 @@ func TestTypeMapping(t *testing.T) {
 
 func TestClass(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       class myclass {
       }`),
 		`(class {:name "myclass" :body []})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       class myclass {
         class inner {
         }
@@ -992,7 +993,7 @@ func TestClass(t *testing.T) {
 		`(class {:name "myclass" :body [(class {:name "myclass::inner" :body []})]})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       class ::myclass {
         class inner {
         }
@@ -1000,7 +1001,7 @@ func TestClass(t *testing.T) {
 		`(class {:name "myclass" :body [(class {:name "myclass::inner" :body []})]})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       class ::myclass {
         class ::inner {
         }
@@ -1008,43 +1009,43 @@ func TestClass(t *testing.T) {
 		`(class {:name "myclass" :body [(class {:name "myclass::inner" :body []})]})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       class myclass inherits other {
       }`),
 		`(class {:name "myclass" :parent "other" :body []})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       class myclass inherits default {
       }`),
 		`(class {:name "myclass" :parent "default" :body []})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       class myclass($a, $b = 2) {
       }`),
 		`(class {:name "myclass" :params {:a {} :b {:value 2}} :body []})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       class myclass($a, $b = 2) inherits other {
       }`),
 		`(class {:name "myclass" :parent "other" :params {:a {} :b {:value 2}} :body []})`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       class 'myclass' {
       }`),
 		`a quoted string is not valid as a name at this location (line: 1, column: 7)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       class class {
       }`),
 		`'class' keyword not allowed at this location (line: 1, column: 7)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       class [a, b] {
       }`),
 		`expected name of class (line: 1, column: 7)`)
@@ -1052,7 +1053,7 @@ func TestClass(t *testing.T) {
 
 func TestDefinition(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       define apache::vhost (
         Integer $port,
         String[1] $docroot,
@@ -1102,21 +1103,21 @@ func TestDefinition(t *testing.T) {
 
 func TestCapabilityMappping(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       MyCap produces Cap {
         attr => $value
       }`),
 		`(produces (qr "MyCap") ["Cap" (=> "attr" (var "value"))])`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       attr produces Cap {}`),
 		`(produces (qn "attr") ["Cap"])`)
 }
 
 func TestApplication(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       application lamp(
         String $db_user,
         String $db_password,
@@ -1165,7 +1166,7 @@ func TestApplication(t *testing.T) {
 
 func TestCallNamed(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = wrap(myFunc(3, 'vx', 'd"x') |Integer $r| >> Integer { $r + 2 })`),
 		`(= (var "x") (call {:functor (qn "wrap") :args [(call {:functor (qn "myFunc") :args [3 "vx" "d\"x"] :block (lambda {:params {:r {:type (qr "Integer")}} :returns (qr "Integer") :body [(+ (var "r") 2)]})})]}))`)
 
@@ -1176,19 +1177,19 @@ func TestCallNamed(t *testing.T) {
 		`notice hello(), 'world'`, `(invoke {:functor (qn "notice") :args [(call {:functor (qn "hello") :args []}) "world"]})`)
 
 	expectBlock(t,
-		Unindent(`
+		issue.Unindent(`
       $x = $y.myFunc
       callIt(*$x)
       (2 + 3).with() |$x| { notice $x }`),
 		`(block (= (var "x") (call-method {:functor (. (var "y") (qn "myFunc")) :args []})) (invoke {:functor (qn "callIt") :args [(unfold (var "x"))]}) (call-method {:functor (. (paren (+ 2 3)) (qn "with")) :args [] :block (lambda {:params {:x {}} :body [(invoke {:functor (qn "notice") :args [(var "x")]})]})}))`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       $x = myFunc(3`),
 		`expected one of ',' or ')', got 'EOF' (line: 1, column: 14)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       $x = myFunc() || $r + 2 }`),
 		`expected token '{', got 'variable' (line: 1, column: 18)`)
 
@@ -1196,12 +1197,12 @@ func TestCallNamed(t *testing.T) {
 
 func TestCallNamedNoArgs(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = wrap(myFunc |Integer $r| >> Integer { $r + 2 })`),
 		`(= (var "x") (call {:functor (qn "wrap") :args [(call {:functor (qn "myFunc") :args [] :block (lambda {:params {:r {:type (qr "Integer")}} :returns (qr "Integer") :body [(+ (var "r") 2)]})})]}))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = [myFunc()]`),
 		`(= (var "x") (array (call {:functor (qn "myFunc") :args []})))`)
 
@@ -1209,43 +1210,43 @@ func TestCallNamedNoArgs(t *testing.T) {
 
 func TestCallMethod(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = $y.max(23)`),
 		`(= (var "x") (call-method {:functor (. (var "y") (qn "max")) :args [23]}))`)
 }
 
 func TestCallMethodArgsLambda(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = $y.max(23) |$x| { $x }`),
 		`(= (var "x") (call-method {:functor (. (var "y") (qn "max")) :args [23] :block (lambda {:params {:x {}} :body [(var "x")]})}))`)
 }
 
 func TestCallMethodNoArgs(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = $y.max`),
 		`(= (var "x") (call-method {:functor (. (var "y") (qn "max")) :args []}))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x == $y.max`),
 		`(== (var "x") (call-method {:functor (. (var "y") (qn "max")) :args []}))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       "${x[3].y}"`),
 		`(concat (str (call-method {:functor (. (access (var "x") 3) (qn "y")) :args []})))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       "${x[3].y.z}"`),
 		`(concat (str (call-method {:functor (. (call-method {:functor (. (access (var "x") 3) (qn "y")) :args []}) (qn "z")) :args []})))`)
 }
 
 func TestCallMethodNoArgsLambda(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = $y.max |$x| { $x }`),
 		`(= (var "x") (call-method {:functor (. (var "y") (qn "max")) :args [] :block (lambda {:params {:x {}} :body [(var "x")]})}))`)
 }
@@ -1257,22 +1258,22 @@ func TestCallFuncNoArgsLambdaThenCall(t *testing.T) {
 
 func TestCallType(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = type(3)`),
 		`(= (var "x") (call {:functor (qn "type") :args [3]}))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = [type(3)]`),
 		`(= (var "x") (array (call {:functor (qn "type") :args [3]})))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = {type(3) => 'v'}`),
 		`(= (var "x") (hash (=> (call {:functor (qn "type") :args [3]}) "v")))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = {'v' => type(3)}`),
 		`(= (var "x") (hash (=> "v" (call {:functor (qn "type") :args [3]}))))`)
 
@@ -1282,7 +1283,7 @@ func TestCallType(t *testing.T) {
 
 func TestCallTypeMethod(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = $x.type(3)`),
 		`(= (var "x") (call-method {:functor (. (var "x") (qn "type")) :args [3]}))`)
 }
@@ -1299,7 +1300,7 @@ func TestImplicitNewWithDotDot(t *testing.T) {
 
 func TestLineComment(t *testing.T) {
 	expectBlock(t,
-		Unindent(`
+		issue.Unindent(`
       $x = 'y'
       # The above is a variable assignment
       # and here is a notice of the assigned
@@ -1341,13 +1342,13 @@ func TestIdentifiers(t *testing.T) {
 
 func TestRestOfLineComment(t *testing.T) {
 	expectBlock(t,
-		Unindent(`
+		issue.Unindent(`
       $x = 'y' # A variable assignment
       notice($y)`),
 		`(block (= (var "x") "y") (invoke {:functor (qn "notice") :args [(var "y")]}))`)
 
 	expectBlock(t,
-		Unindent(`
+		issue.Unindent(`
       # [*version*]
       #   The package version to install, used to set the package name.
       #   Defaults to undefined`),
@@ -1356,7 +1357,7 @@ func TestRestOfLineComment(t *testing.T) {
 
 func TestMultilineComment(t *testing.T) {
 	expectBlock(t,
-		Unindent(`
+		issue.Unindent(`
       $x = 'y'
       /* The above is a variable assignment
          and here is a notice of the assigned
@@ -1372,7 +1373,7 @@ func TestSingleQuote(t *testing.T) {
 	expectDump(t, `$x = 'a \'string\' with \\'`, `(= (var "x") "a 'string' with \\")`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       $x = 'y
       notice($x)`),
 		"unterminated single quoted string (line: 1, column: 6)")
@@ -1380,14 +1381,14 @@ func TestSingleQuote(t *testing.T) {
 
 func TestUnterminatedQuoteEscapedEnd(t *testing.T) {
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       $x = 'y\`),
 		"unterminated single quoted string (line: 1, column: 6)")
 }
 
 func TestStrayTilde(t *testing.T) {
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       $x ~ 'y'
       notice($x)`),
 		"unexpected token '~' (line: 1, column: 4)")
@@ -1395,7 +1396,7 @@ func TestStrayTilde(t *testing.T) {
 
 func TestUnknownToken(t *testing.T) {
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       $x ^ 'y'
       notice($x)`),
 		"unexpected token '^' (line: 1, column: 4)")
@@ -1403,7 +1404,7 @@ func TestUnknownToken(t *testing.T) {
 
 func TestUnterminatedComment(t *testing.T) {
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       $x = 'y'
       /* The above is a variable assignment
       notice($y)`),
@@ -1412,7 +1413,7 @@ func TestUnterminatedComment(t *testing.T) {
 
 func TestIf(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = if $y {
         true
       } else {
@@ -1421,7 +1422,7 @@ func TestIf(t *testing.T) {
 		`(= (var "x") (if {:test (var "y") :then [true] :else [false]}))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = if $y > 2 {
       } else {
         false
@@ -1429,7 +1430,7 @@ func TestIf(t *testing.T) {
 		`(= (var "x") (if {:test (> (var "y") 2) :then [] :else [false]}))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = if $y != 34 {
         true
       } else {
@@ -1437,7 +1438,7 @@ func TestIf(t *testing.T) {
 		`(= (var "x") (if {:test (!= (var "y") 34) :then [true] :else []}))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = if $y {
         1
       } elsif $z {
@@ -1448,7 +1449,7 @@ func TestIf(t *testing.T) {
 		`(= (var "x") (if {:test (var "y") :then [1] :else [(if {:test (var "z") :then [2] :else [3]})]}))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = if $y == if $x {
         true
       } { false }`),
@@ -1461,7 +1462,7 @@ func TestIf(t *testing.T) {
 
 func TestUnless(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = unless $y {
         true
       } else {
@@ -1470,7 +1471,7 @@ func TestUnless(t *testing.T) {
 		`(= (var "x") (unless {:test (var "y") :then [true] :else [false]}))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = unless $y {
       } else {
         false
@@ -1478,7 +1479,7 @@ func TestUnless(t *testing.T) {
 		`(= (var "x") (unless {:test (var "y") :then [] :else [false]}))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = unless $y {
         true
       } else {
@@ -1486,14 +1487,14 @@ func TestUnless(t *testing.T) {
 		`(= (var "x") (unless {:test (var "y") :then [true] :else []}))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $x = if $y == unless $x {
         true
       } { false }`),
 		`(= (var "x") (if {:test (== (var "y") (unless {:test (var "x") :then [true]})) :then [false]}))`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       $x = unless $y {
         1
       } elsif $z {
@@ -1510,7 +1511,7 @@ func TestSelector(t *testing.T) {
 		`(= (var "rootgroup") (? (access (access (var "facts") "os") "family") [(=> "Solaris" "wheel")]))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $rootgroup = $facts['os']['family'] ? {
         'Solaris'          => 'wheel',
         /(Darwin|FreeBSD)/ => 'wheel',
@@ -1519,7 +1520,7 @@ func TestSelector(t *testing.T) {
 		`(= (var "rootgroup") (? (access (access (var "facts") "os") "family") [(=> "Solaris" "wheel") (=> (regexp "(Darwin|FreeBSD)") "wheel") (=> (default) "root")]))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       $rootgroup = $facts['os']['family'] ? {
         'Solaris'          => 'wheel',
         /(Darwin|FreeBSD)/ => 'wheel',
@@ -1530,7 +1531,7 @@ func TestSelector(t *testing.T) {
 
 func TestCase(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
     case $facts['os']['name'] {
       'Solaris':           { include role::solaris } # Apply the solaris class
       'RedHat', 'CentOS':  { include role::redhat  } # Apply the redhat class
@@ -1546,7 +1547,7 @@ func TestCase(t *testing.T) {
 
 func TestAccess(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       Struct[{
         Optional[description] => String,
         Optional[sensitive] => Boolean,
@@ -1558,7 +1559,7 @@ func TestAccess(t *testing.T) {
 			`(=> (qn "type") (qr "Type"))))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       Struct[
         Optional[description] => String,
         Optional[sensitive] => Boolean,
@@ -1572,7 +1573,7 @@ func TestAccess(t *testing.T) {
 
 func TestResource(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       file { '/tmp/foo':
         mode => '0640',
         ensure => present
@@ -1582,7 +1583,7 @@ func TestResource(t *testing.T) {
 			`:bodies [{:title "/tmp/foo" :ops [(=> "mode" "0640") (=> "ensure" (qn "present"))]}]})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       file { '/tmp/foo':
         ensure => file,
         * => $file_ownership
@@ -1592,7 +1593,7 @@ func TestResource(t *testing.T) {
 			`:bodies [{:title "/tmp/foo" :ops [(=> "ensure" (qn "file")) (splat-hash (var "file_ownership"))]}]})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       @file { '/tmp/foo':
         mode => '0640',
         ensure => present
@@ -1603,7 +1604,7 @@ func TestResource(t *testing.T) {
 			`:form "virtual"})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       @@file { '/tmp/foo':
         mode => '0640',
         ensure => present
@@ -1614,19 +1615,19 @@ func TestResource(t *testing.T) {
 			`:form "exported"})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       class { some_title: }`),
 		`(resource {:type (qn "class") :bodies [{:title (qn "some_title") :ops []}]})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       file { '/tmp/foo': }`),
 		`(resource {`+
 			`:type (qn "file") `+
 			`:bodies [{:title "/tmp/foo" :ops []}]})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       package { 'openssh-server':
         ensure => present,
       } -> # and then:
@@ -1657,7 +1658,7 @@ func TestResource(t *testing.T) {
 			`:ops [(=> "ensure" (qn "running")) (=> "enable" true)]}]}))`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       package { 'openssh-server':
         ensure => present,
       } <- # and then:
@@ -1688,7 +1689,7 @@ func TestResource(t *testing.T) {
 			`:ops [(=> "ensure" (qn "running")) (=> "enable" true)]}]}))`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       file { '/tmp/foo':
         mode => '0640',
         ensure => present
@@ -1696,7 +1697,7 @@ func TestResource(t *testing.T) {
 		`expected token '}', got 'EOF' (line: 4, column: 1)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       file { '/tmp/foo':
         mode, '0640',
         ensure, present
@@ -1704,7 +1705,7 @@ func TestResource(t *testing.T) {
 		`invalid attribute operation (line: 2, column: 8)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       file { '/tmp/foo':
         'mode' => '0640',
         'ensure' => present
@@ -1714,7 +1715,7 @@ func TestResource(t *testing.T) {
 
 func TestMultipleBodies(t *testing.T) {
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       file { '/tmp/foo':
         mode => '0640',
         ensure => present;
@@ -1727,7 +1728,7 @@ func TestMultipleBodies(t *testing.T) {
 			`{:title "/tmp/bar" :ops [(=> "mode" "0640") (=> "ensure" (qn "present"))]}]})`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       file { '/tmp/foo':
         mode => '0640',
         ensure => present;
@@ -1772,7 +1773,7 @@ func TestResourceOverride(t *testing.T) {
 		`(resource-override {:resources (access (qr "File") "/tmp/foo.txt") :ops [(=> "mode" "0644")]})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       Service['apache'] {
         require +> [File['apache.pem'], File['httpd.conf']]
       }`),
@@ -1796,12 +1797,12 @@ func TestVirtualResourceCollector(t *testing.T) {
 		`(collect {:type (qr "File") :query (virtual-query)})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       File <| mode == '0644' |>`),
 		`(collect {:type (qr "File") :query (virtual-query (== (qn "mode") "0644"))})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       File <| mode == '0644' |> {
         owner => 'root',
         mode => 640
@@ -1815,12 +1816,12 @@ func TestExportedResourceCollector(t *testing.T) {
 		`(collect {:type (qr "File") :query (exported-query)})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       File <<| mode == '0644' |>>`),
 		`(collect {:type (qr "File") :query (exported-query (== (qn "mode") "0644"))})`)
 
 	expectDump(t,
-		Unindent(`
+		issue.Unindent(`
       File <<| mode == '0644' |>> {
         owner => 'root',
         mode => 640
@@ -1910,49 +1911,49 @@ func TestEPP(t *testing.T) {
 		`(lambda {:body [(epp (render-s ""))]})`)
 
 	expectDumpEPP(t,
-		Unindent(`
+		issue.Unindent(`
       some arbitrary text
       spanning multiple lines`),
 		`(lambda {:body [(epp (render-s "some arbitrary text\nspanning multiple lines"))]})`)
 
 	expectDumpEPP(t,
-		Unindent(`
+		issue.Unindent(`
       <%||%> some arbitrary text
       spanning multiple lines`),
 		`(lambda {:body [(epp (render-s " some arbitrary text\nspanning multiple lines"))]})`)
 
 	expectDumpEPP(t,
-		Unindent(`
+		issue.Unindent(`
       <%||%> some <%#-%>text`),
 		`(lambda {:body [(epp (render-s " some text"))]})`)
 
 	expectErrorEPP(t,
-		Unindent(`
+		issue.Unindent(`
       <%||%> some <%#-text`),
 		`unbalanced epp comment (line: 1, column: 13)`)
 
 	expectDumpEPP(t,
-		Unindent(`
+		issue.Unindent(`
       <%||%> some <%%-%%-%%> text`),
 		`(lambda {:body [(epp (render-s " some <%-%%-%> text"))]})`)
 
 	expectDumpEPP(t,
-		Unindent(`
+		issue.Unindent(`
       <%||-%> some <-% %-> text`),
 		`(lambda {:body [(epp (render-s "some <-% %-> text"))]})`)
 
 	expectDumpEPP(t,
-		Unindent(`
+		issue.Unindent(`
       <%-||-%> some <%- $x = 3 %> text`),
 		`(lambda {:body [(epp (render-s "some") (= (var "x") 3) (render-s " text"))]})`)
 
 	expectErrorEPP(t,
-		Unindent(`
+		issue.Unindent(`
       <%-||-%> some <%- $x = 3 -% $y %> text`),
 		`invalid operator '-%' (line: 1, column: 28)`)
 
 	expectBlockEPP(t,
-		Unindent(`
+		issue.Unindent(`
       vcenter: {
         host: "<%= $host %>"
         user: "<%= $username %>"
@@ -1968,7 +1969,7 @@ func TestEPP(t *testing.T) {
 			`(render-s "\"\n}"))]})`)
 
 	expectDumpEPP(t,
-		Unindent(`
+		issue.Unindent(`
       <%- | Boolean $keys_enable,
         String  $keys_file,
         Array   $keys_trusted,
@@ -2029,17 +2030,17 @@ func TestEPP(t *testing.T) {
 
 	// Fail on EPP constructs unless EPP is enabled
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       <% $x = 3 %> text`),
 		`unexpected token '<' (line: 1, column: 1)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       $x = 3 %> 4`),
 		`unexpected token '>' (line: 1, column: 9)`)
 
 	expectError(t,
-		Unindent(`
+		issue.Unindent(`
       $x = 3 -%> 4`),
 		`unexpected token '%' (line: 1, column: 9)`)
 

@@ -3,11 +3,12 @@ package parser
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/puppetlabs/go-issues/issue"
 	"testing"
 )
 
 func TestManifest(t *testing.T) {
-	expectJSON(t, Unindent(`
+	expectJSON(t, issue.Unindent(`
       file { '/tmp/foo':
         mode => '0640',
         ensure => present;

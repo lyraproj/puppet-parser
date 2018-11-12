@@ -910,14 +910,18 @@ func (ctx *context) ifExpression(unless bool) (expr Expression) {
 func (ctx *context) selectorsExpression(test Expression) (expr Expression) {
 	var selectors []Expression
 	ctx.nextToken()
+	needNext := false
 	if ctx.currentToken == TOKEN_SELC {
 		ctx.nextToken()
 		selectors = ctx.expressions(TOKEN_RC, ctx.selectorEntry)
+		needNext = true
 	} else {
 		selectors = []Expression{ctx.selectorEntry()}
 	}
 	expr = ctx.factory.Select(test, selectors, ctx.locator, test.ByteOffset(), ctx.Pos()-test.ByteOffset())
-	ctx.nextToken()
+	if needNext {
+		ctx.nextToken()
+	}
 	return
 }
 

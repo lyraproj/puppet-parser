@@ -5,7 +5,6 @@ import (
 
 	"github.com/puppetlabs/go-issues/issue"
 	"github.com/puppetlabs/go-parser/parser"
-	"github.com/puppetlabs/go-pspec/testutils"
 )
 
 var PuppetTasks = false
@@ -48,21 +47,21 @@ func TestAttributeAppendValidation(t *testing.T) {
 
 func TestAttributesOpValidation(t *testing.T) {
 	expectNoIssues(t,
-		testutils.Unindent(`
+		(`
       file { '/tmp/foo':
         ensure => file,
         * => $file_ownership
       }`))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       File <| mode == '0644' |> {
         * => $file_ownership
       }`),
 		VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       File {
         ensure => file,
         * => $file_ownership
@@ -70,7 +69,7 @@ func TestAttributesOpValidation(t *testing.T) {
 		VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       File['/tmp/foo'] {
         ensure => file,
         * => $file_ownership
@@ -78,7 +77,7 @@ func TestAttributesOpValidation(t *testing.T) {
 		VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       file { '/tmp/foo':
         ensure => file,
         * => function foo() {}
@@ -88,22 +87,22 @@ func TestAttributesOpValidation(t *testing.T) {
 
 func TestCallNamedFunctionValidation(t *testing.T) {
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       include apache
       `))
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       $x = String(123, 16)
       `))
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       $x = Enum['a', 'b']('a')
       `))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       $x = enum['a', 'b']('a')
       `),
 		VALIDATE_ILLEGAL_EXPRESSION)
@@ -116,14 +115,14 @@ func TestBinaryOpValidation(t *testing.T) {
 
 func TestBlockValidation(t *testing.T) {
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       ['a', 'b']
       $x = 3
       `),
 		VALIDATE_IDEM_EXPRESSION_NOT_LAST)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       case $z {
       2: { true }
       3: { false }
@@ -134,7 +133,7 @@ func TestBlockValidation(t *testing.T) {
 		VALIDATE_IDEM_EXPRESSION_NOT_LAST)
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       case $z {
       2: { true }
       3: { false }
@@ -144,7 +143,7 @@ func TestBlockValidation(t *testing.T) {
       `))
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       case ($z = 2) {
       2: { true }
       3: { false }
@@ -154,7 +153,7 @@ func TestBlockValidation(t *testing.T) {
       `))
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       case $z {
       ($y = 2): { true }
       3: { false }
@@ -164,40 +163,40 @@ func TestBlockValidation(t *testing.T) {
       `))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       if $z { 3 } else { 4 }
       $x = 3
       `),
 		VALIDATE_IDEM_EXPRESSION_NOT_LAST)
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       if $z { $v = 3 } else { $v = 4 }
       $x = 3
       `))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       unless $z { 3 }
       $x = 3
       `),
 		VALIDATE_IDEM_EXPRESSION_NOT_LAST)
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       unless $z { $v = 3 }
       $x = 3
       `))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       (3)
       $x = 3
       `),
 		VALIDATE_IDEM_EXPRESSION_NOT_LAST)
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       ($v = 3)
       $x = 3
       `))
@@ -205,41 +204,41 @@ func TestBlockValidation(t *testing.T) {
 
 func TestCallMethodValidation(t *testing.T) {
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       $x = $y.size()
     `))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       $x = $y.Size()`),
 		VALIDATE_ILLEGAL_EXPRESSION)
 }
 
 func TestCapabilityMappingValidation(t *testing.T) {
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       Something produces Foo {}
       `))
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       Something[A] produces Foo {}
       `))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       something produces Foo {}
       `),
 		VALIDATE_ILLEGAL_CLASSREF)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       Something produces foo {}
       `),
 		VALIDATE_ILLEGAL_CLASSREF)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       Something['A', 'B'] produces Foo {}
       `),
 		VALIDATE_ILLEGAL_EXPRESSION)
@@ -247,14 +246,14 @@ func TestCapabilityMappingValidation(t *testing.T) {
 
 func TestCaseExpressionValidation(t *testing.T) {
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       case $x {
         'a': { true }
         default: { 'false' }
       }`))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       case $x {
         'a': { true }
         default: { 'false' }
@@ -263,7 +262,7 @@ func TestCaseExpressionValidation(t *testing.T) {
 		VALIDATE_DUPLICATE_DEFAULT)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       case $x {
         function foo() {}: { true }
         default: { false }
@@ -273,82 +272,82 @@ func TestCaseExpressionValidation(t *testing.T) {
 
 func TestCollectValidation(t *testing.T) {
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       User <| groups == 'admin' |>`))
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       User <| (groups == 'admin') |>`))
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       User <| present |>`))
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       User <| present and groups == 'admin' |>`))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       User <| $x + 1 |>`),
 		VALIDATE_ILLEGAL_QUERY_EXPRESSION)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       User <| groups >= 'admin' |>`),
 		VALIDATE_ILLEGAL_QUERY_EXPRESSION)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       user <| groups == 'admin' |>`),
 		VALIDATE_ILLEGAL_EXPRESSION)
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       User <<| groups == 'admin' |>>`))
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       User <<| (groups == 'admin') |>>`))
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       User <<| present |>>`))
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       User <<| present and groups == 'admin' |>>`))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       User <<| $x + 1 |>>`),
 		VALIDATE_ILLEGAL_QUERY_EXPRESSION)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       User <<| groups >= 'admin' |>>`),
 		VALIDATE_ILLEGAL_QUERY_EXPRESSION)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       user <<| groups == 'admin' |>>`),
 		VALIDATE_ILLEGAL_EXPRESSION)
 }
 
 func TestEppValidation(t *testing.T) {
 	expectNoIssuesEPP(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       <%-| $a, $b |-%>
       This is $a <%= $a %>`))
 
 	expectIssuesEPP(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       <%-| $a, $b, $a |-%>
       This is $a <%= $a %>`),
 		VALIDATE_DUPLICATE_PARAMETER)
 
 	expectIssuesEPP(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       <%-| $a, *$b |-%>
       This is $a <%= $a %>`),
 		VALIDATE_CAPTURES_REST_NOT_SUPPORTED)
@@ -356,59 +355,59 @@ func TestEppValidation(t *testing.T) {
 
 func TestFunctionDefinitionValidation(t *testing.T) {
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       function foo() {}`))
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       function foo($a, *$b) {}`))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       function foo($a, *$b, $c) {}`),
 		VALIDATE_CAPTURES_REST_NOT_LAST)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       function foo($a::b) {}`),
 		VALIDATE_ILLEGAL_PARAMETER_NAME)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       function foo($a = ($x = 3)) {}`),
 		VALIDATE_ILLEGAL_ASSIGNMENT_CONTEXT)
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       function foo($a = bar() |$p| { $p = 1 }) {}`))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       function foo() {
         function bar() {}
       }`),
 		VALIDATE_NOT_ABSOLUTE_TOP_LEVEL)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       function foo() >> Application {
       }`),
 		VALIDATE_FUTURE_RESERVED_WORD)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       function foo() >> Application[X] {
       }`),
 		VALIDATE_FUTURE_RESERVED_WORD)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       function variant() {
       }`),
 		VALIDATE_RESERVED_TYPE_NAME)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       function Foo() {
       }`),
 		VALIDATE_ILLEGAL_DEFINITION_NAME)
@@ -416,48 +415,48 @@ func TestFunctionDefinitionValidation(t *testing.T) {
 
 func TestHostClassDefinitionValidation(t *testing.T) {
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       class foo {}`))
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       class foo {
         class bar {}
       }`))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       class foo($a, *$b) {
       }`),
 		VALIDATE_CAPTURES_REST_NOT_SUPPORTED)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       class foo($title, $b) {
       }`),
 		VALIDATE_RESERVED_PARAMETER)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       class foo($name, $b) {
       }`),
 		VALIDATE_RESERVED_PARAMETER)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       class foo($a) {
         [$a]
       }`),
 		VALIDATE_IDEM_NOT_ALLOWED_LAST)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       class variant {
       }`),
 		VALIDATE_RESERVED_TYPE_NAME)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       class Foo {
       }`),
 		VALIDATE_ILLEGAL_DEFINITION_NAME)
@@ -465,7 +464,7 @@ func TestHostClassDefinitionValidation(t *testing.T) {
 
 func TestLiteralHashValidation(t *testing.T) {
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       $x = {
         1 => 'one',
         '2' => 'two',
@@ -476,7 +475,7 @@ func TestLiteralHashValidation(t *testing.T) {
       }`))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       $x = {
         1 => 'one',
         '2' => 'two',
@@ -485,7 +484,7 @@ func TestLiteralHashValidation(t *testing.T) {
 		VALIDATE_DUPLICATE_KEY)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       $x = {
         'func' => define foo() {}
       }`),
@@ -494,68 +493,68 @@ func TestLiteralHashValidation(t *testing.T) {
 
 func TestLiteralListValidation(t *testing.T) {
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       $x = [
         1, '2', 3.0, four, 'five', true, undef, default, [1, 2], {'one' => 1}
       ]`))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       $x = [define foo() {}]`),
 		VALIDATE_NOT_TOP_LEVEL, VALIDATE_NOT_RVALUE)
 }
 
 func TestReourceDefinitionValidation(t *testing.T) {
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       define foo() {}`))
 
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       class foo() {
         define bar() {}
       }`))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       define foo() {
         define bar() {}
       }`),
 		VALIDATE_NOT_TOP_LEVEL)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       define foo($a, *$b) {
       }`),
 		VALIDATE_CAPTURES_REST_NOT_SUPPORTED)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       define foo($title, $b) {
       }`),
 		VALIDATE_RESERVED_PARAMETER)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       define foo($name, $b) {
       }`),
 		VALIDATE_RESERVED_PARAMETER)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       define foo($a) {
         [$a]
       }`),
 		VALIDATE_IDEM_NOT_ALLOWED_LAST)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       define variant() {
       }`),
 		VALIDATE_RESERVED_TYPE_NAME)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       define Foo() {
       }`),
 		VALIDATE_ILLEGAL_DEFINITION_NAME)
@@ -563,7 +562,7 @@ func TestReourceDefinitionValidation(t *testing.T) {
 
 func TestRelationshipValidation(t *testing.T) {
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       package { 'openssh-server':
         ensure => present,
       } ->
@@ -574,7 +573,7 @@ func TestRelationshipValidation(t *testing.T) {
       }`))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       package { 'openssh-server':
         ensure => present,
       } ->
@@ -582,7 +581,7 @@ func TestRelationshipValidation(t *testing.T) {
 		VALIDATE_NOT_RVALUE, VALIDATE_NOT_TOP_LEVEL)
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       class my_class {} ->
       package { 'openssh-server':
         ensure => present,
@@ -592,14 +591,14 @@ func TestRelationshipValidation(t *testing.T) {
 
 func TestResourceBodyValidation(t *testing.T) {
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       file { '/tmp/foo':
         ensure => file,
         * => $file_ownership
       }`))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       file { '/tmp/foo':
         ensure => file,
         * => $file_ownership,
@@ -663,7 +662,7 @@ func TestReservedWordValidation(t *testing.T) {
 
 func TestSelectorExpressionValidation(t *testing.T) {
 	expectNoIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       $role = $facts['os']['name'] ? {
         'Solaris'           => role::solaris,
         'RedHat'            => role::redhat,
@@ -672,7 +671,7 @@ func TestSelectorExpressionValidation(t *testing.T) {
       }`))
 
 	expectIssues(t,
-		testutils.Unindent(`
+		issue.Unindent(`
       $role = $facts['os']['name'] ? {
         'Solaris'           => role::solaris,
         default             => role::generic,
