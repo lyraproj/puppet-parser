@@ -7,6 +7,7 @@ type ActivityStyle string
 const ActivityStyleWorkflow = ActivityStyle(`workflow`)
 const ActivityStyleResource = ActivityStyle(`resource`)
 const ActivityStyleAction = ActivityStyle(`action`)
+const ActivityStyleStateless = ActivityStyle(`stateless`)
 
 type ActivityExpression struct {
 	Positioned
