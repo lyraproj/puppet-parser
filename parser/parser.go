@@ -1256,20 +1256,23 @@ func (ctx *context) typeAliasOrDefinition() Expression {
 
 func (ctx *context) callFunctionExpression(functorExpr Expression) Expression {
 	var args []Expression
+	start := functorExpr.ByteOffset()
+	end := start + functorExpr.ByteLength()
 	if ctx.currentToken != TOKEN_PIPE {
 		ctx.nextToken()
 		args = ctx.arguments()
+		end = ctx.Pos()
 		ctx.nextToken()
 	}
 	var block Expression
 	if ctx.currentToken == TOKEN_PIPE {
 		block = ctx.lambda()
+		end = block.ByteOffset() + block.ByteLength()
 	}
-	start := functorExpr.ByteOffset()
 	if namedAccess, ok := functorExpr.(*NamedAccessExpression); ok {
-		return ctx.convertLhsToCall(namedAccess, args, block, start, ctx.Pos()-start)
+		return ctx.convertLhsToCall(namedAccess, args, block, start, end-start)
 	}
-	return ctx.factory.CallNamed(functorExpr, true, args, block, ctx.locator, start, ctx.Pos()-start)
+	return ctx.factory.CallNamed(functorExpr, true, args, block, ctx.locator, start, end-start)
 }
 
 func (ctx *context) activityStyle() ActivityStyle {
