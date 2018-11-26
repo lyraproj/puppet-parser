@@ -47,10 +47,10 @@ var statementCalls = map[string]bool{
 	`return`: true,
 }
 
-var workflowStyles = map[string]ActivityStyle {
-	`workflow`: ActivityStyleWorkflow,
-	`resource`: ActivityStyleResource,
-	`action`: ActivityStyleAction,
+var workflowStyles = map[string]ActivityStyle{
+	`workflow`:  ActivityStyleWorkflow,
+	`resource`:  ActivityStyleResource,
+	`action`:    ActivityStyleAction,
 	`stateless`: ActivityStyleStateless,
 }
 
@@ -453,7 +453,6 @@ func (ctx *context) activity() (expr Expression) {
 	return
 }
 
-
 func (ctx *context) resource() (expr Expression) {
 	expr = ctx.expression()
 	if ctx.currentToken == TOKEN_LC {
@@ -718,7 +717,16 @@ func (ctx *context) primaryExpression() (expr Expression) {
 		case TOKEN_LB:
 			ctx.nextToken()
 			params := ctx.arrayExpression()
-			expr = ctx.factory.Access(expr, params, ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
+			isCall := false
+			if qn, ok := expr.(*QualifiedName); ok {
+				_, isCall = statementCalls[qn.name]
+			}
+			len := ctx.Pos() - expr.ByteOffset()
+			if isCall {
+				expr = ctx.factory.CallNamed(expr, false, []Expression{ctx.factory.Array(params, ctx.locator, expr.ByteOffset(), len)}, nil, ctx.locator, expr.ByteOffset(), len)
+			} else {
+				expr = ctx.factory.Access(expr, params, ctx.locator, expr.ByteOffset(), len)
+			}
 			ctx.nextToken()
 		case TOKEN_DOT:
 			ctx.nextToken()
@@ -1293,7 +1301,6 @@ func (ctx *context) activityName(activity ActivityStyle) string {
 	panic(ctx.parseIssue2(PARSE_EXPECTED_ACTIVITY_NAME, issue.H{`activity`: activity}))
 }
 
-
 // activtyEntry is a hash entry with some specific constrants
 
 func (ctx *context) activityProperty() Expression {
@@ -1314,13 +1321,13 @@ func (ctx *context) activityProperty() Expression {
 	case `input`:
 		// TODO: Allow non condensed declaration using array of hashes where everything is
 		// spelled out (type and value expressed in hash)
-		value = ctx.factory.Array(ctx.parameterList(), ctx.locator, vstart, ctx.Pos() - vstart)
+		value = ctx.factory.Array(ctx.parameterList(), ctx.locator, vstart, ctx.Pos()-vstart)
 		ctx.nextToken()
 	case `output`:
 		// TODO: Allow non condensed declaration using array of hashes where everything is
 		// spelled out (type and value expressed in hash)
 		params := ctx.outputParameters()
-		value = ctx.factory.Array(params, ctx.locator, vstart, ctx.Pos() - vstart)
+		value = ctx.factory.Array(params, ctx.locator, vstart, ctx.Pos()-vstart)
 		ctx.nextToken()
 
 	default:
@@ -1459,8 +1466,8 @@ func (ctx *context) activityDeclaration(start int, style ActivityStyle, name str
 			pl := ps - vs
 			iterVars := ctx.lambdaParameterList()
 			ctx.nextToken()
-      vl := ctx.Pos() - vs
-      fn := ctx.Pos() - fs
+			vl := ctx.Pos() - vs
+			fn := ctx.Pos() - fs
 			iter := f.Hash(
 				[]Expression{
 					f.KeyedEntry(
@@ -1483,7 +1490,7 @@ func (ctx *context) activityDeclaration(start int, style ActivityStyle, name str
 	}
 	var properties Expression
 	if len(propEntries) > 0 {
-		properties = f.Hash(propEntries, l, hstart, hEnd - hstart)
+		properties = f.Hash(propEntries, l, hstart, hEnd-hstart)
 	}
 
 	var block Expression
@@ -1831,7 +1838,7 @@ func (ctx *context) outputParameter() Expression {
 		case TOKEN_LP, TOKEN_WSLP:
 			ps := ctx.tokenStartPos
 			ctx.nextToken()
-			defaultExpression = ctx.factory.Array(ctx.expressions(TOKEN_RP, ctx.attributeAlias), ctx.locator, ps, ps - ctx.Pos())
+			defaultExpression = ctx.factory.Array(ctx.expressions(TOKEN_RP, ctx.attributeAlias), ctx.locator, ps, ps-ctx.Pos())
 			ctx.nextToken()
 		default:
 			defaultExpression = ctx.attributeAlias()

@@ -13,8 +13,8 @@ import (
 	"github.com/puppetlabs/go-issues/issue"
 	"github.com/puppetlabs/go-parser/json"
 	"github.com/puppetlabs/go-parser/parser"
-	"github.com/puppetlabs/go-parser/validator"
 	"github.com/puppetlabs/go-parser/pn"
+	"github.com/puppetlabs/go-parser/validator"
 )
 
 // Program to parse and validate a .pp or .epp file

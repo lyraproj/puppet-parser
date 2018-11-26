@@ -750,8 +750,8 @@ func TestWorkflowDefintion(t *testing.T) {
       workflow foo {} {
         resource bar {}
       }`),
-		`(activity {:name "foo" :style "workflow" :definition (block ` +
-		  `(activity {:name "foo::bar" :style "resource"}))})`,
+		`(activity {:name "foo" :style "workflow" :definition (block `+
+			`(activity {:name "foo::bar" :style "resource"}))})`,
 		PARSER_WORKFLOW_ENABLED)
 
 	expectDump(t,
@@ -766,10 +766,10 @@ func TestWorkflowDefintion(t *testing.T) {
           }
         }
       }`),
-		`(activity {:name "foo" :style "workflow" :definition (block ` +
-		  `(activity {:name "foo::bar" :style "resource" :properties (hash (=> (qn "type") (qr "Genesis::Aws::Instance"))) :definition (hash ` +
-		    `(=> (qn "x") 2) ` +
-		    `(=> (qn "y") (hash (=> (qn "a") "a"))))}))})`,
+		`(activity {:name "foo" :style "workflow" :definition (block `+
+			`(activity {:name "foo::bar" :style "resource" :properties (hash (=> (qn "type") (qr "Genesis::Aws::Instance"))) :definition (hash `+
+			`(=> (qn "x") 2) `+
+			`(=> (qn "y") (hash (=> (qn "a") "a"))))}))})`,
 		PARSER_WORKFLOW_ENABLED)
 
 	expectDump(t,
@@ -781,15 +781,15 @@ func TestWorkflowDefintion(t *testing.T) {
           x => $x,
         }
       }`),
-		`(activity {:name "foo" :style "workflow" :definition (block ` +
-			`(activity {:name "foo::bar" :style "resource" :properties (hash ` +
-			  `(=> (qn "type") (qr "Genesis::Aws::Instance")) ` +
-			  `(=> (qn "iteration") (hash ` +
-			    `(=> (qn "name") (qn "bar")) ` +
-			    `(=> (qn "function") (qn "each")) ` +
-			    `(=> (qn "params") (array (param {:name "y"}))) ` +
-			    `(=> (qn "vars") (array (param {:name "x"})))))) ` +
-			  `:definition (hash (=> (qn "x") (call-method {:functor (. (qr "Deferred") (qn "new")) :args ["$x"]})))}))})`,
+		`(activity {:name "foo" :style "workflow" :definition (block `+
+			`(activity {:name "foo::bar" :style "resource" :properties (hash `+
+			`(=> (qn "type") (qr "Genesis::Aws::Instance")) `+
+			`(=> (qn "iteration") (hash `+
+			`(=> (qn "name") (qn "bar")) `+
+			`(=> (qn "function") (qn "each")) `+
+			`(=> (qn "params") (array (param {:name "y"}))) `+
+			`(=> (qn "vars") (array (param {:name "x"})))))) `+
+			`:definition (hash (=> (qn "x") (call-method {:functor (. (qr "Deferred") (qn "new")) :args ["$x"]})))}))})`,
 		PARSER_WORKFLOW_ENABLED)
 
 	expectDump(t,
@@ -801,9 +801,9 @@ func TestWorkflowDefintion(t *testing.T) {
           }
         }
       }`),
-		`(activity {:name "foo" :style "workflow" :definition (block ` +
-		  `(activity {:name "foo::bar" :style "action" :properties (hash (=> (qn "guard") true)) ` +
-		   `:definition (block (function {:name "read" :body [true]}))}))})`,
+		`(activity {:name "foo" :style "workflow" :definition (block `+
+			`(activity {:name "foo::bar" :style "action" :properties (hash (=> (qn "guard") true)) `+
+			`:definition (block (function {:name "read" :body [true]}))}))})`,
 		PARSER_WORKFLOW_ENABLED)
 
 	expectDump(t,
@@ -821,11 +821,11 @@ func TestWorkflowDefintion(t *testing.T) {
           }
         }
       }`),
-		`(activity {:name "foo" :style "workflow" :definition (block ` +
-		  `(activity {:name "foo::bar" :style "action" :definition (block ` +
-		    `(function {:name "delete" :body [(invoke {:functor (qn "notice") :args ["hello from delete"]})]}) ` +
-		    `(function {:name "read" :body [(invoke {:functor (qn "notice") :args ["hello from read"]})]}) ` +
-		    `(function {:name "upsert" :body [(invoke {:functor (qn "notice") :args ["hello from upsert"]})]}))}))})`,
+		`(activity {:name "foo" :style "workflow" :definition (block `+
+			`(activity {:name "foo::bar" :style "action" :definition (block `+
+			`(function {:name "delete" :body [(invoke {:functor (qn "notice") :args ["hello from delete"]})]}) `+
+			`(function {:name "read" :body [(invoke {:functor (qn "notice") :args ["hello from read"]})]}) `+
+			`(function {:name "upsert" :body [(invoke {:functor (qn "notice") :args ["hello from upsert"]})]}))}))})`,
 		PARSER_WORKFLOW_ENABLED)
 }
 

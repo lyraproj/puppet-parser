@@ -98,7 +98,7 @@ const (
 	TOKEN_RC   = 112
 
 	// | |
-	TOKEN_PIPE = 120
+	TOKEN_PIPE     = 120
 	TOKEN_PIPE_END = 121
 
 	// EPP
@@ -220,7 +220,7 @@ var tokenMap = map[int]string{
 	TOKEN_RC:   `}`,
 
 	// | |
-	TOKEN_PIPE: `|`,
+	TOKEN_PIPE:     `|`,
 	TOKEN_PIPE_END: `|`,
 
 	// EPP
@@ -863,7 +863,8 @@ func isUppercaseLetter(c rune) bool {
 func (ctx *context) consumeQualifiedName(start int, token int) {
 	lastStartsWithUnderscore := false
 	hasDash := false
-	outer: for {
+outer:
+	for {
 		c, n := ctx.Peek()
 		for isLetterOrDigit(c) {
 			ctx.Advance(n)
@@ -874,15 +875,15 @@ func (ctx *context) consumeQualifiedName(start int, token int) {
 			// Valid only if a letter or digit is present before end of name
 			i := ctx.Pos() + n
 			for {
-				c, n = ctx.PeekAt(i);
-				i += n;
+				c, n = ctx.PeekAt(i)
+				i += n
 				if isLetterOrDigit(c) {
 					hasDash = true
-					ctx.SetPos(i);
-					continue outer;
+					ctx.SetPos(i)
+					continue outer
 				}
 				if c != '-' {
-					break outer;
+					break outer
 				}
 			}
 		}
@@ -1249,7 +1250,7 @@ func (ctx *context) consumeDoubleQuotedString() {
 	if ctx.factory != nil {
 		segments = make([]Expression, 0, 4)
 	}
-	segments = ctx.consumeDelimitedString('"', ctx.Pos() - 1, segments,
+	segments = ctx.consumeDelimitedString('"', ctx.Pos()-1, segments,
 		func(buf *bytes.Buffer, ctx *context, ec rune) {
 			switch ec {
 			case '\\', '\'':
@@ -1298,7 +1299,7 @@ func (ctx *context) consumeDoubleQuotedString() {
 	firstPos := segments[0].ByteOffset()
 	if len(segments) == 1 {
 		if _, ok := segments[0].(*LiteralString); ok {
-		// Avoid turning a single string literal into a concatenated string
+			// Avoid turning a single string literal into a concatenated string
 			return
 		}
 	}
@@ -1306,7 +1307,7 @@ func (ctx *context) consumeDoubleQuotedString() {
 }
 
 func (ctx *context) consumeSingleQuotedString() {
-	ctx.consumeDelimitedString('\'', ctx.Pos() - 1, nil, func(buf *bytes.Buffer, ctx *context, ec rune) {
+	ctx.consumeDelimitedString('\'', ctx.Pos()-1, nil, func(buf *bytes.Buffer, ctx *context, ec rune) {
 		buf.WriteRune('\\')
 		if ec != '\\' {
 			buf.WriteRune(ec)
@@ -1320,7 +1321,7 @@ func (ctx *context) consumeSingleQuotedString() {
 // The method returns true if a regexp was found, false otherwise
 func (ctx *context) consumeRegexp() bool {
 	start := ctx.Pos()
-	ctx.consumeDelimitedString('/', start - 1, nil, func(buf *bytes.Buffer, ctx *context, ec rune) {
+	ctx.consumeDelimitedString('/', start-1, nil, func(buf *bytes.Buffer, ctx *context, ec rune) {
 		buf.WriteRune('\\')
 		buf.WriteRune(ec)
 	})

@@ -44,7 +44,7 @@ type (
 	Strictness int
 
 	parserValidator struct {
-		parser parser.ExpressionParser
+		parser    parser.ExpressionParser
 		validator Validator
 	}
 )

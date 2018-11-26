@@ -553,10 +553,10 @@ type (
 	}
 )
 
-const(
-	VIRTUAL = ResourceForm(`virtual`)
+const (
+	VIRTUAL  = ResourceForm(`virtual`)
 	EXPORTED = ResourceForm(`exported`)
-	REGULAR = ResourceForm(`regular`)
+	REGULAR  = ResourceForm(`regular`)
 )
 
 func NewLocator(file, content string) *Locator {

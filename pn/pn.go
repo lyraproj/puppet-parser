@@ -3,9 +3,9 @@ package pn
 import (
 	"bytes"
 	"fmt"
+	"github.com/puppetlabs/go-issues/issue"
 	"regexp"
 	"strings"
-	"github.com/puppetlabs/go-issues/issue"
 )
 
 type (
@@ -16,7 +16,7 @@ type (
 	// * Literal: A boolean, integer, float, string, or undef
 	//
 	// * List: An ordered list of nodes
-  //
+	//
 	// * Map: An ordered map of string to node associations
 	//
 	// * Call: A named list of nodes.

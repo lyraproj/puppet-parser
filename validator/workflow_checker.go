@@ -1,8 +1,8 @@
 package validator
 
 import (
-	"github.com/puppetlabs/go-parser/parser"
 	"github.com/puppetlabs/go-issues/issue"
+	"github.com/puppetlabs/go-parser/parser"
 )
 
 type workflowChecker struct {
@@ -43,4 +43,3 @@ func (v *workflowChecker) checkResource(e *parser.ActivityExpression) {
 
 func (v *workflowChecker) assertValidEntries(e *parser.ActivityExpression, entryNames ...string) {
 }
-
