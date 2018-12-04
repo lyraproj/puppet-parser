@@ -1,6 +1,6 @@
 package parser
 
-import "github.com/puppetlabs/go-issues/issue"
+import "github.com/lyraproj/issue/issue"
 
 const (
 	// Lexer issues

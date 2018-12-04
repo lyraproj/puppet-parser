@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/puppetlabs/go-issues/issue"
+	"github.com/lyraproj/issue/issue"
 )
 
 // Recursive descent context for the Puppet language.

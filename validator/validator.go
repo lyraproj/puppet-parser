@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/puppetlabs/go-issues/issue"
-	"github.com/puppetlabs/go-parser/parser"
+	"github.com/lyraproj/issue/issue"
+	"github.com/lyraproj/puppet-parser/parser"
 )
 
 const (

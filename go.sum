@@ -1,2 +1,2 @@
-github.com/puppetlabs/go-issues v0.0.0-20181112112915-c16bc8ecd50f h1:HKZK7Rk8LAmQqWagoWSBYvR8Oeu6mN7fTK1bMb24ZaE=
-github.com/puppetlabs/go-issues v0.0.0-20181112112915-c16bc8ecd50f/go.mod h1:UNpBgsvFV8ZBoNkXo2YOrkWHA4sXoBmrDGw572x257U=
+github.com/lyraproj/issue v0.0.0-20181204205859-7ed1f9741f4a h1:NC+OjhnKHOTTBPZjTMHOWBElWyQwzKRbR76yEALwuCM=
+github.com/lyraproj/issue v0.0.0-20181204205859-7ed1f9741f4a/go.mod h1:F3Zu9SjR6zROUIVdxgxuX0/Mi4npwgDRalQCNzCyzU0=

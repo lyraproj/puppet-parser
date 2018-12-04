@@ -5,8 +5,8 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/puppetlabs/go-issues/issue"
-	"github.com/puppetlabs/go-parser/pn"
+	"github.com/lyraproj/issue/issue"
+	"github.com/lyraproj/puppet-parser/pn"
 )
 
 // The AST Model. Designed to match the AST model used by the Puppet

@@ -1,6 +1,6 @@
 package parser
 
-import "github.com/puppetlabs/go-parser/pn"
+import "github.com/lyraproj/puppet-parser/pn"
 
 type ActivityStyle string
 

@@ -3,7 +3,7 @@ package parser
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/puppetlabs/go-issues/issue"
+	"github.com/lyraproj/issue/issue"
 	"testing"
 )
 

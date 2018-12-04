@@ -1,3 +1,3 @@
-module github.com/puppetlabs/go-parser
+module github.com/lyraproj/puppet-parser
 
-require github.com/puppetlabs/go-issues v0.0.0-20181112112915-c16bc8ecd50f
+require github.com/lyraproj/issue v0.0.0-20181204205859-7ed1f9741f4a

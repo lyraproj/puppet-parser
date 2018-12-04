@@ -6,7 +6,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/puppetlabs/go-issues/issue"
+	"github.com/lyraproj/issue/issue"
 )
 
 // Recursive descent lexer for the Puppet language.

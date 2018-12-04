@@ -10,11 +10,11 @@ import (
 	"os"
 	"strings"
 
-	"github.com/puppetlabs/go-issues/issue"
-	"github.com/puppetlabs/go-parser/json"
-	"github.com/puppetlabs/go-parser/parser"
-	"github.com/puppetlabs/go-parser/pn"
-	"github.com/puppetlabs/go-parser/validator"
+	"github.com/lyraproj/issue/issue"
+	"github.com/lyraproj/puppet-parser/json"
+	"github.com/lyraproj/puppet-parser/parser"
+	"github.com/lyraproj/puppet-parser/pn"
+	"github.com/lyraproj/puppet-parser/validator"
 )
 
 // Program to parse and validate a .pp or .epp file

@@ -4,9 +4,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/puppetlabs/go-issues/issue"
-	"github.com/puppetlabs/go-parser/literal"
-	"github.com/puppetlabs/go-parser/parser"
+	"github.com/lyraproj/issue/issue"
+	"github.com/lyraproj/puppet-parser/literal"
+	"github.com/lyraproj/puppet-parser/parser"
 )
 
 var DOUBLE_COLON_EXPR = regexp.MustCompile(`::`)

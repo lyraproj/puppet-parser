@@ -3,7 +3,7 @@ package pn
 import (
 	"bytes"
 	"fmt"
-	"github.com/puppetlabs/go-issues/issue"
+	"github.com/lyraproj/issue/issue"
 	"regexp"
 	"strings"
 )
