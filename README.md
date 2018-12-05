@@ -24,6 +24,10 @@ parse [-v][-j] <path to pp or epp file>
     </tr>
 </table>
 
+## The JSON output
+
+The output from the parser when using the `-j` option is in the JSON format defined in [Puppet Notation (PN) specification][1].
+
 ## The parser package
 
 ### What it is
@@ -89,3 +93,4 @@ guarantee that things will not change radically in the near future.
 Please contact the author [Thomas Hallgren](mailto:thomas.hallgren@puppet.com) if you
 have ideas or want to use this code.
 
+[1]: https://github.com/puppetlabs/puppet-specifications/blob/master/models/pn.md
