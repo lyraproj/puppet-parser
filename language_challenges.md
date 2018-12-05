@@ -46,7 +46,7 @@ This yields and array that is equal to:
 #### Interpolations
 A double quoted string may contain interpolations in the form "${var}" or simply "$var". When
 using the brace delimited form, the contained expression can be an expression. That expression
-in turn, may both braces. It may even contain a string which in turn contains a nested
+in turn, may contain braces. It may even contain a string which in turn contains a nested
 interpolation:
 
 ###### Example of a valid nested interpolation
@@ -80,7 +80,7 @@ is `expr` followed by an array.
 
 #### Unparameterized argument lists and "statement calls"
 
-In puppet, a call to a function may or may not use parenthesis to delimit the arguments. This
+In puppet, a call to a function may or may not use parentheses to delimit the arguments. This
 poses several challenges. One is that it might a conflict with a resource expression. Consider:
 ```
 somefunc { 'a', 'b' }
@@ -100,8 +100,8 @@ or, which is exactly the same thing:
 notice 'the argument'
 ```
 Is this a block that calls notice without arguments and then returns the string 'the argument'? Nope.
-Since "notice" happens to be one of the well known "statement calls", it's a block that returns the value
-of the expression `notice('the argument')`. A pair of parenthesis must be inserted after 'notice' to make
+Since "notice" happens to be one of the well known "statement calls", it's a construct that returns the value
+of the expression `notice('the argument')`. A pair of parentheses must be inserted after 'notice' to make
 it an actual call with no parameters.
 
 The exact same syntax, but with a function name that is not known to be a predefined statement call
