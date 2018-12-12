@@ -505,7 +505,7 @@ func (ctx *context) orExpression() (expr Expression) {
 		switch ctx.currentToken {
 		case TOKEN_OR:
 			ctx.nextToken()
-			expr = ctx.factory.Or(expr, ctx.orExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
+			expr = ctx.factory.Or(expr, ctx.andExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 		default:
 			return
 		}
@@ -518,7 +518,7 @@ func (ctx *context) andExpression() (expr Expression) {
 		switch ctx.currentToken {
 		case TOKEN_AND:
 			ctx.nextToken()
-			expr = ctx.factory.And(expr, ctx.andExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
+			expr = ctx.factory.And(expr, ctx.compareExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 		default:
 			return
 		}
@@ -532,7 +532,7 @@ func (ctx *context) compareExpression() (expr Expression) {
 		case TOKEN_LESS, TOKEN_LESS_EQUAL, TOKEN_GREATER, TOKEN_GREATER_EQUAL:
 			op := ctx.tokenString()
 			ctx.nextToken()
-			expr = ctx.factory.Comparison(op, expr, ctx.compareExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
+			expr = ctx.factory.Comparison(op, expr, ctx.equalExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 
 		default:
 			return
@@ -548,7 +548,7 @@ func (ctx *context) equalExpression() (expr Expression) {
 		case TOKEN_EQUAL, TOKEN_NOT_EQUAL:
 			op := ctx.tokenString()
 			ctx.nextToken()
-			expr = ctx.factory.Comparison(op, expr, ctx.equalExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
+			expr = ctx.factory.Comparison(op, expr, ctx.shiftExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 
 		default:
 			return
@@ -564,7 +564,7 @@ func (ctx *context) shiftExpression() (expr Expression) {
 		case TOKEN_LSHIFT, TOKEN_RSHIFT:
 			op := ctx.tokenString()
 			ctx.nextToken()
-			expr = ctx.factory.Arithmetic(op, expr, ctx.shiftExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
+			expr = ctx.factory.Arithmetic(op, expr, ctx.additiveExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 
 		default:
 			return
@@ -580,7 +580,7 @@ func (ctx *context) additiveExpression() (expr Expression) {
 		case TOKEN_ADD, TOKEN_SUBTRACT:
 			op := ctx.tokenString()
 			ctx.nextToken()
-			expr = ctx.factory.Arithmetic(op, expr, ctx.additiveExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
+			expr = ctx.factory.Arithmetic(op, expr, ctx.multiplicativeExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 
 		default:
 			return
@@ -596,7 +596,7 @@ func (ctx *context) multiplicativeExpression() (expr Expression) {
 		case TOKEN_MULTIPLY, TOKEN_DIVIDE, TOKEN_REMAINDER:
 			op := ctx.tokenString()
 			ctx.nextToken()
-			expr = ctx.factory.Arithmetic(op, expr, ctx.multiplicativeExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
+			expr = ctx.factory.Arithmetic(op, expr, ctx.matchExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 
 		default:
 			return
@@ -612,7 +612,7 @@ func (ctx *context) matchExpression() (expr Expression) {
 		case TOKEN_MATCH, TOKEN_NOT_MATCH:
 			op := ctx.tokenString()
 			ctx.nextToken()
-			expr = ctx.factory.Match(op, expr, ctx.matchExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
+			expr = ctx.factory.Match(op, expr, ctx.inExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 
 		default:
 			return
@@ -626,7 +626,7 @@ func (ctx *context) inExpression() (expr Expression) {
 		switch ctx.currentToken {
 		case TOKEN_IN:
 			ctx.nextToken()
-			expr = ctx.factory.In(expr, ctx.inExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
+			expr = ctx.factory.In(expr, ctx.unaryExpression(), ctx.locator, expr.ByteOffset(), ctx.Pos()-expr.ByteOffset())
 
 		default:
 			return expr

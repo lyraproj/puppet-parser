@@ -1859,6 +1859,14 @@ func TestOperators(t *testing.T) {
 		`(= (var "x") 4)`)
 
 	expectDump(t,
+		`$x = 10 - 5 - 3`,
+		`(= (var "x") (- (- 10 5) 3))`)
+
+	expectDump(t,
+		`$x = 10 - 5 * 3`,
+		`(= (var "x") (- 10 (* 5 3)))`)
+
+	expectDump(t,
 		`$x = a * (b + c)`,
 		`(= (var "x") (* (qn "a") (paren (+ (qn "b") (qn "c")))))`)
 
