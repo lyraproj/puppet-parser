@@ -48,10 +48,10 @@ var statementCalls = map[string]bool{
 }
 
 var workflowStyles = map[string]ActivityStyle{
-	`workflow`:  ActivityStyleWorkflow,
-	`resource`:  ActivityStyleResource,
-	`action`:    ActivityStyleAction,
-	`stateless`: ActivityStyleStateless,
+	`action`:       ActivityStyleAction,
+	`resource`:     ActivityStyleResource,
+	`stateHandler`: ActivityStyleStateHandler,
+	`workflow`:     ActivityStyleWorkflow,
 }
 
 type Lexer interface {
@@ -1518,7 +1518,7 @@ func (ctx *context) activityDeclaration(start int, style ActivityStyle, name str
 			}
 			ctx.nextToken()
 		}
-	default: // ActivityStyleAction or ActivityStyleStateless
+	default: // ActivityStyleAction or ActivityStyleStateHandler
 		ctx.assertToken(TOKEN_LC)
 		ctx.nextToken()
 		block = ctx.parse(TOKEN_RC, false)
