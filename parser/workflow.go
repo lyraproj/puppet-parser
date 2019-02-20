@@ -4,10 +4,10 @@ import "github.com/lyraproj/puppet-parser/pn"
 
 type ActivityStyle string
 
-const ActivityStyleWorkflow = ActivityStyle(`workflow`)
-const ActivityStyleResource = ActivityStyle(`resource`)
 const ActivityStyleAction = ActivityStyle(`action`)
-const ActivityStyleStateless = ActivityStyle(`stateless`)
+const ActivityStyleResource = ActivityStyle(`resource`)
+const ActivityStyleStateHandler = ActivityStyle(`stateHandler`)
+const ActivityStyleWorkflow = ActivityStyle(`workflow`)
 
 type ActivityExpression struct {
 	Positioned
