@@ -3,8 +3,9 @@ package parser
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/lyraproj/issue/issue"
 	"testing"
+
+	"github.com/lyraproj/issue/issue"
 )
 
 func TestManifest(t *testing.T) {
@@ -30,7 +31,9 @@ func toJSON(e Expression) string {
 	result := bytes.NewBufferString(``)
 	enc := json.NewEncoder(result)
 	enc.SetEscapeHTML(false)
-	enc.Encode(e.ToPN().ToData())
+	if err := enc.Encode(e.ToPN().ToData()); err != nil {
+		panic(err)
+	}
 	result.Truncate(result.Len() - 1)
 	return result.String()
 }

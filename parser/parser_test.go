@@ -2,8 +2,9 @@ package parser
 
 import (
 	"bytes"
-	"github.com/lyraproj/issue/issue"
 	"testing"
+
+	"github.com/lyraproj/issue/issue"
 )
 
 func TestEmpty(t *testing.T) {
@@ -653,7 +654,7 @@ func TestBlock(t *testing.T) {
 		`Extraneous comma between statements (line: 1, column: 10)`)
 }
 
-func TestFunctionDefintion(t *testing.T) {
+func TestFunctionDefinition(t *testing.T) {
 	expectDump(t,
 		issue.Unindent(`
       function myFunc(Integer[0,3] $first, $untyped, String $nxt = 'hello') >> Float {
@@ -718,9 +719,9 @@ func TestFunctionDefintion(t *testing.T) {
 		`expected token '{', got 'boolean literal' (line: 1, column: 30)`)
 }
 
-func TestPlanDefintion(t *testing.T) {
+func TestPlanDefinition(t *testing.T) {
 	expectDump(t, `plan foo { }`,
-		`(plan {:name "foo" :body []})`, PARSER_TASKS_ENABLED)
+		`(plan {:name "foo" :body []})`, TasksEnabled)
 
 	expectDump(t,
 		issue.Unindent(`
@@ -729,21 +730,21 @@ func TestPlanDefintion(t *testing.T) {
         $b = 20
      }`),
 		`(plan {:name "foo" :body [(= (var "a") 10) (= (var "b") 20)]})`,
-		PARSER_TASKS_ENABLED)
+		TasksEnabled)
 
 	expectDump(t, `plan foo($p1 = 'yo', $p2) { }`,
-		`(plan {:name "foo" :params {:p1 {:value "yo"} :p2 {}} :body []})`, PARSER_TASKS_ENABLED)
+		`(plan {:name "foo" :params {:p1 {:value "yo"} :p2 {}} :body []})`, TasksEnabled)
 
 	expectError(t, `$a = plan`,
-		`expected a name to follow keyword 'plan' (line: 1, column: 10)`, PARSER_TASKS_ENABLED)
+		`expected a name to follow keyword 'plan' (line: 1, column: 10)`, TasksEnabled)
 
 	expectDump(t, `$a = plan`,
 		`(= (var "a") (qn "plan"))`)
 }
 
-func TestWorkflowDefintion(t *testing.T) {
+func TestWorkflowDefinition(t *testing.T) {
 	expectDump(t, `workflow foo { }`,
-		`(activity {:name "foo" :style "workflow"})`, PARSER_WORKFLOW_ENABLED)
+		`(activity {:name "foo" :style "workflow"})`, WorkflowEnabled)
 
 	expectDump(t,
 		issue.Unindent(`
@@ -752,7 +753,7 @@ func TestWorkflowDefintion(t *testing.T) {
       }`),
 		`(activity {:name "foo" :style "workflow" :definition (block `+
 			`(activity {:name "foo::bar" :style "resource"}))})`,
-		PARSER_WORKFLOW_ENABLED)
+		WorkflowEnabled)
 
 	expectDump(t,
 		issue.Unindent(`
@@ -770,7 +771,7 @@ func TestWorkflowDefintion(t *testing.T) {
 			`(activity {:name "foo::bar" :style "resource" :properties (hash (=> (qn "type") (qr "Genesis::Aws::Instance"))) :definition (hash `+
 			`(=> (qn "x") 2) `+
 			`(=> (qn "y") (hash (=> (qn "a") "a"))))}))})`,
-		PARSER_WORKFLOW_ENABLED)
+		WorkflowEnabled)
 
 	expectDump(t,
 		issue.Unindent(`
@@ -790,7 +791,7 @@ func TestWorkflowDefintion(t *testing.T) {
 			`(=> (qn "params") (array (param {:name "y"}))) `+
 			`(=> (qn "vars") (array (param {:name "x"})))))) `+
 			`:definition (hash (=> (qn "x") (call-method {:functor (. (qr "Deferred") (qn "new")) :args ["$x"]})))}))})`,
-		PARSER_WORKFLOW_ENABLED)
+		WorkflowEnabled)
 
 	expectDump(t,
 		issue.Unindent(`
@@ -804,7 +805,7 @@ func TestWorkflowDefintion(t *testing.T) {
 		`(activity {:name "foo" :style "workflow" :definition (block `+
 			`(activity {:name "foo::bar" :style "action" :properties (hash (=> (qn "guard") true)) `+
 			`:definition (block (function {:name "read" :body [true]}))}))})`,
-		PARSER_WORKFLOW_ENABLED)
+		WorkflowEnabled)
 
 	expectDump(t,
 		issue.Unindent(`
@@ -826,7 +827,7 @@ func TestWorkflowDefintion(t *testing.T) {
 			`(function {:name "delete" :body [(invoke {:functor (qn "notice") :args ["hello from delete"]})]}) `+
 			`(function {:name "read" :body [(invoke {:functor (qn "notice") :args ["hello from read"]})]}) `+
 			`(function {:name "upsert" :body [(invoke {:functor (qn "notice") :args ["hello from upsert"]})]}))}))})`,
-		PARSER_WORKFLOW_ENABLED)
+		WorkflowEnabled)
 }
 
 func TestNodeDefinition(t *testing.T) {
@@ -1101,7 +1102,7 @@ func TestDefinition(t *testing.T) {
 			`(=> "notify" (access (qr "Service") "httpd"))]}]})]})`)
 }
 
-func TestCapabilityMappping(t *testing.T) {
+func TestCapabilityMapping(t *testing.T) {
 	expectDump(t,
 		issue.Unindent(`
       MyCap produces Cap {
@@ -2058,11 +2059,11 @@ func TestEPP(t *testing.T) {
 }
 
 func expectDumpEPP(t *testing.T, source string, expected string) {
-	expectDump(t, source, expected, PARSER_EPP_MODE)
+	expectDump(t, source, expected, EppMode)
 }
 
 func expectBlockEPP(t *testing.T, source string, expected string) {
-	expectBlock(t, source, expected, PARSER_EPP_MODE)
+	expectBlock(t, source, expected, EppMode)
 }
 
 func expectDump(t *testing.T, source string, expected string, parserOptions ...Option) {
@@ -2087,7 +2088,7 @@ func expectBlock(t *testing.T, source string, expected string, parserOptions ...
 }
 
 func expectErrorEPP(t *testing.T, source string, expected string) {
-	expectError(t, source, expected, PARSER_EPP_MODE)
+	expectError(t, source, expected, EppMode)
 }
 
 func expectError(t *testing.T, source string, expected string, parserOptions ...Option) {

@@ -41,8 +41,8 @@ func (e *ActivityExpression) Properties() Expression {
 	return e.properties
 }
 
-func (w *ActivityExpression) ToDefinition() Definition {
-	return w
+func (e *ActivityExpression) ToDefinition() Definition {
+	return e
 }
 
 func (e *ActivityExpression) ToPN() pn.PN {

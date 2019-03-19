@@ -12,7 +12,7 @@ undef, array, and object data types. The PN conversion to `Data` was specificall
 designed with this objective in mind.
 
 ### Format
-A PN forms a directed acyclig graph of nodes. There are five types of nodes:
+A PN forms a directed acyclic graph of nodes. There are five types of nodes:
 
 * Literal: A boolean, integer, float, string, or undef
 * List: An ordered list of nodes

@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	STRICT_OFF     = Strictness(issue.SEVERITY_IGNORE)
-	STRICT_WARNING = Strictness(issue.SEVERITY_WARNING)
-	STRICT_ERROR   = Strictness(issue.SEVERITY_ERROR)
+	StrictOff     = Strictness(issue.SeverityIgnore)
+	StrictWarning = Strictness(issue.SeverityWarning)
+	StrictError   = Strictness(issue.SeverityError)
 )
 
 type (
@@ -52,11 +52,11 @@ type (
 func Strict(str string) Strictness {
 	switch strings.ToLower(str) {
 	case ``, `off`:
-		return STRICT_OFF
+		return StrictOff
 	case `warning`:
-		return STRICT_WARNING
+		return StrictWarning
 	case `error`:
-		return STRICT_ERROR
+		return StrictError
 	default:
 		panic(fmt.Sprintf(`Invalid Strictness value '%s'`, str))
 	}
@@ -64,11 +64,11 @@ func Strict(str string) Strictness {
 
 func (s Strictness) String() string {
 	switch s {
-	case STRICT_OFF:
+	case StrictOff:
 		return `off`
-	case STRICT_WARNING:
+	case StrictWarning:
 		return `warning`
-	case STRICT_ERROR:
+	case StrictError:
 		return `error`
 	default:
 		panic(fmt.Sprintf(`Invalid Strictness value %d`, s))
@@ -76,9 +76,9 @@ func (s Strictness) String() string {
 }
 
 func (v *AbstractValidator) Demote(code issue.Code, severity issue.Severity) {
-	issue := issue.IssueForCode(code)
+	i := issue.ForCode(code)
 	severity.AssertValid()
-	if !issue.IsDemotable() {
+	if !i.IsDemotable() {
 		panic(fmt.Sprintf(`Attempt to demote the hard issue '%s' to %s`, code, severity.String()))
 	}
 	v.severities[code] = severity
@@ -88,9 +88,9 @@ func (v *AbstractValidator) Demote(code issue.Code, severity issue.Severity) {
 func (v *AbstractValidator) Accept(code issue.Code, e parser.Expression, args issue.H) {
 	severity, ok := v.severities[code]
 	if !ok {
-		severity = issue.SEVERITY_ERROR
+		severity = issue.SeverityError
 	}
-	if severity != issue.SEVERITY_IGNORE {
+	if severity != issue.SeverityIgnore {
 		v.issues = append(v.issues, issue.NewReported(code, severity, args, e))
 	}
 }

@@ -15,50 +15,49 @@ func TestVariableAssignValidation(t *testing.T) {
 }
 
 func TestNumericVariableAssignValidation(t *testing.T) {
-	expectIssues(t, `$1 = 'y'`, VALIDATE_ILLEGAL_NUMERIC_ASSIGNMENT)
+	expectIssues(t, `$1 = 'y'`, ValidateIllegalNumericAssignment)
 }
 
 func TestMultipleVariableAssign(t *testing.T) {
 	expectNoIssues(t, `[$a, $b] = 'y'`)
-	expectIssues(t, `[$a, $1] = 'y'`, VALIDATE_ILLEGAL_NUMERIC_ASSIGNMENT)
-	expectIssues(t, `[$a, $b['h']] = 'y'`, VALIDATE_ILLEGAL_ASSIGNMENT_VIA_INDEX)
-	expectIssues(t, `[$a, $b::z] = 'y'`, VALIDATE_CROSS_SCOPE_ASSIGNMENT)
+	expectIssues(t, `[$a, $1] = 'y'`, ValidateIllegalNumericAssignment)
+	expectIssues(t, `[$a, $b['h']] = 'y'`, ValidateIllegalAssignmentViaIndex)
+	expectIssues(t, `[$a, $b::z] = 'y'`, ValidateCrossScopeAssignment)
 }
 
 func TestAccessAssignValidation(t *testing.T) {
-	expectIssues(t, `$x['h'] = 'y'`, VALIDATE_ILLEGAL_ASSIGNMENT_VIA_INDEX)
-	expectIssues(t, `$::x = 'y'`, VALIDATE_CROSS_SCOPE_ASSIGNMENT)
+	expectIssues(t, `$x['h'] = 'y'`, ValidateIllegalAssignmentViaIndex)
+	expectIssues(t, `$::x = 'y'`, ValidateCrossScopeAssignment)
 }
 
 func TestAppendsDeletesValidation(t *testing.T) {
-	expectIssues(t, `$x += 'y'`, VALIDATE_APPENDS_DELETES_NO_LONGER_SUPPORTED)
-	expectIssues(t, `$x -= 'y'`, VALIDATE_APPENDS_DELETES_NO_LONGER_SUPPORTED)
+	expectIssues(t, `$x += 'y'`, ValidateAppendsDeletesNoLongerSupported)
+	expectIssues(t, `$x -= 'y'`, ValidateAppendsDeletesNoLongerSupported)
 }
 
 func TestNamespaceAssignValidation(t *testing.T) {
-	expectIssues(t, `$x::z = 'y'`, VALIDATE_CROSS_SCOPE_ASSIGNMENT)
+	expectIssues(t, `$x::z = 'y'`, ValidateCrossScopeAssignment)
 }
 
 func TestAttributeAppendValidation(t *testing.T) {
 	expectNoIssues(t, `Service[apache] { require +> File['apache.pem'] }`)
 
-	expectIssues(t, `service { apache: require +> File['apache.pem'] }`, VALIDATE_ILLEGAL_ATTRIBUTE_APPEND)
+	expectIssues(t, `service { apache: require +> File['apache.pem'] }`, ValidateIllegalAttributeAppend)
 }
 
 func TestAttributesOpValidation(t *testing.T) {
-	expectNoIssues(t,
-		(`
+	expectNoIssues(t, `
       file { '/tmp/foo':
         ensure => file,
         * => $file_ownership
-      }`))
+      }`)
 
 	expectIssues(t,
 		issue.Unindent(`
       File <| mode == '0644' |> {
         * => $file_ownership
       }`),
-		VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT)
+		ValidateUnsupportedOperatorInContext)
 
 	expectIssues(t,
 		issue.Unindent(`
@@ -66,7 +65,7 @@ func TestAttributesOpValidation(t *testing.T) {
         ensure => file,
         * => $file_ownership
       }`),
-		VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT)
+		ValidateUnsupportedOperatorInContext)
 
 	expectIssues(t,
 		issue.Unindent(`
@@ -74,7 +73,7 @@ func TestAttributesOpValidation(t *testing.T) {
         ensure => file,
         * => $file_ownership
       }`),
-		VALIDATE_UNSUPPORTED_OPERATOR_IN_CONTEXT)
+		ValidateUnsupportedOperatorInContext)
 
 	expectIssues(t,
 		issue.Unindent(`
@@ -82,7 +81,7 @@ func TestAttributesOpValidation(t *testing.T) {
         ensure => file,
         * => function foo() {}
       }`),
-		VALIDATE_NOT_TOP_LEVEL, VALIDATE_NOT_RVALUE)
+		ValidateNotTopLevel, ValidateNotRvalue)
 }
 
 func TestCallNamedFunctionValidation(t *testing.T) {
@@ -105,11 +104,11 @@ func TestCallNamedFunctionValidation(t *testing.T) {
 		issue.Unindent(`
       $x = enum['a', 'b']('a')
       `),
-		VALIDATE_ILLEGAL_EXPRESSION)
+		ValidateIllegalExpression)
 }
 
 func TestBinaryOpValidation(t *testing.T) {
-	expectIssues(t, `notice(define foo() {} < 3)`, VALIDATE_NOT_TOP_LEVEL, VALIDATE_NOT_RVALUE)
+	expectIssues(t, `notice(define foo() {} < 3)`, ValidateNotTopLevel, ValidateNotRvalue)
 	expectNoIssues(t, `notice(true == !false)`)
 }
 
@@ -119,7 +118,7 @@ func TestBlockValidation(t *testing.T) {
       ['a', 'b']
       $x = 3
       `),
-		VALIDATE_IDEM_EXPRESSION_NOT_LAST)
+		ValidateIdemExpressionNotLast)
 
 	expectIssues(t,
 		issue.Unindent(`
@@ -130,7 +129,7 @@ func TestBlockValidation(t *testing.T) {
       }
       $x = 3
       `),
-		VALIDATE_IDEM_EXPRESSION_NOT_LAST)
+		ValidateIdemExpressionNotLast)
 
 	expectNoIssues(t,
 		issue.Unindent(`
@@ -167,7 +166,7 @@ func TestBlockValidation(t *testing.T) {
       if $z { 3 } else { 4 }
       $x = 3
       `),
-		VALIDATE_IDEM_EXPRESSION_NOT_LAST)
+		ValidateIdemExpressionNotLast)
 
 	expectNoIssues(t,
 		issue.Unindent(`
@@ -180,7 +179,7 @@ func TestBlockValidation(t *testing.T) {
       unless $z { 3 }
       $x = 3
       `),
-		VALIDATE_IDEM_EXPRESSION_NOT_LAST)
+		ValidateIdemExpressionNotLast)
 
 	expectNoIssues(t,
 		issue.Unindent(`
@@ -193,7 +192,7 @@ func TestBlockValidation(t *testing.T) {
       (3)
       $x = 3
       `),
-		VALIDATE_IDEM_EXPRESSION_NOT_LAST)
+		ValidateIdemExpressionNotLast)
 
 	expectNoIssues(t,
 		issue.Unindent(`
@@ -211,7 +210,7 @@ func TestCallMethodValidation(t *testing.T) {
 	expectIssues(t,
 		issue.Unindent(`
       $x = $y.Size()`),
-		VALIDATE_ILLEGAL_EXPRESSION)
+		ValidateIllegalExpression)
 }
 
 func TestCapabilityMappingValidation(t *testing.T) {
@@ -229,19 +228,19 @@ func TestCapabilityMappingValidation(t *testing.T) {
 		issue.Unindent(`
       something produces Foo {}
       `),
-		VALIDATE_ILLEGAL_CLASSREF)
+		ValidateIllegalClassref)
 
 	expectIssues(t,
 		issue.Unindent(`
       Something produces foo {}
       `),
-		VALIDATE_ILLEGAL_CLASSREF)
+		ValidateIllegalClassref)
 
 	expectIssues(t,
 		issue.Unindent(`
       Something['A', 'B'] produces Foo {}
       `),
-		VALIDATE_ILLEGAL_EXPRESSION)
+		ValidateIllegalExpression)
 }
 
 func TestCaseExpressionValidation(t *testing.T) {
@@ -259,7 +258,7 @@ func TestCaseExpressionValidation(t *testing.T) {
         default: { 'false' }
         default: { 'true' }
       }`),
-		VALIDATE_DUPLICATE_DEFAULT)
+		ValidateDuplicateDefault)
 
 	expectIssues(t,
 		issue.Unindent(`
@@ -267,7 +266,7 @@ func TestCaseExpressionValidation(t *testing.T) {
         function foo() {}: { true }
         default: { false }
       }`),
-		VALIDATE_NOT_TOP_LEVEL, VALIDATE_NOT_RVALUE)
+		ValidateNotTopLevel, ValidateNotRvalue)
 }
 
 func TestCollectValidation(t *testing.T) {
@@ -290,17 +289,17 @@ func TestCollectValidation(t *testing.T) {
 	expectIssues(t,
 		issue.Unindent(`
       User <| $x + 1 |>`),
-		VALIDATE_ILLEGAL_QUERY_EXPRESSION)
+		ValidateIllegalQueryExpression)
 
 	expectIssues(t,
 		issue.Unindent(`
       User <| groups >= 'admin' |>`),
-		VALIDATE_ILLEGAL_QUERY_EXPRESSION)
+		ValidateIllegalQueryExpression)
 
 	expectIssues(t,
 		issue.Unindent(`
       user <| groups == 'admin' |>`),
-		VALIDATE_ILLEGAL_EXPRESSION)
+		ValidateIllegalExpression)
 
 	expectNoIssues(t,
 		issue.Unindent(`
@@ -321,17 +320,17 @@ func TestCollectValidation(t *testing.T) {
 	expectIssues(t,
 		issue.Unindent(`
       User <<| $x + 1 |>>`),
-		VALIDATE_ILLEGAL_QUERY_EXPRESSION)
+		ValidateIllegalQueryExpression)
 
 	expectIssues(t,
 		issue.Unindent(`
       User <<| groups >= 'admin' |>>`),
-		VALIDATE_ILLEGAL_QUERY_EXPRESSION)
+		ValidateIllegalQueryExpression)
 
 	expectIssues(t,
 		issue.Unindent(`
       user <<| groups == 'admin' |>>`),
-		VALIDATE_ILLEGAL_EXPRESSION)
+		ValidateIllegalExpression)
 }
 
 func TestEppValidation(t *testing.T) {
@@ -344,13 +343,13 @@ func TestEppValidation(t *testing.T) {
 		issue.Unindent(`
       <%-| $a, $b, $a |-%>
       This is $a <%= $a %>`),
-		VALIDATE_DUPLICATE_PARAMETER)
+		ValidateDuplicateParameter)
 
 	expectIssuesEPP(t,
 		issue.Unindent(`
       <%-| $a, *$b |-%>
       This is $a <%= $a %>`),
-		VALIDATE_CAPTURES_REST_NOT_SUPPORTED)
+		ValidateCapturesRestNotSupported)
 }
 
 func TestFunctionDefinitionValidation(t *testing.T) {
@@ -365,17 +364,17 @@ func TestFunctionDefinitionValidation(t *testing.T) {
 	expectIssues(t,
 		issue.Unindent(`
       function foo($a, *$b, $c) {}`),
-		VALIDATE_CAPTURES_REST_NOT_LAST)
+		ValidateCapturesRestNotLast)
 
 	expectIssues(t,
 		issue.Unindent(`
       function foo($a::b) {}`),
-		VALIDATE_ILLEGAL_PARAMETER_NAME)
+		ValidateIllegalParameterName)
 
 	expectIssues(t,
 		issue.Unindent(`
       function foo($a = ($x = 3)) {}`),
-		VALIDATE_ILLEGAL_ASSIGNMENT_CONTEXT)
+		ValidateIllegalAssignmentContext)
 
 	expectNoIssues(t,
 		issue.Unindent(`
@@ -386,31 +385,31 @@ func TestFunctionDefinitionValidation(t *testing.T) {
       function foo() {
         function bar() {}
       }`),
-		VALIDATE_NOT_ABSOLUTE_TOP_LEVEL)
+		ValidateNotAbsoluteTopLevel)
 
 	expectIssues(t,
 		issue.Unindent(`
       function foo() >> Application {
       }`),
-		VALIDATE_FUTURE_RESERVED_WORD)
+		ValidateFutureReservedWord)
 
 	expectIssues(t,
 		issue.Unindent(`
       function foo() >> Application[X] {
       }`),
-		VALIDATE_FUTURE_RESERVED_WORD)
+		ValidateFutureReservedWord)
 
 	expectIssues(t,
 		issue.Unindent(`
       function variant() {
       }`),
-		VALIDATE_RESERVED_TYPE_NAME)
+		ValidateReservedTypeName)
 
 	expectIssues(t,
 		issue.Unindent(`
       function Foo() {
       }`),
-		VALIDATE_ILLEGAL_DEFINITION_NAME)
+		ValidateIllegalDefinitionName)
 }
 
 func TestHostClassDefinitionValidation(t *testing.T) {
@@ -428,38 +427,38 @@ func TestHostClassDefinitionValidation(t *testing.T) {
 		issue.Unindent(`
       class foo($a, *$b) {
       }`),
-		VALIDATE_CAPTURES_REST_NOT_SUPPORTED)
+		ValidateCapturesRestNotSupported)
 
 	expectIssues(t,
 		issue.Unindent(`
       class foo($title, $b) {
       }`),
-		VALIDATE_RESERVED_PARAMETER)
+		ValidateReservedParameter)
 
 	expectIssues(t,
 		issue.Unindent(`
       class foo($name, $b) {
       }`),
-		VALIDATE_RESERVED_PARAMETER)
+		ValidateReservedParameter)
 
 	expectIssues(t,
 		issue.Unindent(`
       class foo($a) {
         [$a]
       }`),
-		VALIDATE_IDEM_NOT_ALLOWED_LAST)
+		ValidateIdemNotAllowedLast)
 
 	expectIssues(t,
 		issue.Unindent(`
       class variant {
       }`),
-		VALIDATE_RESERVED_TYPE_NAME)
+		ValidateReservedTypeName)
 
 	expectIssues(t,
 		issue.Unindent(`
       class Foo {
       }`),
-		VALIDATE_ILLEGAL_DEFINITION_NAME)
+		ValidateIllegalDefinitionName)
 }
 
 func TestLiteralHashValidation(t *testing.T) {
@@ -481,14 +480,14 @@ func TestLiteralHashValidation(t *testing.T) {
         '2' => 'two',
         1 => 'one again'
       }`),
-		VALIDATE_DUPLICATE_KEY)
+		ValidateDuplicateKey)
 
 	expectIssues(t,
 		issue.Unindent(`
       $x = {
         'func' => define foo() {}
       }`),
-		VALIDATE_NOT_TOP_LEVEL, VALIDATE_NOT_RVALUE)
+		ValidateNotTopLevel, ValidateNotRvalue)
 }
 
 func TestLiteralListValidation(t *testing.T) {
@@ -501,10 +500,10 @@ func TestLiteralListValidation(t *testing.T) {
 	expectIssues(t,
 		issue.Unindent(`
       $x = [define foo() {}]`),
-		VALIDATE_NOT_TOP_LEVEL, VALIDATE_NOT_RVALUE)
+		ValidateNotTopLevel, ValidateNotRvalue)
 }
 
-func TestReourceDefinitionValidation(t *testing.T) {
+func TestResourceDefinitionValidation(t *testing.T) {
 	expectNoIssues(t,
 		issue.Unindent(`
       define foo() {}`))
@@ -520,44 +519,44 @@ func TestReourceDefinitionValidation(t *testing.T) {
       define foo() {
         define bar() {}
       }`),
-		VALIDATE_NOT_TOP_LEVEL)
+		ValidateNotTopLevel)
 
 	expectIssues(t,
 		issue.Unindent(`
       define foo($a, *$b) {
       }`),
-		VALIDATE_CAPTURES_REST_NOT_SUPPORTED)
+		ValidateCapturesRestNotSupported)
 
 	expectIssues(t,
 		issue.Unindent(`
       define foo($title, $b) {
       }`),
-		VALIDATE_RESERVED_PARAMETER)
+		ValidateReservedParameter)
 
 	expectIssues(t,
 		issue.Unindent(`
       define foo($name, $b) {
       }`),
-		VALIDATE_RESERVED_PARAMETER)
+		ValidateReservedParameter)
 
 	expectIssues(t,
 		issue.Unindent(`
       define foo($a) {
         [$a]
       }`),
-		VALIDATE_IDEM_NOT_ALLOWED_LAST)
+		ValidateIdemNotAllowedLast)
 
 	expectIssues(t,
 		issue.Unindent(`
       define variant() {
       }`),
-		VALIDATE_RESERVED_TYPE_NAME)
+		ValidateReservedTypeName)
 
 	expectIssues(t,
 		issue.Unindent(`
       define Foo() {
       }`),
-		VALIDATE_ILLEGAL_DEFINITION_NAME)
+		ValidateIllegalDefinitionName)
 }
 
 func TestRelationshipValidation(t *testing.T) {
@@ -578,7 +577,7 @@ func TestRelationshipValidation(t *testing.T) {
         ensure => present,
       } ->
       node example.com {}`),
-		VALIDATE_NOT_RVALUE, VALIDATE_NOT_TOP_LEVEL)
+		ValidateNotRvalue, ValidateNotTopLevel)
 
 	expectIssues(t,
 		issue.Unindent(`
@@ -586,7 +585,7 @@ func TestRelationshipValidation(t *testing.T) {
       package { 'openssh-server':
         ensure => present,
       }`),
-		VALIDATE_NOT_RVALUE, VALIDATE_NOT_TOP_LEVEL)
+		ValidateNotRvalue, ValidateNotTopLevel)
 }
 
 func TestResourceBodyValidation(t *testing.T) {
@@ -603,7 +602,7 @@ func TestResourceBodyValidation(t *testing.T) {
         ensure => file,
         * => $file_ownership,
         * => $file_mode_content
-      }`), VALIDATE_MULTIPLE_ATTRIBUTES_UNFOLD)
+      }`), ValidateMultipleAttributesUnfold)
 }
 
 func TestResourceValidation(t *testing.T) {
@@ -613,25 +612,25 @@ func TestResourceValidation(t *testing.T) {
 
 	expectNoIssues(t, `@@foo { my: message => 'syntax ok' }`)
 
-	expectIssues(t, `@class { my: message => 'syntax ok' }`, VALIDATE_NOT_VIRTUALIZABLE)
+	expectIssues(t, `@class { my: message => 'syntax ok' }`, ValidateNotVirtualizable)
 
-	expectIssues(t, `@@class { my: message => 'syntax ok' }`, VALIDATE_NOT_VIRTUALIZABLE)
+	expectIssues(t, `@@class { my: message => 'syntax ok' }`, ValidateNotVirtualizable)
 }
 
 func TestResourceDefaultValidation(t *testing.T) {
 	expectNoIssues(t, `Something { message => 'syntax ok' }`)
 
-	expectIssues(t, `@Something { message => 'syntax ok' }`, VALIDATE_NOT_VIRTUALIZABLE)
+	expectIssues(t, `@Something { message => 'syntax ok' }`, ValidateNotVirtualizable)
 
-	expectIssues(t, `@@Something { message => 'syntax ok' }`, VALIDATE_NOT_VIRTUALIZABLE)
+	expectIssues(t, `@@Something { message => 'syntax ok' }`, ValidateNotVirtualizable)
 }
 
 func TestResourceOverrideValidation(t *testing.T) {
 	expectNoIssues(t, `Something['here'] { message => 'syntax ok' }`)
 
-	expectIssues(t, `@Something['here'] { message => 'syntax ok' }`, VALIDATE_NOT_VIRTUALIZABLE)
+	expectIssues(t, `@Something['here'] { message => 'syntax ok' }`, ValidateNotVirtualizable)
 
-	expectIssues(t, `@@Something['here'] { message => 'syntax ok' }`, VALIDATE_NOT_VIRTUALIZABLE)
+	expectIssues(t, `@@Something['here'] { message => 'syntax ok' }`, ValidateNotVirtualizable)
 }
 
 func TestNodeDefinitionValidation(t *testing.T) {
@@ -649,15 +648,15 @@ func TestNodeDefinitionValidation(t *testing.T) {
 
 	expectNoIssues(t, `node example.com {}`)
 
-	expectIssues(t, `node 'bad char' {}`, VALIDATE_ILLEGAL_HOSTNAME_CHARS)
+	expectIssues(t, `node 'bad char' {}`, ValidateIllegalHostnameChars)
 
-	expectIssues(t, `node "bad char" {}`, VALIDATE_ILLEGAL_HOSTNAME_CHARS)
+	expectIssues(t, `node "bad char" {}`, ValidateIllegalHostnameChars)
 
-	expectIssues(t, `node "not${here}" {}`, VALIDATE_ILLEGAL_HOSTNAME_INTERPOLATION)
+	expectIssues(t, `node "not${here}" {}`, ValidateIllegalHostnameInterpolation)
 }
 
 func TestReservedWordValidation(t *testing.T) {
-	expectIssues(t, `$x = private`, VALIDATE_RESERVED_WORD)
+	expectIssues(t, `$x = private`, ValidateReservedWord)
 }
 
 func TestSelectorExpressionValidation(t *testing.T) {
@@ -677,7 +676,7 @@ func TestSelectorExpressionValidation(t *testing.T) {
         default             => role::generic,
         'RedHat'            => role::redhat,
         default             => role::generic,
-      }`), VALIDATE_DUPLICATE_DEFAULT)
+      }`), ValidateDuplicateDefault)
 }
 
 func TestTypeAliasValidation(t *testing.T) {
@@ -685,9 +684,9 @@ func TestTypeAliasValidation(t *testing.T) {
 
 	expectNoIssues(t, `type MyType = Variant[Integer, String]`)
 
-	expectIssues(t, `type Variant = MyType`, VALIDATE_RESERVED_TYPE_NAME)
+	expectIssues(t, `type Variant = MyType`, ValidateReservedTypeName)
 
-	expectIssues(t, `type ::MyType = Integer`, VALIDATE_ILLEGAL_DEFINITION_NAME)
+	expectIssues(t, `type ::MyType = Integer`, ValidateIllegalDefinitionName)
 }
 
 func TestTypeMappingValidation(t *testing.T) {
@@ -697,23 +696,23 @@ func TestTypeMappingValidation(t *testing.T) {
 
 	expectIssues(t,
 		`type Runtime[ruby, [/^MyPackage::(\w+)$/, 'MyModule::\1']] = MyPackage::MyObject`,
-		VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING)
+		ValidateIllegalRegexpTypeMapping)
 
 	expectIssues(t,
 		`type Runtime[ruby, 'MyModule::MyObject'] = [/^MyModule::(\w+)$/, 'MyPackage::\1']`,
-		VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING)
+		ValidateIllegalSingleTypeMapping)
 
 	expectIssues(t,
 		`type Runtime[ruby, [/^MyPackage::(\w+)$/, 'MyModule::\1']] = $x`,
-		VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING)
+		ValidateIllegalRegexpTypeMapping)
 
 	expectIssues(t,
 		`type Runtime[ruby, 'MyModule::MyObject'] = $x`,
-		VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING)
+		ValidateIllegalSingleTypeMapping)
 
 	expectIssues(t,
 		`type Pattern[/^MyPackage::(\w+)$/, 'MyModule::\1'] = [/^MyModule::(\w+)$/, 'MyPackage::\1']`,
-		VALIDATE_UNSUPPORTED_EXPRESSION)
+		ValidateUnsupportedExpression)
 }
 
 func expectNoIssues(t *testing.T, str string) {
@@ -721,7 +720,7 @@ func expectNoIssues(t *testing.T, str string) {
 }
 
 func expectNoIssuesEPP(t *testing.T, str string) {
-	expectIssuesX(t, str, []parser.Option{parser.PARSER_EPP_MODE})
+	expectIssuesX(t, str, []parser.Option{parser.EppMode})
 }
 
 func expectIssues(t *testing.T, str string, expectedIssueCodes ...issue.Code) {
@@ -729,7 +728,7 @@ func expectIssues(t *testing.T, str string, expectedIssueCodes ...issue.Code) {
 }
 
 func expectIssuesEPP(t *testing.T, str string, expectedIssueCodes ...issue.Code) {
-	expectIssuesX(t, str, []parser.Option{parser.PARSER_EPP_MODE}, expectedIssueCodes...)
+	expectIssuesX(t, str, []parser.Option{parser.EppMode}, expectedIssueCodes...)
 }
 
 func expectIssuesX(t *testing.T, str string, parserOptions []parser.Option, expectedIssueCodes ...issue.Code) {
@@ -740,8 +739,8 @@ func expectIssuesX(t *testing.T, str string, parserOptions []parser.Option, expe
 	fail := false
 nextCode:
 	for _, expectedIssueCode := range expectedIssueCodes {
-		for _, issue := range issues {
-			if expectedIssueCode == issue.Code() {
+		for _, i := range issues {
+			if expectedIssueCode == i.Code() {
 				continue nextCode
 			}
 		}
@@ -750,14 +749,14 @@ nextCode:
 	}
 
 nextIssue:
-	for _, issue := range issues {
+	for _, i := range issues {
 		for _, expectedIssueCode := range expectedIssueCodes {
-			if expectedIssueCode == issue.Code() {
+			if expectedIssueCode == i.Code() {
 				continue nextIssue
 			}
 		}
 		fail = true
-		t.Logf(`Unexpected issue %s: '%s'`, issue.Code(), issue.String())
+		t.Logf(`Unexpected issue %s: '%s'`, i.Code(), i.String())
 	}
 	if fail {
 		t.Fail()
@@ -766,10 +765,10 @@ nextIssue:
 
 func parseAndValidate(t *testing.T, str string, parserOptions ...parser.Option) []issue.Reported {
 	if PuppetTasks {
-		parserOptions = append([]parser.Option{parser.PARSER_TASKS_ENABLED}, parserOptions...)
+		parserOptions = append([]parser.Option{parser.TasksEnabled}, parserOptions...)
 	}
 	if PuppetWorkflow {
-		parserOptions = append([]parser.Option{parser.PARSER_WORKFLOW_ENABLED}, parserOptions...)
+		parserOptions = append([]parser.Option{parser.WorkflowEnabled}, parserOptions...)
 	}
 
 	var v Validator
@@ -783,7 +782,7 @@ func parseAndValidate(t *testing.T, str string, parserOptions ...parser.Option) 
 			return v.Issues()
 		}
 	} else if expr := parse(t, str, parserOptions...); expr != nil {
-		v = ValidatePuppet(expr, STRICT_ERROR)
+		v = ValidatePuppet(expr, StrictError)
 		return v.Issues()
 	}
 	return nil
