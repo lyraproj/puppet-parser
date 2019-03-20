@@ -42,7 +42,7 @@ type (
 		// Returns false for all expressions except the Noop expression
 		IsNop() bool
 
-		// Represent the expression using Puppet Extended S-Expresssion Notation (PN)
+		// Represent the expression using Puppet Extended S-Expression Notation (PN)
 		//
 		// An expression is in one of two forms:
 		//
@@ -1250,7 +1250,7 @@ func (e *LiteralBoolean) ToLiteralValue() LiteralValue {
 }
 
 func (e *LiteralDefault) Value() interface{} {
-	return DEFAULT_INSTANCE
+	return DefaultInstance
 }
 
 func (e *LiteralDefault) AllContents(path []Expression, visitor PathVisitor) {
@@ -1297,17 +1297,17 @@ func (e *LiteralHash) Get(key string) Expression {
 	for _, entry := range e.entries {
 		ex, _ := entry.(*KeyedEntry)
 		ek := ex.Key()
-		switch ek.(type) {
+		switch ek := ek.(type) {
 		case *LiteralString:
-			if ek.(*LiteralString).value == key {
+			if ek.value == key {
 				return ex.Value()
 			}
 		case *QualifiedName:
-			if ek.(*QualifiedName).name == key {
+			if ek.name == key {
 				return ex.Value()
 			}
 		case *QualifiedReference:
-			if ek.(*QualifiedReference).name == key {
+			if ek.name == key {
 				return ex.Value()
 			}
 		}

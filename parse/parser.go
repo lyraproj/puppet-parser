@@ -5,7 +5,6 @@ package main
 import (
 	"bytes"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
@@ -19,7 +18,7 @@ import (
 
 // Program to parse and validate a .pp or .epp file
 var validateOnly = flag.Bool("v", false, "validate only")
-var jsonOuput = flag.Bool("j", false, "json output")
+var jsonOutput = flag.Bool("j", false, "json output")
 var strict = flag.String("s", `off`, "strict (off, warning, or error)")
 var tasks = flag.Bool("t", false, "tasks")
 var workflow = flag.Bool("w", false, "workflow")
@@ -29,7 +28,7 @@ func main() {
 
 	args := flag.Args()
 	if len(args) != 1 {
-		fmt.Fprintln(os.Stderr, "Usage: parse [options] <pp or epp file to parse>\nValid options are:")
+		pn.Fprintln(os.Stderr, "Usage: parse [options] <pp or epp file to parse>\nValid options are:")
 		flag.PrintDefaults()
 		os.Exit(1)
 	}
@@ -41,48 +40,48 @@ func main() {
 	}
 
 	var result map[string]interface{}
-	if *jsonOuput {
+	if *jsonOutput {
 		result = make(map[string]interface{}, 2)
 	}
 
 	strictness := validator.Strict(*strict)
 
-	parseOpts := []parser.Option{}
+	parseOpts := make([]parser.Option, 0)
 	if strings.HasSuffix(fileName, `.epp`) {
-		parseOpts = append(parseOpts, parser.PARSER_EPP_MODE)
+		parseOpts = append(parseOpts, parser.EppMode)
 	}
 	if *tasks {
-		parseOpts = append(parseOpts, parser.PARSER_TASKS_ENABLED)
+		parseOpts = append(parseOpts, parser.TasksEnabled)
 	}
 	if *workflow {
-		parseOpts = append(parseOpts, parser.PARSER_WORKFLOW_ENABLED)
+		parseOpts = append(parseOpts, parser.WorkflowEnabled)
 	}
 
 	expr, err := parser.CreateParser(parseOpts...).Parse(args[0], string(content), false)
-	if *jsonOuput {
+	if *jsonOutput {
 		if err != nil {
-			if issue, ok := err.(issue.Reported); ok {
-				result[`issues`] = []interface{}{pn.ReportedToPN(issue).ToData()}
+			if i, ok := err.(issue.Reported); ok {
+				result[`issues`] = []interface{}{pn.ReportedToPN(i).ToData()}
 			} else {
 				result[`error`] = err.Error()
 			}
 			emitJson(result)
-			// Parse error is always SEVERITY_ERROR
+			// Parse error is always SeverityError
 			os.Exit(1)
 		}
 
 		v := validator.ValidatePuppet(expr, strictness)
 		if len(v.Issues()) > 0 {
-			severity := issue.Severity(issue.SEVERITY_IGNORE)
+			severity := issue.Severity(issue.SeverityIgnore)
 			issues := make([]interface{}, len(v.Issues()))
-			for idx, issue := range v.Issues() {
-				if issue.Severity() > severity {
-					severity = issue.Severity()
+			for idx, i := range v.Issues() {
+				if i.Severity() > severity {
+					severity = i.Severity()
 				}
-				issues[idx] = pn.ReportedToPN(issue).ToData()
+				issues[idx] = pn.ReportedToPN(i).ToData()
 			}
 			result[`issues`] = issues
-			if severity == issue.SEVERITY_ERROR {
+			if severity == issue.SeverityError {
 				emitJson(result)
 				os.Exit(1)
 			}
@@ -96,21 +95,21 @@ func main() {
 	}
 
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err.Error())
-		// Parse error is always SEVERITY_ERROR
+		pn.Fprintln(os.Stderr, err.Error())
+		// Parse error is always SeverityError
 		os.Exit(1)
 	}
 
 	v := validator.ValidatePuppet(expr, strictness)
 	if len(v.Issues()) > 0 {
-		severity := issue.Severity(issue.SEVERITY_IGNORE)
-		for _, issue := range v.Issues() {
-			fmt.Fprintln(os.Stderr, issue.String())
-			if issue.Severity() > severity {
-				severity = issue.Severity()
+		severity := issue.Severity(issue.SeverityIgnore)
+		for _, i := range v.Issues() {
+			pn.Fprintln(os.Stderr, i.String())
+			if i.Severity() > severity {
+				severity = i.Severity()
 			}
 		}
-		if severity == issue.SEVERITY_ERROR {
+		if severity == issue.SeverityError {
 			os.Exit(1)
 		}
 	}
@@ -118,12 +117,12 @@ func main() {
 	if !*validateOnly {
 		b := bytes.NewBufferString(``)
 		expr.ToPN().Format(b)
-		fmt.Println(b)
+		pn.Println(b)
 	}
 }
 
 func emitJson(value interface{}) {
 	b := bytes.NewBufferString(``)
 	json.ToJson(value, b)
-	fmt.Println(b.String())
+	pn.Println(b.String())
 }

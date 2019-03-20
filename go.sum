@@ -1,2 +1,5 @@
 github.com/lyraproj/issue v0.0.0-20190213110846-64f0e861a560 h1:VVFwiMUrZe1a64kpEGzrPdeB6QzGEZTAVeo1OTOEWEk=
 github.com/lyraproj/issue v0.0.0-20190213110846-64f0e861a560/go.mod h1:F3Zu9SjR6zROUIVdxgxuX0/Mi4npwgDRalQCNzCyzU0=
+github.com/lyraproj/issue v0.0.0-20190319142512-87bdca048c6e h1:sUMHEmbU4Hwj1BXtYyU/VzFxgD3wv8KLMKfljGOP6RY=
+github.com/lyraproj/issue v0.0.0-20190319145359-029b4266d45b h1:niKVq5VjkwpgwUqXmr7jL+WuoWXbqN2UvkM/grgj4gk=
+github.com/lyraproj/issue v0.0.0-20190319145359-029b4266d45b/go.mod h1:F3Zu9SjR6zROUIVdxgxuX0/Mi4npwgDRalQCNzCyzU0=

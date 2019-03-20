@@ -11,7 +11,7 @@ type workflowChecker struct {
 
 func NewWorkflowChecker() Checker {
 	wfChecker := &workflowChecker{}
-	wfChecker.initialize(STRICT_ERROR)
+	wfChecker.initialize(StrictError)
 	return wfChecker
 }
 
@@ -19,7 +19,7 @@ func (v *workflowChecker) Validate(e parser.Expression) {
 	Check(v, e)
 }
 
-func (v *workflowChecker) check_ActivityExpression(e *parser.ActivityExpression) {
+func (v *workflowChecker) checkActivityExpression(e *parser.ActivityExpression) {
 	switch e.Style() {
 	case parser.ActivityStyleAction:
 		v.checkAction(e)
@@ -30,7 +30,7 @@ func (v *workflowChecker) check_ActivityExpression(e *parser.ActivityExpression)
 	case parser.ActivityStyleWorkflow:
 		v.checkWorkflow(e)
 	default:
-		v.Accept(VALIDATE_INVALID_ACTIVITY_STYLE, e, issue.H{`style`: e.Style()})
+		v.Accept(ValidateInvalidActivityStyle, e, issue.H{`style`: e.Style()})
 	}
 }
 
@@ -44,7 +44,4 @@ func (v *workflowChecker) checkResource(e *parser.ActivityExpression) {
 }
 
 func (v *workflowChecker) checkWorkflow(e *parser.ActivityExpression) {
-}
-
-func (v *workflowChecker) assertValidEntries(e *parser.ActivityExpression, entryNames ...string) {
 }

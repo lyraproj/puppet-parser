@@ -10,5 +10,7 @@ import (
 func ToJson(value interface{}, result io.Writer) {
 	enc := json.NewEncoder(result)
 	enc.SetEscapeHTML(false)
-	enc.Encode(value)
+	if err := enc.Encode(value); err != nil {
+		panic(err)
+	}
 }

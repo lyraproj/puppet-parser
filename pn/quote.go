@@ -2,7 +2,6 @@ package pn
 
 import (
 	"bytes"
-	"fmt"
 )
 
 func DoubleQuote(str string, b *bytes.Buffer) {
@@ -21,7 +20,7 @@ func DoubleQuote(str string, b *bytes.Buffer) {
 			b.WriteString(`\\`)
 		default:
 			if c < 0x20 {
-				fmt.Fprintf(b, `\o%3.3o`, c)
+				Fprintf(b, `\o%3.3o`, c)
 			} else {
 				b.WriteRune(c)
 			}

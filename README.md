@@ -81,7 +81,7 @@ guarantee that things will not change radically in the near future.
 * [x] Puppet 4.x compliant validator
 * [x] CLI and executable for validating .pp and .epp files
 * [x] AST construction
-* [x] Puppet Extended S-Expresssion Notation of AST
+* [x] Puppet Extended S-Expression Notation of AST
 * [x] JSON serialization of AST
 * [x] Options to conditionally allow lexer/parser to understand PSpec constructs
 * [x] Errors and warnings using issue codes and named arguments

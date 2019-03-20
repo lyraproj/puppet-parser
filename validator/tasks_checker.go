@@ -11,7 +11,7 @@ type tasksChecker struct {
 
 func NewTasksChecker() Checker {
 	tasksChecker := &tasksChecker{}
-	tasksChecker.initialize(STRICT_ERROR)
+	tasksChecker.initialize(StrictError)
 	return tasksChecker
 }
 
@@ -20,49 +20,49 @@ func (v *tasksChecker) Validate(e parser.Expression) {
 }
 
 func (v *tasksChecker) illegalTasksExpression(e parser.Expression) {
-	v.Accept(VALIDATE_CATALOG_OPERATION_NOT_SUPPORTED, e, issue.H{`operation`: e})
+	v.Accept(ValidateCatalogOperationNotSupported, e, issue.H{`operation`: e})
 }
 
-func (v *tasksChecker) check_Application(e *parser.Application) {
+func (v *tasksChecker) checkApplication(e *parser.Application) {
 	v.illegalTasksExpression(e)
 }
 
-func (v *tasksChecker) check_CapabilityMapping(e *parser.CapabilityMapping) {
+func (v *tasksChecker) checkCapabilityMapping(e *parser.CapabilityMapping) {
 	v.illegalTasksExpression(e)
 }
 
-func (v *tasksChecker) check_CollectExpression(e *parser.CollectExpression) {
+func (v *tasksChecker) checkCollectExpression(e *parser.CollectExpression) {
 	v.illegalTasksExpression(e)
 }
 
-func (v *tasksChecker) check_HostClassDefinition(e *parser.HostClassDefinition) {
+func (v *tasksChecker) checkHostClassDefinition(e *parser.HostClassDefinition) {
 	v.illegalTasksExpression(e)
 }
 
-func (v *tasksChecker) check_NodeDefinition(e *parser.NodeDefinition) {
+func (v *tasksChecker) checkNodeDefinition(e *parser.NodeDefinition) {
 	v.illegalTasksExpression(e)
 }
 
-func (v *tasksChecker) check_RelationshipExpression(e *parser.RelationshipExpression) {
+func (v *tasksChecker) checkRelationshipExpression(e *parser.RelationshipExpression) {
 	v.illegalTasksExpression(e)
 }
 
-func (v *tasksChecker) check_ResourceDefaultsExpression(e *parser.ResourceDefaultsExpression) {
+func (v *tasksChecker) checkResourceDefaultsExpression(e *parser.ResourceDefaultsExpression) {
 	v.illegalTasksExpression(e)
 }
 
-func (v *tasksChecker) check_ResourceExpression(e *parser.ResourceExpression) {
+func (v *tasksChecker) checkResourceExpression(e *parser.ResourceExpression) {
 	v.illegalTasksExpression(e)
 }
 
-func (v *tasksChecker) check_ResourceOverrideExpression(e *parser.ResourceOverrideExpression) {
+func (v *tasksChecker) checkResourceOverrideExpression(e *parser.ResourceOverrideExpression) {
 	v.illegalTasksExpression(e)
 }
 
-func (v *tasksChecker) check_ResourceTypeDefinition(e *parser.ResourceTypeDefinition) {
+func (v *tasksChecker) checkResourceTypeDefinition(e *parser.ResourceTypeDefinition) {
 	v.illegalTasksExpression(e)
 }
 
-func (v *tasksChecker) check_SiteDefinition(e *parser.SiteDefinition) {
+func (v *tasksChecker) checkSiteDefinition(e *parser.SiteDefinition) {
 	v.illegalTasksExpression(e)
 }

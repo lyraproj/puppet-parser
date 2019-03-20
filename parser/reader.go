@@ -26,10 +26,9 @@ type StringReader interface {
 	From(start int) string
 }
 
-type ParseError struct {
-	rootCause error
-	message   string
-	offset    int
+type parseError struct {
+	message string
+	offset  int
 }
 
 type stringReader struct {
@@ -37,7 +36,7 @@ type stringReader struct {
 	text string
 }
 
-func (e *ParseError) Error() string {
+func (e *parseError) Error() string {
 	return fmt.Sprintf(`%s at offset %d`, e.message, e.offset)
 }
 
@@ -45,11 +44,11 @@ func NewStringReader(s string) StringReader {
 	return &stringReader{i: 0, text: s}
 }
 
-func (r *stringReader) parseError(message string) *ParseError {
-	return &ParseError{message: message, offset: r.i}
+func (r *stringReader) parseError(message string) *parseError {
+	return &parseError{message: message, offset: r.i}
 }
 
-func (r *stringReader) invalidUnicode() *ParseError {
+func (r *stringReader) invalidUnicode() *parseError {
 	return r.parseError("invalid unicode character")
 }
 

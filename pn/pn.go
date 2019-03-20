@@ -3,15 +3,17 @@ package pn
 import (
 	"bytes"
 	"fmt"
-	"github.com/lyraproj/issue/issue"
+	"io"
 	"regexp"
 	"strings"
+
+	"github.com/lyraproj/issue/issue"
 )
 
 type (
-	// PN - Puppet Extended S-Expresssion Notation
+	// PN - Puppet Extended S-Expression Notation
 	//
-	// A PN forms a directed acyclig graph of nodes. There are four types of nodes:
+	// A PN forms a directed acyclic graph of nodes. There are four types of nodes:
 	//
 	// * Literal: A boolean, integer, float, string, or undef
 	//
@@ -77,7 +79,7 @@ type (
 
 var keyPattern = regexp.MustCompile(`^[A-Za-z_-][0-9A-Za-z_-]*$`)
 
-// Represent the Reported using Puppet Extended S-Expresssion Notation (PN)
+// Represent the Reported using Puppet Extended S-Expression Notation (PN)
 func ReportedToPN(ri issue.Reported) PN {
 	return Map([]Entry{
 		Literal(ri.Code()).WithName(`code`),
@@ -246,7 +248,7 @@ func (pn *literalPN) AsParameters() []PN {
 
 // Strip zeroes between last significant digit and end or exponent. The
 // zero following the decimal point is considered significant.
-var STRIP_TRAILING_ZEROES = regexp.MustCompile("\\A(.*(?:\\.0|[1-9]))0+(e[+-]?\\d+)?\\z")
+var StripTrailingZeroes = regexp.MustCompile(`\A(.*(?:\.0|[1-9]))0+(e[+-]?\d+)?\z`)
 
 func (pn *literalPN) Format(b *bytes.Buffer) {
 	switch pn.val.(type) {
@@ -255,7 +257,7 @@ func (pn *literalPN) Format(b *bytes.Buffer) {
 	case string:
 		DoubleQuote(pn.val.(string), b)
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-		fmt.Fprintf(b, `%d`, pn.val)
+		Fprintf(b, `%d`, pn.val)
 	case float32, float64:
 		str := fmt.Sprintf(`%.16g`, pn.val)
 		// We want 16 digit precision that overflows into scientific notation and no trailing zeroes
@@ -265,16 +267,16 @@ func (pn *literalPN) Format(b *bytes.Buffer) {
 			str = fmt.Sprintf(`%.16e`, pn.val)
 		}
 
-		if groups := STRIP_TRAILING_ZEROES.FindStringSubmatch(str); groups != nil {
+		if groups := StripTrailingZeroes.FindStringSubmatch(str); groups != nil {
 			b.WriteString(groups[1])
 			b.WriteString(groups[2])
 		} else {
 			b.WriteString(str)
 		}
 	case bool:
-		fmt.Fprintf(b, `%t`, pn.val)
+		Fprintf(b, `%t`, pn.val)
 	default:
-		fmt.Fprintf(b, `%v`, pn.val)
+		Fprintf(b, `%v`, pn.val)
 	}
 }
 
@@ -298,5 +300,26 @@ func formatElements(elements []PN, b *bytes.Buffer) {
 			b.WriteByte(' ')
 			elements[idx].Format(b)
 		}
+	}
+}
+
+func Fprintf(w io.Writer, format string, a ...interface{}) {
+	_, err := fmt.Fprintf(w, format, a...)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func Fprintln(w io.Writer, a ...interface{}) {
+	_, err := fmt.Fprintln(w, a...)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func Println(a ...interface{}) {
+	_, err := fmt.Println(a...)
+	if err != nil {
+		panic(err)
 	}
 }
