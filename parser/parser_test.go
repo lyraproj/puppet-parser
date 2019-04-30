@@ -744,15 +744,15 @@ func TestPlanDefinition(t *testing.T) {
 
 func TestWorkflowDefinition(t *testing.T) {
 	expectDump(t, `workflow foo { }`,
-		`(activity {:name "foo" :style "workflow"})`, WorkflowEnabled)
+		`(step {:name "foo" :style "workflow"})`, WorkflowEnabled)
 
 	expectDump(t,
 		issue.Unindent(`
       workflow foo {} {
         resource bar {}
       }`),
-		`(activity {:name "foo" :style "workflow" :definition (block `+
-			`(activity {:name "foo::bar" :style "resource"}))})`,
+		`(step {:name "foo" :style "workflow" :definition (block `+
+			`(step {:name "foo::bar" :style "resource"}))})`,
 		WorkflowEnabled)
 
 	expectDump(t,
@@ -767,8 +767,8 @@ func TestWorkflowDefinition(t *testing.T) {
           }
         }
       }`),
-		`(activity {:name "foo" :style "workflow" :definition (block `+
-			`(activity {:name "foo::bar" :style "resource" :properties (hash (=> (qn "type") (qr "Genesis::Aws::Instance"))) :definition (hash `+
+		`(step {:name "foo" :style "workflow" :definition (block `+
+			`(step {:name "foo::bar" :style "resource" :properties (hash (=> (qn "type") (qr "Genesis::Aws::Instance"))) :definition (hash `+
 			`(=> (qn "x") 2) `+
 			`(=> (qn "y") (hash (=> (qn "a") "a"))))}))})`,
 		WorkflowEnabled)
@@ -782,8 +782,8 @@ func TestWorkflowDefinition(t *testing.T) {
           x => $x,
         }
       }`),
-		`(activity {:name "foo" :style "workflow" :definition (block `+
-			`(activity {:name "foo::bar" :style "resource" :properties (hash `+
+		`(step {:name "foo" :style "workflow" :definition (block `+
+			`(step {:name "foo::bar" :style "resource" :properties (hash `+
 			`(=> (qn "type") (qr "Genesis::Aws::Instance")) `+
 			`(=> (qn "iteration") (hash `+
 			`(=> (qn "name") (qn "bar")) `+
@@ -802,8 +802,8 @@ func TestWorkflowDefinition(t *testing.T) {
           }
         }
       }`),
-		`(activity {:name "foo" :style "workflow" :definition (block `+
-			`(activity {:name "foo::bar" :style "action" :properties (hash (=> (qn "guard") true)) `+
+		`(step {:name "foo" :style "workflow" :definition (block `+
+			`(step {:name "foo::bar" :style "action" :properties (hash (=> (qn "guard") true)) `+
 			`:definition (block (function {:name "read" :body [true]}))}))})`,
 		WorkflowEnabled)
 
@@ -822,8 +822,8 @@ func TestWorkflowDefinition(t *testing.T) {
           }
         }
       }`),
-		`(activity {:name "foo" :style "workflow" :definition (block `+
-			`(activity {:name "foo::bar" :style "action" :definition (block `+
+		`(step {:name "foo" :style "workflow" :definition (block `+
+			`(step {:name "foo::bar" :style "action" :definition (block `+
 			`(function {:name "delete" :body [(invoke {:functor (qn "notice") :args ["hello from delete"]})]}) `+
 			`(function {:name "read" :body [(invoke {:functor (qn "notice") :args ["hello from read"]})]}) `+
 			`(function {:name "upsert" :body [(invoke {:functor (qn "notice") :args ["hello from upsert"]})]}))}))})`,

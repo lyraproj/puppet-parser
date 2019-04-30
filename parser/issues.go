@@ -29,10 +29,10 @@ const (
 
 	parseClassNotValidHere            = `PARSE_CLASS_NOT_VALID_HERE`
 	parseElsifInUnless                = `PARSE_ELSIF_IN_UNLESS`
-	parseExpectedActivityName         = `PARSE_EXPECTED_ACTIVITY_NAME`
-	parseExpectedActivityStyle        = `PARSE_EXPECTED_ACTIVITY_STYLE`
+	parseExpectedStepName             = `PARSE_EXPECTED_STEP_NAME`
+	parseExpectedStepStyle            = `PARSE_EXPECTED_STEP_STYLE`
 	parseExpectedAttributeName        = `PARSE_EXPECTED_ATTRIBUTE_NAME`
-	parseExpectedActivityOperation    = `PARSE_EXPECTED_ACTIVITY_OPERATION`
+	parseExpectedStepOperation        = `PARSE_EXPECTED_STEP_OPERATION`
 	parseExpectedIteratorStyle        = `PARSE_EXPECTED_ITERATOR_STYLE`
 	parseExpectedClassName            = `PARSE_EXPECTED_CLASS_NAME`
 	parseExpectedFarrowAfterKey       = `PARSE_EXPECTED_FARROW_AFTER_KEY`
@@ -48,7 +48,7 @@ const (
 	parseExpectedVariable             = `PARSE_EXPECTED_VARIABLE`
 	parseExtraneousComma              = `PARSE_EXTRANEOUS_COMMA`
 	parseIllegalEppParameters         = `PARSE_ILLEGAL_EPP_PARAMETERS`
-	parseInvalidActivityAttribute     = `PARSE_INVALID_ACTIVITY_ATTRIBUTE`
+	parseInvalidStepAttribute         = `PARSE_INVALID_STEP_ATTRIBUTE`
 	parseInvalidAttribute             = `PARSE_INVALID_ATTRIBUTE`
 	parseInvalidResource              = `PARSE_INVALID_RESOURCE`
 	parseInheritsMustBeTypeName       = `PARSE_INHERITS_MUST_BE_TYPE_NAME`
@@ -82,10 +82,10 @@ func init() {
 
 	issue.Hard(parseClassNotValidHere, `'class' keyword not allowed at this location`)
 	issue.Hard(parseElsifInUnless, `elsif not supported in unless expression`)
-	issue.Hard(parseExpectedActivityName, `expected %{activity} name`)
-	issue.Hard(parseExpectedActivityOperation, `expected one of 'delete', 'read', or 'upsert'. Got '%{operation}'`)
+	issue.Hard(parseExpectedStepName, `expected %{step} name`)
+	issue.Hard(parseExpectedStepOperation, `expected one of 'delete', 'read', or 'upsert'. Got '%{operation}'`)
 	issue.Hard(parseExpectedIteratorStyle, `expected one of 'each', 'range', or 'times'. Got '%{style}`)
-	issue.Hard(parseExpectedActivityStyle, `expected one of 'action', 'resource', or 'workflow'`)
+	issue.Hard(parseExpectedStepStyle, `expected one of 'action', 'resource', or 'workflow'`)
 	issue.Hard(parseExpectedAttributeName, `expected attribute name`)
 	issue.Hard(parseExpectedClassName, `expected name of class`)
 	issue.Hard(parseExpectedFarrowAfterKey, `expected '=>' to follow hash key`)
@@ -101,7 +101,7 @@ func init() {
 	issue.Hard(parseExpectedVariable, `expected variable declaration`)
 	issue.Hard(parseExtraneousComma, `Extraneous comma between statements`)
 	issue.Hard(parseIllegalEppParameters, `Ambiguous EPP parameter expression. Probably missing '<%%-' before parameters to remove leading whitespace`)
-	issue.Hard(parseInvalidActivityAttribute, `Attribute '%{name}' is not valid in a '%{style}' definition`)
+	issue.Hard(parseInvalidStepAttribute, `Attribute '%{name}' is not valid in a '%{style}' definition`)
 	issue.Hard(parseInvalidAttribute, `invalid attribute operation`)
 	issue.Hard(parseInvalidResource, `invalid resource expression`)
 	issue.Hard(parseInheritsMustBeTypeName, `expected type name to follow 'inherits'`)

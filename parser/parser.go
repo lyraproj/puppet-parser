@@ -47,11 +47,11 @@ var statementCalls = map[string]bool{
 	`return`: true,
 }
 
-var workflowStyles = map[string]ActivityStyle{
-	`action`:       ActivityStyleAction,
-	`resource`:     ActivityStyleResource,
-	`stateHandler`: ActivityStyleStateHandler,
-	`workflow`:     ActivityStyleWorkflow,
+var workflowStyles = map[string]StepStyle{
+	`action`:       StepStyleAction,
+	`resource`:     StepStyleResource,
+	`stateHandler`: StepStyleStateHandler,
+	`workflow`:     StepStyleWorkflow,
 }
 
 type Lexer interface {
@@ -424,7 +424,7 @@ func (ctx *context) relationship() (expr Expression) {
 }
 
 func (ctx *context) assignment() (expr Expression) {
-	expr = ctx.activity()
+	expr = ctx.step()
 	for {
 		switch ctx.currentToken {
 		case tokenAssign, tokenAddAssign, tokenSubtractAssign:
@@ -437,7 +437,7 @@ func (ctx *context) assignment() (expr Expression) {
 	}
 }
 
-func (ctx *context) activity() (expr Expression) {
+func (ctx *context) step() (expr Expression) {
 	start := ctx.Pos()
 	expr = ctx.resource()
 	if ctx.workflow {
@@ -445,7 +445,7 @@ func (ctx *context) activity() (expr Expression) {
 			s := qn.Name()
 			if style, ok := workflowStyles[s]; ok {
 				if name, ok := ctx.identifier(); ok {
-					expr = ctx.activityDeclaration(start, style, name, true)
+					expr = ctx.stepDeclaration(start, style, name, true)
 				}
 			}
 		}
@@ -1278,7 +1278,7 @@ func (ctx *context) callFunctionExpression(functorExpr Expression) Expression {
 	return ctx.factory.CallNamed(functorExpr, true, args, block, ctx.locator, start, end-start)
 }
 
-func (ctx *context) activityStyle() ActivityStyle {
+func (ctx *context) stepStyle() StepStyle {
 	switch ctx.currentToken {
 	case tokenIdentifier:
 		if style, ok := workflowStyles[ctx.tokenString()]; ok {
@@ -1286,19 +1286,19 @@ func (ctx *context) activityStyle() ActivityStyle {
 			return style
 		}
 	}
-	panic(ctx.parseIssue(parseExpectedActivityStyle))
+	panic(ctx.parseIssue(parseExpectedStepStyle))
 }
 
-func (ctx *context) activityName(activity ActivityStyle) string {
+func (ctx *context) stepName(step StepStyle) string {
 	if tn, ok := ctx.identifier(); ok {
 		return tn
 	}
-	panic(ctx.parseIssue2(parseExpectedActivityName, issue.H{`activity`: activity}))
+	panic(ctx.parseIssue2(parseExpectedStepName, issue.H{`step`: step}))
 }
 
-// activityEntry is a hash entry with some specific constraints
+// stepEntry is a hash entry with some specific constraints
 
-func (ctx *context) activityProperty() Expression {
+func (ctx *context) stepProperty() Expression {
 	start := ctx.Pos()
 	key, ok := ctx.identifierExpr()
 	if !ok {
@@ -1313,15 +1313,15 @@ func (ctx *context) activityProperty() Expression {
 	name := key.(*QualifiedName).name
 	var value Expression
 	switch name {
-	case `input`:
+	case `parameters`:
 		// TODO: Allow non condensed declaration using array of hashes where everything is
 		// spelled out (type and value expressed in hash)
 		value = ctx.factory.Array(ctx.parameterList(), ctx.locator, vstart, ctx.Pos()-vstart)
 		ctx.nextToken()
-	case `output`:
+	case `returns`:
 		// TODO: Allow non condensed declaration using array of hashes where everything is
 		// spelled out (type and value expressed in hash)
-		params := ctx.outputParameters()
+		params := ctx.returnParameters()
 		value = ctx.factory.Array(params, ctx.locator, vstart, ctx.Pos()-vstart)
 		ctx.nextToken()
 
@@ -1402,34 +1402,34 @@ func (ctx *context) stateAttribute() (op Expression) {
 	}
 }
 
-func (ctx *context) activityExpression() Expression {
+func (ctx *context) stepExpression() Expression {
 	start := ctx.Pos()
 	if ctx.currentToken == tokenFunction {
 		return ctx.functionDefinition()
 	}
-	style := ctx.activityStyle()
-	name := ctx.activityName(style)
-	return ctx.activityDeclaration(start, style, name, false)
+	style := ctx.stepStyle()
+	name := ctx.stepName(style)
+	return ctx.stepDeclaration(start, style, name, false)
 }
 
 func (ctx *context) activities() []Expression {
 	activities := make([]Expression, 0)
 	for ctx.currentToken != tokenRc {
-		activities = append(activities, ctx.activityExpression())
+		activities = append(activities, ctx.stepExpression())
 	}
 	ctx.nextToken()
 	return activities
 }
 
-func (ctx *context) activityDeclaration(start int, style ActivityStyle, name string, atTop bool) Expression {
-	if style == ActivityStyleWorkflow {
+func (ctx *context) stepDeclaration(start int, style StepStyle, name string, atTop bool) Expression {
+	if style == StepStyleWorkflow {
 		// Push to name stack
 		ctx.nameStack = append(ctx.nameStack, name)
 	}
 	hstart := ctx.tokenStartPos
 	ctx.assertToken(tokenLc)
 	ctx.nextToken()
-	propEntries := ctx.expressions(tokenRc, ctx.activityProperty)
+	propEntries := ctx.expressions(tokenRc, ctx.stepProperty)
 	hEnd := ctx.Pos()
 	ctx.nextToken()
 
@@ -1489,7 +1489,7 @@ func (ctx *context) activityDeclaration(start int, style ActivityStyle, name str
 	var block Expression
 
 	switch style {
-	case ActivityStyleWorkflow:
+	case StepStyleWorkflow:
 		if ctx.currentToken == tokenLc {
 			hstart := ctx.tokenStartPos
 			ctx.nextToken()
@@ -1501,7 +1501,7 @@ func (ctx *context) activityDeclaration(start int, style ActivityStyle, name str
 
 		// Pop name stack
 		ctx.nameStack = ctx.nameStack[:len(ctx.nameStack)-1]
-	case ActivityStyleResource:
+	case StepStyleResource:
 		if ctx.currentToken == tokenLc {
 			hstart := ctx.tokenStartPos
 			ctx.nextToken()
@@ -1511,17 +1511,17 @@ func (ctx *context) activityDeclaration(start int, style ActivityStyle, name str
 			}
 			ctx.nextToken()
 		}
-	default: // ActivityStyleAction or ActivityStyleStateHandler
+	default: // StepStyleAction or StepStyleStateHandler
 		ctx.assertToken(tokenLc)
 		ctx.nextToken()
 		block = ctx.parse(tokenRc, false)
 		ctx.nextToken()
 	}
-	activity := f.Activity(ctx.qualifiedName(name), style, properties, block, l, start, ctx.Pos()-start)
+	step := f.Step(ctx.qualifiedName(name), style, properties, block, l, start, ctx.Pos()-start)
 	if atTop {
-		ctx.addDefinition(activity)
+		ctx.addDefinition(step)
 	}
-	return activity
+	return step
 }
 
 func (ctx *context) lambda() (result Expression) {
@@ -1790,11 +1790,11 @@ func (ctx *context) parameter() Expression {
 		defaultExpression, typeExpr, capturesRest, ctx.locator, start, ctx.Pos()-start)
 }
 
-func (ctx *context) outputParameters() (result []Expression) {
+func (ctx *context) returnParameters() (result []Expression) {
 	switch ctx.currentToken {
 	case tokenLp, tokenWslp:
 		ctx.nextToken()
-		return ctx.expressions(tokenRp, ctx.outputParameter)
+		return ctx.expressions(tokenRp, ctx.returnParameter)
 	default:
 		return []Expression{}
 	}
@@ -1808,7 +1808,7 @@ func (ctx *context) attributeAlias() Expression {
 	panic(ctx.parseIssue(parseExpectedAttributeName))
 }
 
-func (ctx *context) outputParameter() Expression {
+func (ctx *context) returnParameter() Expression {
 	var typeExpr, defaultExpression Expression
 
 	start := ctx.tokenStartPos
