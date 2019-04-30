@@ -2,50 +2,50 @@ package parser
 
 import "github.com/lyraproj/puppet-parser/pn"
 
-type ActivityStyle string
+type StepStyle string
 
-const ActivityStyleAction = ActivityStyle(`action`)
-const ActivityStyleResource = ActivityStyle(`resource`)
-const ActivityStyleStateHandler = ActivityStyle(`stateHandler`)
-const ActivityStyleWorkflow = ActivityStyle(`workflow`)
+const StepStyleAction = StepStyle(`action`)
+const StepStyleResource = StepStyle(`resource`)
+const StepStyleStateHandler = StepStyle(`stateHandler`)
+const StepStyleWorkflow = StepStyle(`workflow`)
 
-type ActivityExpression struct {
+type StepExpression struct {
 	Positioned
 	name       string
-	style      ActivityStyle
+	style      StepStyle
 	properties Expression
 	definition Expression
 }
 
-func (e *ActivityExpression) AllContents(path []Expression, visitor PathVisitor) {
+func (e *StepExpression) AllContents(path []Expression, visitor PathVisitor) {
 	DeepVisit(e, path, visitor, e.properties, e.definition)
 }
 
-func (e *ActivityExpression) Contents(path []Expression, visitor PathVisitor) {
+func (e *StepExpression) Contents(path []Expression, visitor PathVisitor) {
 	ShallowVisit(e, path, visitor, e.properties, e.definition)
 }
 
-func (e *ActivityExpression) Name() string {
+func (e *StepExpression) Name() string {
 	return e.name
 }
 
-func (e *ActivityExpression) Style() ActivityStyle {
+func (e *StepExpression) Style() StepStyle {
 	return e.style
 }
 
-func (e *ActivityExpression) Definition() Expression {
+func (e *StepExpression) Definition() Expression {
 	return e.definition
 }
 
-func (e *ActivityExpression) Properties() Expression {
+func (e *StepExpression) Properties() Expression {
 	return e.properties
 }
 
-func (e *ActivityExpression) ToDefinition() Definition {
+func (e *StepExpression) ToDefinition() Definition {
 	return e
 }
 
-func (e *ActivityExpression) ToPN() pn.PN {
+func (e *StepExpression) ToPN() pn.PN {
 	entries := []pn.Entry{
 		pn.Literal(e.name).WithName(`name`),
 		pn.Literal(string(e.style)).WithName(`style`)}
@@ -56,5 +56,5 @@ func (e *ActivityExpression) ToPN() pn.PN {
 	if e.definition != nil {
 		entries = append(entries, e.definition.ToPN().WithName(`definition`))
 	}
-	return pn.Map(entries).AsCall(`activity`)
+	return pn.Map(entries).AsCall(`step`)
 }

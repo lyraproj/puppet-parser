@@ -30,7 +30,7 @@ const (
 	ValidateIllegalQueryExpression          = `VALIDATE_ILLEGAL_QUERY_EXPRESSION`
 	ValidateIllegalRegexpTypeMapping        = `VALIDATE_ILLEGAL_REGEXP_TYPE_MAPPING`
 	ValidateIllegalSingleTypeMapping        = `VALIDATE_ILLEGAL_SINGLE_TYPE_MAPPING`
-	ValidateInvalidActivityStyle            = `VALIDATE_INVALID_ACTIVITY_STYLE`
+	ValidateInvalidStepStyle                = `VALIDATE_INVALID_STEP_STYLE`
 	ValidateMultipleAttributesUnfold        = `VALIDATE_MULTIPLE_ATTRIBUTES_UNFOLD`
 	ValidateNotAbsoluteTopLevel             = `VALIDATE_NOT_ABSOLUTE_TOP_LEVEL`
 	ValidateNotRvalue                       = `VALIDATE_NOT_RVALUE`
@@ -116,7 +116,7 @@ func init() {
 		`Illegal type mapping. Expected a Type on the left side, got %{expression}`,
 		issue.HF{`expression`: issue.AnOrA})
 
-	issue.Hard(ValidateInvalidActivityStyle, `Expected one of 'for', 'function', 'guard', 'resource', or 'workflow'. Got '%{style}'`)
+	issue.Hard(ValidateInvalidStepStyle, `Expected one of 'for', 'function', 'guard', 'resource', or 'workflow'. Got '%{style}'`)
 
 	issue.Hard(ValidateMultipleAttributesUnfold, `Unfolding of attributes from Hash can only be used once per resource body`)
 

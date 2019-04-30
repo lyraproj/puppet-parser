@@ -81,7 +81,7 @@ type basicChecker struct {
 type Checker interface {
 	Validator
 
-	checkActivityExpression(e *parser.ActivityExpression)
+	checkStepExpression(e *parser.StepExpression)
 	checkApplication(e *parser.Application)
 	checkAssignmentExpression(e *parser.AssignmentExpression)
 	checkAttributeOperation(e *parser.AttributeOperation)
@@ -130,8 +130,8 @@ func NewChecker(strict Strictness) Checker {
 
 func Check(v Checker, e parser.Expression) {
 	switch e := e.(type) {
-	case *parser.ActivityExpression:
-		v.checkActivityExpression(e)
+	case *parser.StepExpression:
+		v.checkStepExpression(e)
 	case *parser.Application:
 		v.checkApplication(e)
 	case *parser.AssignmentExpression:
@@ -226,7 +226,7 @@ func (v *basicChecker) illegalWorkflowOperation(e parser.Expression) {
 	v.Accept(ValidateWorkflowOperationNotSupported, e, issue.H{`operation`: e})
 }
 
-func (v *basicChecker) checkActivityExpression(e *parser.ActivityExpression) {
+func (v *basicChecker) checkStepExpression(e *parser.StepExpression) {
 	v.illegalWorkflowOperation(e)
 }
 
